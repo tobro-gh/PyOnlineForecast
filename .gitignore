@@ -1,0 +1,32 @@
+# Ignore Python virtual environment
+py_online_forecast_venv/
+
+# Ignore folders
+/data/
+!/py_online_forecast/data/
+
+# Ignore Python bytecode files
+__pycache__/
+*.py[cod]
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore environment files
+.env
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+# Ignore build directories
+py_online_forecast.egg-info/
+build/
+dist/
