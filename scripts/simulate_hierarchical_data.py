@@ -14,8 +14,8 @@ n_train = 1000
 n_test = 1000
 
 #%%
-# Set seed
 np.random.seed(1)
+
 def sim(n_samples):
     w = np.random.normal(0, sigma, n_samples + 2)
     Y_H = np.zeros(n_samples + 3)
@@ -46,7 +46,8 @@ predictions = Y_test @ pred_mat.T
 
 #%% Export bottom level observations and all predictions to csv
 columns = pd.MultiIndex.from_tuples([("Y_A", 0), ("Y_H", 0), ("pred_Y_A", 2), ("pred_Y_H", 2), ("pred_Y_H", 1)])
-fc_data = pd.DataFrame(np.hstack([Y_test, predictions]), columns=columns).fc.convert()
+Y_test_top = Y_test.sum(axis=1).reshape(-1,1)
+fc_data = pd.DataFrame(np.hstack([Y_test_top, Y_test[:, [1]], predictions]), columns=columns).fc.convert()
 
 #%%
 lagged_predictions = fc_data.fc.lag()
@@ -84,4 +85,3 @@ if __name__ == "__main__":
 # %%
 fc_data.to_csv("../py_online_forecast/data/hierarchical_data.csv", index = False)
 
-# %%
