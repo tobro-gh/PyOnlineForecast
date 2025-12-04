@@ -9,7 +9,7 @@ import os
 import functools
 import pickle
 from abc import ABC, abstractmethod
-from collections import deque
+from numpy.lib.stride_tricks import sliding_window_view
 
 # Get the directory of the current module
 module_dir = os.path.dirname(__file__)
@@ -47,19 +47,30 @@ class ForecastMatrix:
     def __init__(self, data: pd.DataFrame):
         self._obj = data
      
-    def append(self, data: pd.DataFrame, ignore_column_names = False):
+    def append(self, data: pd.DataFrame | pd.Series, ignore_column_names = False, sort = False):
+        if isinstance(data, pd.Series):
+            data = data.to_frame().T
+        else:
+            data = data.copy()
+
         # Append time data of same shape
-        data = data.copy()
         if ignore_column_names:
             data.columns = self._obj.columns
+
+        if sort:
+            if not data.index.is_monotonic_increasing:
+                data = data.sort_index()
+
+        # Check that frequency matches (if existing data has datetime index)
+        if isinstance(self._obj.index, pd.DatetimeIndex):
+            if not isinstance(data.index, pd.DatetimeIndex):
+                raise ValueError("Cannot append data with non-datetime index to data with datetime index.")
+            # Check that data is contiguous
+            expected_index = pd.date_range(start=self._obj.index[-1] + self._obj.index.freq, periods=len(data), freq=self._obj.index.freq)
+            if not data.index.equals(expected_index):
+                raise ValueError("Appended data is not contiguous with existing data.")
+            
         return pd.concat([self._obj, data], axis = 0)
-
-    def append_series(self, data: pd.Series, ignore_column_names = False):
-        if ignore_column_names:
-            data = data.copy()
-            data.index = self._obj.columns
-
-        return pd.concat([self._obj.T, data], axis = 1).T
 
     def join(self, data: pd.DataFrame, how = "left"):
         if not data.fc.check():
@@ -203,7 +214,8 @@ class ForecastMatrix:
         if isinstance(data.index, pd.DatetimeIndex):
             # Infer frequency
             inferred_freq = pd.infer_freq(data.index)
-            data = data.asfreq(inferred_freq, method=fill_method)
+            if inferred_freq is not None:
+                data = data.asfreq(inferred_freq, method=fill_method)
         
         return data
 
@@ -312,6 +324,36 @@ class Source:
     def __repr__(self):
         return self._name
 
+    def __add__(self, other):
+        return SumTransformation(self, other)
+
+    def __radd__(self, other):
+        return SumTransformation(other, self)
+
+    def __sub__(self, other):
+        return SubTransformation(self, other)
+    
+    def __rsub__(self, other):
+        return SubTransformation(other, self)
+    
+    def __mul__(self, other):     
+        return MulTransformation(self, other)
+
+    def __rmul__(self, other):
+        return MulTransformation(self, other)
+
+    def __truediv__(self, other):
+        return DivTransformation(self, other)
+    
+    def __rtruediv__(self, other):
+        return DivTransformation(other, self)
+
+    def __pow__(self, other):
+        return PowTransformation(self, other)
+
+    def __rpow__(self, other):
+        return PowTransformation(other, self)
+
 # Placeholder keywords for specifying data sources
 Memory = Source("Memory")
 DefaultSource = Source("DefaultSource")
@@ -341,8 +383,9 @@ def format_array(data: np.ndarray | pd.Series | pd.DataFrame, index, vars):
             return pd.DataFrame(data, index = index, columns = vars)
         else:
             reshaped = data.reshape((data.shape[0], -1))
-            new_vars = [f"{var}_{i}" for var in vars for i in range(reshaped.shape[1] // len(vars))]
-            return pd.DataFrame(reshaped, index = index, columns = new_vars)
+            if len(vars) != reshaped.shape[1]:
+                vars = [f"{var}_{i}" for var in vars for i in range(reshaped.shape[1] // len(vars))]
+            return pd.DataFrame(reshaped, index = index, columns = vars)
     else:
         if data.ndim == 1:
             return pd.Series(data, name = index, index = vars)
@@ -440,8 +483,6 @@ class Transformation(Source):
     with keyword names matching the evaluate method parameters to specify how data should be passed.   
     Also enables basic operations between transformations, such as +, -, *, etc.
     """
-
-    preserve_names = False
 
     # Superclass for transformations
     def __init__(self, *apply_args, **apply_kwargs):
@@ -551,6 +592,8 @@ class Transformation(Source):
         if recursion_pars is None:
             recursion_pars = {}        
 
+        new_recursion_pars = {}
+
         if memory is None:
             memory = recursion_pars.get(self, None)
 
@@ -569,7 +612,7 @@ class Transformation(Source):
             elif isinstance(val, Transformation):
                 t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, check_output = check_output)
 
-                recursion_pars.update(t_rec_pars)
+                new_recursion_pars.update(t_rec_pars)
 
                 data = data | {val: t_val} # Note, creates new data dict to avoid modifying input data
 
@@ -591,7 +634,7 @@ class Transformation(Source):
             result = eval_out
             memory = None
 
-        recursion_pars[self] = memory
+        new_recursion_pars[self] = memory
     
         if check_output:
             # Clean up result if needed
@@ -606,39 +649,9 @@ class Transformation(Source):
                 result = result.fc.convert()
 
         if return_recursion_pars:
-            return result, recursion_pars
+            return result, new_recursion_pars
         else:
             return result
-
-    def __add__(self, other):
-        return SumTransformation(self, other)
-
-    def __radd__(self, other):
-        return SumTransformation(other, self)
-
-    def __sub__(self, other):
-        return SubTransformation(self, other)
-    
-    def __rsub__(self, other):
-        return SubTransformation(other, self)
-    
-    def __mul__(self, other):     
-        return MulTransformation(self, other)
-
-    def __rmul__(self, other):
-        return MulTransformation(self, other)
-
-    def __truediv__(self, other):
-        return DivTransformation(self, other)
-    
-    def __rtruediv__(self, other):
-        return DivTransformation(other, self)
-
-    def __pow__(self, other):
-        return PowTransformation(self, other)
-
-    def __rpow__(self, other):
-        return PowTransformation(other, self)
 
     def evaluate(self) -> tuple[DataFrame, dict] | DataFrame:
         # In: signature can be freely defined by subclasses.
@@ -745,6 +758,75 @@ class Transformer:
 
     def reset_state(self):
         self.sorted_transforms = None
+
+# TODO: use the format_warpper in place of manual conversion in multiple locations
+def format_wrapper(*input_dfs: str, output_as = None, product_vars = False):
+    """
+    Decorator factory, for making decorators that convert input dataframes to numpy nd.array, and the output to a dataframe.
+    If product_vars is True, the output columns are formed as the product of input variable names.
+    """
+    def decorator(func):
+        sig = inspect.signature(func)
+        # Check that input_dfs match signature
+        for name in input_dfs:
+            if not name in sig.parameters:
+                raise ValueError(f"Input name {name} not found in signature.")
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+
+            bound_args = sig.bind(*args, **kwargs)
+
+            # Get reference for formatting output
+            if output_as is not None:
+                value = bound_args.arguments[output_as]
+
+                if isinstance(value, pd.DataFrame):
+                    ref = [value.index, value.columns]
+                elif isinstance(value, pd.Series):
+                    ref = [value.name, value.index]
+                elif isinstance(value, np.ndarray):
+                    ref = None
+                else:
+                    raise ValueError(f"Reference output should be DataFrame or Series but got {type(value)}")
+
+                ndim = value.ndim
+
+                if product_vars and ref is not None:
+                    # Form output variable names as product of input variable names
+                    vars = ref[1].unique().tolist()
+                    ran = range(len(vars))
+                    flat_vars = [(vars[i], vars[j]) for i in ran for j in ran]
+                    ref[1] = flat_vars
+
+            # Convert inputs to arrays
+            for name in input_dfs:
+                if name in bound_args.arguments:
+                    value = bound_args.arguments[name]
+                    if isinstance(value, (pd.DataFrame, pd.Series)):
+                        bound_args.arguments[name] = np.atleast_2d(value.to_numpy())
+                    elif isinstance(value, (np.ndarray,)):
+                        bound_args.arguments[name] = np.atleast_2d(value)
+
+            result, memory = func(*bound_args.args, **bound_args.kwargs)
+
+            # Format output as reference
+            if output_as is not None:
+
+                if ref is None and not isinstance(result, np.ndarray):
+                    result = result.to_numpy()
+
+                if ndim == 1:
+                    result = result.squeeze(0)
+
+                if ref is not None:
+                    result = format_array(result, *ref)
+
+            return result, memory
+        
+        return wrapper
+    
+    return decorator
 
 
 class BackShift(Transformation):
@@ -923,8 +1005,8 @@ class Length(Transformation):
 
 class One(Transformation):
     
-    def __init__(self):
-        super().__init__(index = DefaultIndex)
+    def __init__(self, index = DefaultIndex):
+        super().__init__(index = index)
 
     def evaluate(self, index):
         if isinstance(index, (pd.Index, np.ndarray)):
@@ -1002,6 +1084,151 @@ class FourierSeries(Transformation):
 
         return result
 
+class SlidingSum(Transformation):
+
+    def __init__(self, data = DefaultSource, window_size = 1, *args, **kwargs):
+        self.window_size = window_size
+        super().__init__(data = data, old_data = Memory)
+        self._args = args
+        self._kwargs = kwargs
+
+    @format_wrapper("data", output_as = "data")
+    def evaluate(self, data, old_data = None):
+        if old_data is None:
+            n_vars = data.shape[1] if data.ndim == 2 else data.shape[0]
+            old_data = np.full((self.window_size - 1, n_vars), np.nan)
+                
+        extended_data = np.concatenate((old_data, data))
+        windows = sliding_window_view(extended_data, self.window_size, *self._args, axis = 0, **self._kwargs)
+
+        result_all = np.sum(windows, axis = -1)
+
+        result = result_all[-data.shape[0]:]
+        old_data = extended_data[-(self.window_size - 1):]
+
+        return result, old_data
+
+class SlidingMean(Transformation):
+
+    def __init__(self, data = None, window_size = None, *args, **kwargs):
+        self._args = args
+        self._kwargs = kwargs
+        self.window_size = window_size
+        super().__init__(data = data, old_data = Memory)
+
+    @format_wrapper("data", output_as = "data")
+    def evaluate(self, data, old_data = None):
+        if old_data is None:
+            n_vars = data.shape[1] if data.ndim == 2 else data.shape[0]
+            old_data = np.full((self.window_size - 1, n_vars), np.nan)
+                
+        extended_data = np.concatenate((old_data, data))
+        windows = sliding_window_view(extended_data, self.window_size, *self._args, axis = 0, **self._kwargs)
+
+        result_all = np.mean(windows, axis = -1)
+
+        result = result_all[-data.shape[0]:]
+        old_data = extended_data[-(self.window_size - 1):]
+
+        return result, old_data
+
+def forgetting_mean(forgetting, data, state, track_memory = False):
+
+    collapse = tuple(i for i in range(1, data.ndim))
+    mask = ~np.isnan(data).any(axis = collapse)
+    clean_data = data[mask]
+
+    n = clean_data.shape[0]
+
+    if state is None:
+        old_est = np.zeros_like(data[0])
+        memory = 0
+    else:
+        old_est, memory = state
+
+    result = np.full_like(clean_data, np.nan)
+
+    if track_memory:
+        # Old estimate is unnormalized sum
+        w_sum = old_est
+
+        for i in range(n):
+            w_sum = forgetting * w_sum + data[i]
+            memory = memory * forgetting + 1
+            result[i] = w_sum / memory
+
+        # Store data for next iteration
+        new_est = w_sum
+
+    else:
+        # Assume saturated memory and update mean estimate directly (old_est is mean)
+        result[0] = forgetting * old_est + (1 - forgetting) * data[0]
+        for i in range(1, n):
+            result[i] = forgetting * result[i-1] + (1 - forgetting) * data[i]
+
+        # Store data for next iteration
+        new_est = result[-1]
+        memory = None
+
+    result_full = np.full_like(data, np.nan)
+    result_full[mask] = result
+
+    return result_full, (new_est, memory)
+
+class ForgettingMean(Transformation):
+
+    def __init__(self, forgetting, data = DefaultSource, track_memory = True):
+        super().__init__(data, state = Memory)
+        self.forgetting = forgetting
+        self.track_memory = track_memory
+        self.data = data
+
+    @format_wrapper("data", output_as = "data")
+    def evaluate(self, data, state = None):
+        return forgetting_mean(self.forgetting, data, state, self.track_memory)
+
+class ForgettingVariance(Transformation):
+
+    def __init__(self, forgetting, data = DefaultSource, track_memory = True, center = True, covariance = False):
+        if center:
+            if isinstance(center, Transformation):
+                mean = center
+            else:
+                mean = ForgettingMean(forgetting, data = data, track_memory = track_memory)
+            super().__init__(mean = mean, data = data, state = Memory)
+        else:
+            super().__init__(data = data, state = Memory)
+
+        if covariance:
+            self.evaluate = format_wrapper("data","mean", output_as = "data", product_vars = True)(self.evaluate)
+        else:
+            self.evaluate = format_wrapper("data","mean", output_as = "data")(self.evaluate)
+
+        self.forgetting = forgetting
+        self.track_memory = track_memory
+        self.covariance = covariance
+
+    def evaluate(self, data, mean = None, state = None):
+        
+        # Compute unentered variance
+        if self.covariance:
+            data = np.einsum('ij,ik->ijk', data, data)
+        else:
+            data = data**2
+
+        var, state = forgetting_mean(self.forgetting, data, state, self.track_memory)
+
+        # Center estimate if mean is provided
+        if mean is not None:
+            if self.covariance:
+                mean_outer = np.einsum('ij,ik->ijk', mean, mean)
+                var = var - mean_outer
+            else:
+                mean_sq = mean**2
+                var = var - mean_sq
+
+        return var, state
+
 class FSDay(Transformation):
     
     def __init__(self, freq, t = DefaultIndex, nharmonics = 1, horizons = None):
@@ -1023,7 +1250,8 @@ class FSDay(Transformation):
         if pre_computed is None:
 
             # Create set of times based on freq and first entry in t
-            times = pd.date_range(start = ts[0], periods = 24, freq = self.freq)
+            end = ts[0] + pd.Timedelta(days = 1)
+            times = pd.date_range(start = ts[0], end = end, freq = self.freq, inclusive = 'left')
 
             # Compute times of day,
             tod = TimeOfDay.evaluate(None, times)
@@ -1061,6 +1289,29 @@ class FSDay(Transformation):
 
         return data
 
+class Disruption(Transformation):
+    # A class for modelling disruptions at a specific day and hour
+
+    def __init__(self, hour, dayofweek = None, duration = None):
+        super().__init__(index = DefaultIndex, horizon = PredictionHorizon)
+        self.hour = hour
+        self.dayofweek = dayofweek
+        self.duration = duration
+    
+    def evaluate(self, index, horizon):
+        start_time = index + pd.Timedelta(hours=horizon)
+        if self.duration is not None:
+            end_time = start_time + pd.Timedelta(hours=self.duration)
+            cond = (index >= start_time) & (index <= end_time)
+        else:
+            cond = (start_time.hour == self.hour)
+        if self.dayofweek is not None:
+            cond &= (start_time.dayofweek == self.dayofweek)
+
+        if not isinstance(cond, (pd.Index, np.ndarray)):
+            cond = pd.Index([cond])
+        data = cond.astype(float)
+        return data
 
 class SumHorizons(Transformation):
     
@@ -1202,10 +1453,10 @@ class PrimitiveTransformation(Transformation):
 
     def __init__(self, a, b):
 
-        if not isinstance(a, Transformation):
+        if not isinstance(a, Source):
             a = Param(a)
 
-        if not isinstance(b, Transformation):
+        if not isinstance(b, Source):
             b = Param(b)
 
         self.a, self.b = a, b
@@ -1239,8 +1490,9 @@ class PowTransformation(PrimitiveTransformation):
 
 class TimeOfDay(Transformation):
 
-    def __init__(self, t = DefaultIndex):
+    def __init__(self, t = DefaultIndex, as_2d = False):
         super().__init__(t = t)
+        self.as_2d = as_2d
 
     def evaluate(self, t):
         if isinstance(t, pd.DataFrame):
@@ -1254,12 +1506,16 @@ class TimeOfDay(Transformation):
         delta = t - t.dt.floor("D")
         seconds = delta.dt.total_seconds()
         time_of_day_float = seconds / 86400
+        time_of_day_float = time_of_day_float.to_numpy()
+        if self.as_2d:
+            time_of_day_float = time_of_day_float.reshape(-1, 1)
         return time_of_day_float
 
 class TimeOfYear(Transformation):
 
-    def __init__(self, t=DefaultIndex):
+    def __init__(self, t=DefaultIndex, as_2d = False):
         super().__init__(t=t)
+        self.as_2d = as_2d
 
     def evaluate(self, t):
         if isinstance(t, pd.DataFrame):
@@ -1275,13 +1531,20 @@ class TimeOfYear(Transformation):
         end = start + pd.DateOffset(years=1)
 
         delta = (t - start).dt.total_seconds()
-        total = (end - start).dt.total_seconds()
-        return delta / total
+        total = (end - start).dt.total_seconds()        
+        result = delta / total
+        result = result.to_numpy()
+
+        if self.as_2d:
+            result = result.reshape(-1, 1)
+
+        return result
 
 class TimeOfWeek(TimeOfDay):
 
-    def __init__(self, t=DefaultIndex):
-        super().__init__(t=t)
+    def __init__(self, t=DefaultIndex, as_2d = False):
+        super().__init__(t=t, as_2d=False)
+        self._week_as_2d = as_2d
 
     def evaluate(self, t):
         tod = super().evaluate(t)
@@ -1294,8 +1557,11 @@ class TimeOfWeek(TimeOfDay):
         else:
             raise ValueError("Input t must be a pd.DatetimeIndex or pd.Timestamp.")
 
-
         tow = (t.dt.dayofweek + tod) / 7
+        if self._week_as_2d:
+            tow = tow.to_numpy().reshape(-1, 1)
+        else:
+            tow = tow.to_numpy()
         return tow
 
 class Identity(Transformation):
@@ -1369,8 +1635,6 @@ class HorizonTarget(Transformation):
 
 class Map(Transformation):
 
-    preserve_names = True
-
     def __init__(self, *vars, data = DefaultSource):
         super().__init__(data = data)
         self.vars = list(vars)
@@ -1382,8 +1646,6 @@ class Map(Transformation):
         return super().__repr__() + f"({self.vars})"
 
 class SelectColumns(Transformation):
-    
-    preserve_names = True
 
     def __init__(self, indices, data = DefaultSource):
         super().__init__(data = data)
@@ -1404,8 +1666,8 @@ class SelectColumns(Transformation):
 
 
 class Combine(Transformation):
-    def __init__(self, *sources, format_result = None):
-        super().__init__(*sources, index = DefaultIndex, memory = Memory)
+    def __init__(self, *sources, format_result = None, index = DefaultIndex):
+        super().__init__(*sources, index = index, memory = Memory)
         self.format_result = format_result
 
     def evaluate(self, *data, index = None, memory = None):
@@ -1515,29 +1777,15 @@ class Lag(Transformation):
         self.amount = amount
         self.fill_value = float("nan") if default_value is None else default_value
 
+    @format_wrapper("data", output_as = "data")
     def evaluate(self, data, prev_values = None):
-        ndim = data.ndim
-        y = data
-        if isinstance(data, (pd.Series, pd.DataFrame)):
-            y = data.to_numpy()
-        y = np.atleast_2d(y)
 
         if prev_values is None:
             # Get shape of data to initialize buffer
-            m = y.shape[1]
+            m = data.shape[1]
             prev_values = CircularBuffer(self.amount, m, default_value = self.fill_value)
 
-        y_lagged = prev_values.update(y)
-
-        if ndim == 1:
-            y_lagged = y_lagged.squeeze(0)
-
-        if isinstance(data, pd.Series):
-            result = pd.Series(y_lagged, index = data.index, name = data.name)
-        elif isinstance(data, pd.DataFrame):
-            result = pd.DataFrame(y_lagged, index = data.index, columns = data.columns)
-        else:
-            result = y_lagged
+        result = prev_values.update(data)
 
         return result, prev_values
 
@@ -2065,12 +2313,12 @@ class RRR(OnlinePredictor):
     # Q is a symmetric weight matrix for the ridge penalty, and tilde_theta_t is a regularization term / prior for theta. 
     # F denotes the Frobenius norm.
     # The solution is used to predict in the model
-    # Y_t = X_t theta + E_t, where E_t ~ MN(0, diag(u_1, u_2, …, u_t), V_t).
+    # Y_t = X_t theta + E_t, where E_t ~ MN(0, I, V_t).
 
     source_init_params = {"n": DimX, "m": DimY}
     target = "mean"
 
-    def __init__(self, n, m, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True):
+    def __init__(self, n, m, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True, full_cov = True):
         super().__init__(format={"mean": Target, "cov": None})  
         self.tilde_K = np.eye(n) * tilde_k_init_val
         self.tilde_R = np.zeros((n,m))
@@ -2091,7 +2339,11 @@ class RRR(OnlinePredictor):
 
         self.n, self.m = n, m
 
-    def update_model(self, x_i, y_i, y_i_hat, Q: np.ndarray | float = None, theta_tilde: np.ndarray = None,u: float | int = 1, V: np.ndarray = None, estimate_V = True, mem = 0.99):
+        self._forgetting_var_state = None
+        self._full_cov = full_cov
+
+
+    def update_model(self, x_i, y_i, y_i_hat, Q: np.ndarray | float = None, theta_tilde: np.ndarray = None, V: np.ndarray = None, estimate_V = True, mem = 0.99):
 
         if mem < 0 or mem > 1:
             raise ValueError("Memory must be between 0 and 1.")
@@ -2132,59 +2384,47 @@ class RRR(OnlinePredictor):
 
         self.theta = np.linalg.solve(K, R)
 
-        # Update estimate of variance in U direction
-        self.kappa = mem**2*self.kappa + u*x_outer
+        # Update estimate of variance
+        self.kappa = mem**2*self.kappa + x_outer
 
         temp1 = np.linalg.solve(K, self.kappa)
     
         self.inner_var_theta = np.linalg.solve(K, temp1.T).T # K^-1 kappa K^-1^T
 
-        # Update variance estimate
+
         if estimate_V and self._n_updates >= self.burn_in:
-            if u != 1:
-                raise ValueError("Estimation of V is only supported for u = 1.")
-            
             resid = y_i - y_i_hat
-            # TODO: consider centering the residuals based on history?
-            outer = np.outer(resid, resid)
-            # If outer product contains nan, don't update variance estimate, else
-            if not np.isnan(outer).any():
-                if self.track_memory:
-                   # Update variance estimate without assuming near limit of memory
-                    self._memory = mem * self._memory + 1
-                    self._total_var = mem* self._total_var + outer
-                    self.V = self._total_var / self._memory
-                else: 
-                    # Check if variance estimate is nan, if so, set to outer product of residuals
-                    if np.isnan(self.V).any():
-                        self.V = outer
-                    else:
-                        # Update variance estimate
-                        if mem == 1: # Special case: no forgetting
-                            total_mem = self._n_updates - self.burn_in
-                            self.V = (self.V*total_mem + outer)/(total_mem + 1)
-                        else:
-                            self.V = mem * self.V + (1 - mem) * outer # Assumes number of updates sufficiently large that memory is near its limiting value.
-         
+            if self._full_cov:
+                sse = np.outer(resid, resid)
+                # Pad to make (1, m, m) for use with forgetting_mean
+                sse = sse.reshape(1, m, m)
+            else:
+                sse = resid**2 
+                sse = sse.reshape(1, m)
+            
+            _V, self._forgetting_var_state = forgetting_mean(mem, sse, self._forgetting_var_state, track_memory=self.track_memory)
+            if self._full_cov:
+                self.V = _V[0]
+            else:
+                self.V = np.diag(_V[0])
+
         self._n_updates += 1
 
-    def predict(self, x: np.ndarray, u: float | int = 1, V = None, return_var_theta = False):
+    def predict(self, x: np.ndarray, V = None, return_var_theta = False):
         result = {}
 
         if V is None:
             V = self.V
 
         result['mean'] = x.T @ self.theta
-        new_u = u + x.T @ self.inner_var_theta @ x
 
-        # Compute full covariance (u x V)
-        if self.combine_variance:
-            var_pred_err = self.V*new_u
-            result['cov'] = var_pred_err
+        # Compute covariance (u x V)
+        var_pred_err = self.V*(1 + x.T @ self.inner_var_theta @ x)
 
-        # Use decomposed form of covariance (u, V)
-        else:
-            result['cov'] = (new_u, V)
+        if not self._full_cov:
+            var_pred_err = np.diag(var_pred_err)
+
+        result['cov'] = var_pred_err
 
         # Compute variance of theta
         if return_var_theta:

@@ -15,7 +15,7 @@ daily_temp_seasonality = 5 * np.sin(2 * np.pi * date_range.hour / 24)
 yearly_temp_seasonality = 10 * np.sin(2 * np.pi * date_range.dayofyear / 365)
 
 # Random noise
-temp_noise = np.random.normal(0, 2, len(date_range))
+temp_noise = np.random.normal(0, 1, len(date_range))
 
 # Total temperature
 temperature = base_temperature + daily_temp_seasonality + yearly_temp_seasonality + temp_noise

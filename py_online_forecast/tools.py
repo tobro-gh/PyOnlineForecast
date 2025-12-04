@@ -1,13 +1,11 @@
 from __future__ import annotations
-from dataclasses import replace
 from .core import *
 from typing import List
 import pandas as pd
 from datetime import datetime
 import time
-from typing import List, Tuple
 import sched
-import inspect
+
 
 class DataHandler:
 
@@ -80,23 +78,14 @@ class DataHandler:
 class DataTracker:
 
     """
-    A class for tracking and managing time-series data with optional preprocessing and memory constraints.
+    A class for tracking and managing time-series with memory constraints.
     """
 
-    def __init__(self, memory: int = None, preprocess_fn = None):
+    def __init__(self, memory: int = None, freq = None):
         self.data: pd.DataFrame = None
         self.memory = memory
-        self.preprocess_fn = preprocess_fn
+        self.freq = freq
         self.preprocess_storage = {}
-        # Get number of arguments for preprocess function
-        if preprocess_fn:
-            num_args = len(inspect.signature(preprocess_fn).parameters)
-            if num_args == 2:
-                self.preprocess_macro = lambda x: self.preprocess_fn(x, self.preprocess_storage)
-            elif num_args == 1:
-                self.preprocess_macro = lambda x: self.preprocess_fn(x)
-            else:
-                raise ValueError("preprocess_fn must accept either 1 or 2 arguments.")
 
         # Make room for any online updaters that need to track updates
         self._online_updaters = set()
@@ -111,35 +100,24 @@ class DataTracker:
         for updater in self._online_updaters:
             updater._notify(self)
 
-    def add_data(self, data):
-        if self.preprocess_fn:
-            data = self.preprocess_fn(data, self.preprocess_storage)
-            if data is None:
-                return
+    def add_data(self, data: pd.Series | pd.DataFrame, forget = True):
 
-        if not data.index.is_monotonic_increasing:
-            data = data.sort_index()
-
-        old_data = self.data
-
-        if old_data is None:
+        if self.data is None:
             self.data = data
             self._notify_online_updaters()
             return
         
-        end_time = self.data.index[-1]
-        start_time = data.index[0]
-
-        if end_time >= start_time:
-            raise ValueError(f"New data overlaps with existing data. End time of existing data: {end_time}, start time of new data: {start_time}")
-
-        self.data = pd.concat([old_data, data], axis=0)
+        self.data = self.data.fc.append(data, sort = True)
 
         # Truncate to memory
-        if self.memory is not None and len(self.data) > self.memory:
-            self.data = self.data.iloc[-self.memory:]
+        if forget:
+            self.forget()
 
         self._notify_online_updaters()
+
+    def forget(self):
+        if self.memory is not None and len(self.data) > self.memory:
+            self.data = self.data.iloc[-self.memory:]
 
     @property
     def has_data(self):
@@ -338,3 +316,185 @@ class UpdateModels:
                         df.to_csv(path, mode='a', header=False, index_label="index")
                     else:
                         df.to_csv(path, mode='w', header=True, index_label="index")
+
+class DataCleaner(Transformation):
+
+    def __init__(self, forgetting, data = DefaultSource, z_thresh = 3, forward_fill = True, track_memory = True):
+        mean = ForgettingMean(forgetting, track_memory = track_memory, data = data)
+        variance = ForgettingVariance(forgetting, track_memory = track_memory, center = mean, covariance = False, data = data)
+        super().__init__(data, variance = variance, mean = mean)
+        self.z_thresh = z_thresh
+        self.forward_fill = forward_fill
+
+    def evaluate(self, data, variance, mean):
+        if not isinstance(data, (pd.DataFrame, pd.Series)):
+            raise ValueError("DataCleaner can only be applied to pandas DataFrame or Series.")
+        std = np.sqrt(variance)
+        z_scores = np.abs((data - mean) / std)
+
+        # Identify outliers
+        outliers = z_scores > self.z_thresh
+
+        # Replace outliers with NaN
+        data_cleaned = data.mask(outliers)
+
+        if self.forward_fill:
+            data_cleaned = data_cleaned.ffill()
+
+        return data_cleaned
+
+
+class Scaler(Transformation):
+
+    def __init__(self, data = DefaultSource, var_scales: dict[str, float] = None):
+        super().__init__(data, state = Memory)
+        self.var_scales = var_scales
+
+    def evaluate(self, data, state = None):
+        if not isinstance(data, (pd.DataFrame, pd.Series)):
+            raise ValueError("DataScaler can only be applied to pandas DataFrame or Series.")
+
+        if state is None:
+            data_cols = data.columns if isinstance(data, pd.DataFrame) else data.index
+            indexer = subset_columns(data_cols, *list(self.var_scales.keys()), return_index = True)
+
+            # Translate bool indexer to location index
+            indexer = np.where(indexer)[0]
+
+            cols = data_cols[indexer]
+            if isinstance(cols, pd.MultiIndex):
+                scales = np.array([self.var_scales[col[0]] for col in cols])
+            else:
+                scales = np.array([self.var_scales[col] for col in cols])
+            state = (indexer, scales)
+
+        indexer, scales = state
+
+        scaled_data = data.copy()
+
+        if isinstance(data, pd.Series):
+            scaled_data.iloc[indexer] = data.iloc[indexer] * scales            
+            
+        else:
+
+            scaled_data.iloc[:, indexer] = data.iloc[:, indexer] * scales
+
+        return scaled_data
+
+class Aggregator(Transformation):
+
+    def __init__(self, level, data = DefaultSource, agg_type: Literal["sum", "mean"] = None):
+        if agg_type == "sum":
+            agg_data = SlidingSum(window_size=level, data=data)
+        elif agg_type == "mean":
+            agg_data = SlidingMean(window_size=level, data=data)
+        else:
+            agg_data = data
+
+        self.level = level
+        
+        super().__init__(agg_data, state = Memory)
+
+    def evaluate(self, agg_data, state = None):
+        if not isinstance(agg_data, pd.DataFrame):
+            raise ValueError("Aggregator can only be applied to pandas dataframe.")
+        if agg_data.shape[0] < self.level:
+            raise ValueError("Not enough data to aggregate.")
+
+        if state is None:
+            state = 0
+
+        # Get start index
+        start = self.level - state if state > 0 else 0
+
+        # Get every self.level-th value
+        result = agg_data.iloc[start::self.level]
+
+        # Update state
+        state = (state + len(agg_data)) % self.level
+
+        # Format as series if only one row
+        if result.shape[0] == 1:
+            result = result.iloc[0]
+
+        return result, state
+
+
+
+class PreProcessor:
+
+    def __init__(self, *outputs, clean = True, combine = False, ref = None, z_thresh = 3, forward_fill = True, forgetting = 0.995, track_memory = True, agg_level = None, agg_type = None, **kwargs):
+
+        if not outputs:
+            self._outputs = [DefaultSource]
+        else:
+            self._outputs = list(outputs)
+
+        if clean:
+            self._outputs = [DataCleaner(forgetting, z_thresh = z_thresh, forward_fill = forward_fill, track_memory = track_memory, data = o) for o in self._outputs]
+
+        if agg_level is not None:
+            self._outputs = [Aggregator(agg_level, data = o, agg_type = agg_type) for o in self._outputs]
+
+        self._ref = ref or self._outputs[0]
+
+        if combine:
+            self._outputs = [Combine(*self._outputs)]
+
+        self._transformer = Transformer(**kwargs)
+
+        self._transformer.add_transforms(*self._outputs)
+
+        self._transformer.set_transforms()
+
+        self.data = {key: None for key in self._transformer.sorted_transforms} | {DefaultSource: None}
+
+    def add_data(self, data: dict | pd.DataFrame | pd.Series | np.ndarray):
+        if not isinstance(data, dict):
+            data = {DefaultSource: data}
+
+        for key, value in data.items():
+            if key is not DefaultSource and key not in self.data:
+                raise ValueError(f"Unknown data source: {key}")
+            if self.data[key] is None:
+                self.data[key] = value
+            else:
+                self.data[key] = self.data[key].fc.append(value, sort = True)
+
+    def forget(self):
+
+        for key in self.data:
+            self.data[key] = None
+
+    def update(self, data = None, index = None, forget = True):
+
+        if data is not None:
+            self.add_data(data)
+
+
+        if index is None:
+            if self.data[self._ref] is not None:
+                index = self.data[self._ref].index
+            elif DefaultSource in self.data and self.data[DefaultSource] is not None:
+                index = self.data[DefaultSource].index
+            else:
+                raise ValueError("No reference data available for determining update index.")
+
+        # Get available data in time range
+        update_data = {}
+        for key, value in self.data.items():
+            if value is not None:
+                update_data[key] = value.loc[index]
+                
+        # Update transformer
+        result = self._transformer.transform(update_data)
+
+        if forget:
+            self.forget()
+    
+        outputs = {key: result[key] for key in self._outputs}
+
+        if len(outputs) == 1:
+            return list(outputs.values())[0]
+
+        return outputs 

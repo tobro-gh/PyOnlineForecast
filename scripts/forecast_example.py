@@ -75,7 +75,7 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 
 #%% 3.1 Configure Model for Online Forecasting
 # In an online setting, switch to recursive ridge regressor (RRR)
-model.configure_predictor(RRR)
+model.configure_predictor(RRR, predictor_init_params={"track_memory": True}) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
 result = model.fit(data, mem = 1)
