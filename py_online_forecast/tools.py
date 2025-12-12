@@ -319,16 +319,27 @@ class UpdateModels:
 
 class DataCleaner(Transformation):
 
-    def __init__(self, forgetting, data = DefaultSource, z_thresh = 3, forward_fill = True, track_memory = True):
+    def __init__(self, forgetting, data = DefaultSource, z_thresh = 3, forward_fill = True, track_memory = True, freq: str = None):
         mean = ForgettingMean(forgetting, track_memory = track_memory, data = data)
         variance = ForgettingVariance(forgetting, track_memory = track_memory, center = mean, covariance = False, data = data)
         super().__init__(data, variance = variance, mean = mean)
         self.z_thresh = z_thresh
         self.forward_fill = forward_fill
+        self.freq = freq
 
     def evaluate(self, data, variance, mean):
         if not isinstance(data, (pd.DataFrame, pd.Series)):
             raise ValueError("DataCleaner can only be applied to pandas DataFrame or Series.")
+
+        # Check frequency if freq is set
+        if self.freq is not None:
+            
+            # Check if freq is already correct
+            if data.index.freq != self.freq:
+                # Try to reindex to expected frequency
+                expected_index = pd.date_range(start=data.index.min(), end=data.index.max(), freq=self.freq)
+                data = data.reindex(expected_index)
+
         std = np.sqrt(variance)
         z_scores = np.abs((data - mean) / std)
 
@@ -343,6 +354,26 @@ class DataCleaner(Transformation):
 
         return data_cleaned
 
+class AlignIndex(Transformation):
+    # Align dataframes/series to expected index
+
+    def __init__(self, *data, expected_index = DefaultIndex, method: str = None):
+        super().__init__(*data, expected_index = expected_index)
+        self.method = method
+    
+    def evaluate(self, *data, expected_index):
+        aligned_data = []
+        for df in data:
+            if not isinstance(df, (pd.DataFrame, pd.Series)):
+                raise ValueError("AlignIndex can only be applied to pandas DataFrame or Series.")
+            aligned_df = df.reindex(expected_index, method=self.method)
+            aligned_data.append(aligned_df)
+        if len(aligned_data) == 1:
+            result = aligned_data[0]
+        result = aligned_data
+
+        # Output as dict using self.apply_args
+        return {k: r for k, r in zip(self.apply_args, result)}
 
 class Scaler(Transformation):
 
@@ -412,10 +443,6 @@ class Aggregator(Transformation):
 
         # Update state
         state = (state + len(agg_data)) % self.level
-
-        # Format as series if only one row
-        if result.shape[0] == 1:
-            result = result.iloc[0]
 
         return result, state
 

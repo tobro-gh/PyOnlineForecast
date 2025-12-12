@@ -16,7 +16,8 @@ S_top = S[[0]]
 B = [1, 0] # [Y_{H,t-1}, Y_{H,t-0}]
 
 # We can then instantiate a TemporalReconciler for online reconciliation.
-temporal_reconciler = TemporalReconciler(S_top, B, predictor_type = c.RRR, horizon = 2, variance_name = "cov", skip_duplicates=True)
+config = c.RRR.configure()
+temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
 
 # The parameters are as follows:
 # S_top: The summation matrix for the top level(s) of the hierarchy
@@ -39,15 +40,18 @@ temporal_reconciler.reset_state()
 
 # Then, loop over rows in the data and update the reconciler one step at a time
 result = []
+result_cov  = []
 for t in range(len(Y_bot)):
-    Y_bot_t = Y_bot.iloc[t]
-    Y_hat_t = Y_hat.iloc[t]
+    Y_bot_t = Y_bot.iloc[[t]]
+    Y_hat_t = Y_hat.iloc[[t]]
     rec_t = temporal_reconciler.rec_update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
     result.append(rec_t["mean"])
+    result_cov.append(rec_t["cov"])
 
-result_df = pd.concat(result, axis = 1).T
+result_df = pd.concat(result)
+result_cov_df = pd.concat(result_cov)
 #%% For general hierarchies, we instead use the Reconciler class, which does not use the backshift structure
-reconciler = Reconciler(S_top, predictor_type = c.RRR, horizon = 2, variance_name = "cov")
+reconciler = Reconciler(S_top, config, horizon = 2, variance_name = "cov")
 
 # Alternatively,
 
@@ -115,8 +119,8 @@ axes[1, 1].set_title(f"Reconciled top level, rmse: {rmse_rec_top:.3f}")
 plt.tight_layout()
 
 #%% To see how the reconciler works, we can manually apply data transformations to retrieve the design matrix and target variables
-X_rec = reconciler.X.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
-Y_rec = reconciler.Y.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+X_rec = reconciler.model.X.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+Y_rec = reconciler.model.Y.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
 
 # Notice, X_rec is a dict with keys "X_pred" and "X_train", where X_train is the same as X_pred but lagged according to the forecast horizon (2 in this case).
 
@@ -180,3 +184,4 @@ nodes, bot_nodes, top_nodes = make_hierarchy({"v2": ["v10", "v11", "v11_1"], "v1
 nodes["v2"].print_hierarchy()
 obs_nodes, B = nodes["v2"].build_B("v00", "v01", "v10")
 lat_nodes, A_lat = nodes["v2"].build_A_lat(*obs_nodes)
+# %%

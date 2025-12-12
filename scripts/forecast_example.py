@@ -39,12 +39,14 @@ data.fc.convert()
 energy = Map("energy")
 taobs = Map("Taobs")
 ta = Subset("Ta", horizons = (1,))
+const = One()
 
 #%% 1.2 Create Simple OLS Model
+ols_config = WLS.configure()
 # Model energy_{t+1} = f(X(Taobs_t, Ta_t)) using low-pass filters
 lp_Taobs = LowPass(taobs, alpha = 0.7)
 lp_Ta = LowPass(ta, alpha = 0.8)
-model = Model((lp_Taobs, lp_Ta), energy, OLS, 1)
+model = Model.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
 
 #%% 1.3 Fit Model and Make Predictions
 # Fit the model and make predictions
@@ -61,7 +63,7 @@ plt.show()
 beta_ols = model.predictor.get_model_params()
 model.reset_state()
 X = model.X.apply(data)
-X_train = X["X_train"]
+X_train = X.shift(1)
 Y = model.Y.apply(data)
 
 beta_np = np.linalg.lstsq(X_train[1:], Y.to_numpy()[1:], rcond=None)[0]
@@ -75,7 +77,8 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 
 #%% 3.1 Configure Model for Online Forecasting
 # In an online setting, switch to recursive ridge regressor (RRR)
-model.configure_predictor(RRR, predictor_init_params={"track_memory": True}) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
+rrr_config = RRR.configure(track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
+model.configure_prediction(rrr_config)
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
 result = model.fit(data, mem = 1)
@@ -88,7 +91,7 @@ plt.show()
 #%% 3.3 Multivariate target
 # The model also supports multivariate targets, e.g. energy and Taobs
 target = Map("energy", "Taobs")
-model_multi = Model((lp_Taobs, lp_Ta), target, RRR, 1)
+model_multi = Model.construct((const, lp_Taobs, lp_Ta), target, rrr_config, 1)
 result_multi = model_multi.fit(data, mem = 1)
 fig, ax = plt.subplots()
 data.plot(y="energy", ax = ax)
@@ -98,8 +101,10 @@ plt.legend(["Energy obs", "Taobs", "Energy forecast", "Taobs forecast"])
 plt.show()
 
 #%% 3.4 Online Data Update Simulation
-# To emulate a real online setting, provide data in small chunks
-subsets = [data.iloc[i] for i in range(len(data))]
+# To emulate a real online setting, provide data in small chunks. Note, inputs are always assumed
+# to have observations along the first axis. This means, if a single observation is provided, it should be padded with
+# an extra dimension, e.g. data.iloc[[i]] for the i'th observation.
+subsets = [data.iloc[[i]] for i in range(len(data))]
 
 # Reset model for proper comparison
 model.reset_state()
@@ -114,7 +119,7 @@ for s in subsets:
 predictions = pd.concat(predictions)
 
 # Compare predictions with the previous results
-print(np.allclose(result["mean"].to_numpy().squeeze()[1:], predictions.to_numpy()[1:])) # Should be True
+print(np.allclose(result["mean"].to_numpy()[1:], predictions.to_numpy()[1:])) # Should be True
 
 
 # Models can also be updated without updating predictor parameters, i.e. only predict,
@@ -131,14 +136,18 @@ ta2 = Subset("Ta", horizons = (2,)) # Use all available forecasts of Ta
 # Low-pass filter for the new model
 lp_Ta2 = LowPass(ta2, alpha = 0.8)
 
-model_2h = Model((lp_Taobs, lp_Ta2), energy, RRR, 2)
+model_2h = Model.construct((const, lp_Taobs, lp_Ta2), energy, rrr_config, 2)
+
+ref = model.fit(data, mem = 1)
+ref_2h = model_2h.fit(data, mem = 1)
+
 
 #%% 4.2 Model Ensemble
 # Create an ensemble of the two models
 models = Ensemble(model, model_2h)
 
 # Fit the ensemble model
-result = models.fit(data)
+result = models.fit(data, mem = 1)
 
 # Results are stored in a dict indexed by the models
 result_model_1h = result[model]
@@ -152,20 +161,20 @@ result_model_2h = result[model_2h]
 # the separation into different models.
 ta_all = Map("Ta")
 lp_Ta_all = LowPass(ta_all, alpha = 0.8)
-horizon_models = HorizonEnsemble((lp_Taobs, lp_Ta_all), energy, RRR, horizons = (1,2))
+horizon_models = HorizonEnsemble((lp_Taobs, lp_Ta_all), energy, rrr_config, horizons = (1,2))
 
 # Then fit the ensemble as normal
-horizon_result = horizon_models.fit(data)
+horizon_result = horizon_models.fit(data, return_y = True, mem = 1)
 
 # Note, the horizon ensemble concatenates results for all horizons in one dataframe
 # Ensembles can also be updated in an online fashion
 horizon_models.reset_state()
 predictions = []
 for s in subsets:
-    p = horizon_models.update(s)["mean"]
+    p = horizon_models.update(s, mem = 1)["mean"]
     predictions.append(p)
 
-predictions = pd.concat(predictions, axis = 1).T
+predictions = pd.concat(predictions, axis = 0)
 
 # Compare (except two first rows, as they contain NaNs)
 print(np.allclose(horizon_result["mean"].to_numpy()[2:], predictions.to_numpy()[2:])) # Should be True
@@ -254,35 +263,30 @@ transformer.transform(data)
 transformer.transform({DefaultSource: data})
 
 #%% 6.2 Special sources
-# There are some special sources, i.e. Index, Horizons, Target and Prediction.
-# Index returns the index of a dataframe in the input data, by default the first
-# element of the input data dict. It can be altered by calling ref = source, in
-# either the apply or transform methods.
+# There are some special sources, i.e. DefaultSource, DefaultIndex, Memory, PredictorParameters, UpdatePredictor,
+#  X_init, Y_init, DimX and DimY.
+# DefaultSource represents the default input data, when no other source is specified.
+# DefaultIndex represents the index of the default input data.
+# Memory represents the memory state of the model/transform, i.e. the recursion parameters.
+# PredictorParameters is used to pass parameters to the predictor during updates.
+# UpdatePredictor is used to indicate whether the predictor should be updated during an update.
+# X_init, Y_init, DimX and DimY are used in predictor initialization. Specifically, X_init and Y_init are placeholders
+# for the initial input and target data and DimX and DimY correspond to Dim(X_init) and Dim(Y_init). These sources are
+# only available within scopes when creating custom predictors.
 
-# The Index source returns the index of the data, e.g.
+# The DefaultIndex source returns the index of the data, e.g.
 tod = TimeOfDay(DefaultIndex)
 tod.apply(data, ref = DefaultSource)
 
-# The Index source data is created when a Data object is created from theinput, i.e.
-data_dict = Data(data)
+# The Index source data is created when data is parsed into a special dict,
+data_dict = parse_data(data)
 data_dict[DefaultIndex]
 
-# The Target and Prediction sources only works in tandem with a Model (or Ensemble).
 # They act as placeholders for the target variable, and predictions thereof. In an
 # ensemble with multiple Models, the Target and Prediction sources will be specific
 # to each model.
 
 # The PredictionHorizon source is used to specify the (integer) horizon for the prediction.
-
-#%% Residuals transform
-# The Residuals transform uses the Target and Prediction sources to compute
-# residuals for a specific model. It is only valid within a model or ensemble.
-
-residuals = Residuals(0) # Residuals per model, with default value 0
-
-# The residuals can be used to create moving average type models, e.g.
-ma1 = Model((One(), residuals), energy, RRR, 1)
-res_ma1 = ma1.fit(data, Q = 0.01) # Here Q is a regularization parameter for RRR to avoid singularity caused by artificial 0 residuals
 
 #%%============================================================================
 # SECTION 7: HYPERPARAMETER OPTIMIZATION
@@ -291,14 +295,18 @@ res_ma1 = ma1.fit(data, Q = 0.01) # Here Q is a regularization parameter for RRR
 # The hyperparameters of a model, i.e. the parameters of the transformations and
 # the predictor, can be optimized using the fit_and_score method.
 
+# For a non-trivial case, we add a slow trend in the data
+trend_data = data.copy()
+trend_data[("energy",0)] += 0.1*np.arange(len(trend_data))
+
 def obj(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
     lp_Ta2.alpha = alpha
     lp_Ta_all.alpha = alpha
-    return model_2h.fit_and_score(data, scorefun = rmse, mem = mem)
+    return model_2h.fit_and_score(trend_data, scorefun = rmse, mem = mem)
 
-res = minimize(obj, x0 = [1, 0.8], bounds = [(0.1, 0.99), (0.1, 0.99)], method = "L-BFGS-B")
+res = minimize(obj, x0 = [0.5, 0.5], bounds = [(0.1, 0.999), (0.1, 0.999)], method = "Nelder-Mead")
 print(res)
 
 #%% 7.2 Hyperparameter Optimization for Ensembles
@@ -308,12 +316,11 @@ def obj_horizon(x):
     lp_Taobs.alpha = alpha
     lp_Ta2.alpha = alpha
     lp_Ta_all.alpha = alpha
-    scores = models.fit_and_score(data, scorefun = rmse, mem = mem)
+    scores = models.fit_and_score(trend_data, scorefun = rmse, mem = mem)
     return np.mean(list(scores.values()))
 
 res_horizon = minimize(obj_horizon, x0 = [1, 0.8], bounds = [(0.1, 0.99), (0.1, 0.99)], method = "L-BFGS-B")
 print(res_horizon)
-
 
 #%%=============================================================================
 # SECTION 8: MULTISTEP FORECASTING
