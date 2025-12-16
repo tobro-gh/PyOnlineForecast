@@ -46,11 +46,19 @@ ols_config = WLS.configure()
 # Model energy_{t+1} = f(X(Taobs_t, Ta_t)) using low-pass filters
 lp_Taobs = LowPass(taobs, alpha = 0.7)
 lp_Ta = LowPass(ta, alpha = 0.8)
-model = Model.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
+
+# We then create a Prediction for the 1-hour ahead forecast
+pred = Prediction.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
+
+# And to manage data and access additional functionality, we wrap it in a Model
+model = Model(pred)
+
+# Note, if we do not need the prediction outside the model, we can also create the model directly,
+#model = Model.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
 
 #%% 1.3 Fit Model and Make Predictions
 # Fit the model and make predictions
-result = model.fit(data, return_y = True)
+result = model.fit(data)
 
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
@@ -62,9 +70,9 @@ plt.show()
 # Compare with least squares estimate
 beta_ols = model.predictor.get_model_params()
 model.reset_state()
-X = model.X.apply(data)
+X = pred.X.apply(data)
 X_train = X.shift(1)
-Y = model.Y.apply(data)
+Y = pred.Y.apply(data)
 
 beta_np = np.linalg.lstsq(X_train[1:], Y.to_numpy()[1:], rcond=None)[0]
 
@@ -76,9 +84,14 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 #%%============================================================================
 
 #%% 3.1 Configure Model for Online Forecasting
-# In an online setting, switch to recursive ridge regressor (RRR)
+# In an online setting, switch to recursive ridge regressor (RRR).
+
+# We make a new predictor configuration
 rrr_config = RRR.configure(track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
-model.configure_prediction(rrr_config)
+
+# And then update the prediction configuration
+pred.update_config(rrr_config)
+
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
 result = model.fit(data, mem = 1)
@@ -129,42 +142,44 @@ model.update(data, update_predictor = False)
 # SECTION 4: MULTI-HORIZON FORECASTING
 #%%============================================================================
 
-#%% 4.1 Separate Models for Each Horizon
+#%% 4.1 Separate predictions for each horizon
 # Create a new model for 2-hour ahead forecasts
 ta2 = Subset("Ta", horizons = (2,)) # Use all available forecasts of Ta
 
 # Low-pass filter for the new model
 lp_Ta2 = LowPass(ta2, alpha = 0.8)
 
-model_2h = Model.construct((const, lp_Taobs, lp_Ta2), energy, rrr_config, 2)
+# We then make a prediction for the 2-hour ahead forecast
+pred_2h = Prediction.construct((const, lp_Taobs, lp_Ta2), energy, rrr_config, 2)
 
-ref = model.fit(data, mem = 1)
-ref_2h = model_2h.fit(data, mem = 1)
+# Note, we can still run the prediction as a standalone object
+ref_1h = pred.apply(data, mem = 1)
+ref_2h = pred_2h.apply(data, mem = 1)
 
 
 #%% 4.2 Model Ensemble
-# Create an ensemble of the two models
-models = Ensemble(model, model_2h)
+# For convenience, we can create a model of both outputs,
+models = Model(pred, pred_2h)
 
 # Fit the ensemble model
 result = models.fit(data, mem = 1)
 
-# Results are stored in a dict indexed by the models
-result_model_1h = result[model]
-result_model_2h = result[model_2h]
+# Results are stored in a dict indexed by the predictions
+result_model_1h = result[pred]
+result_model_2h = result[pred_2h]
 
 # Note: ensembles also support the update methods, and the update_predictor argument
 
 #%% 4.3 Horizon Ensemble
-# Ensembles can also be created using the HorizonEnsemble class.
+# Ensembles can also be created using the "Ensemble" subclass of the model.
 # In this case, we first include all forecast horizons, and let the ensemble handle
 # the separation into different models.
 ta_all = Map("Ta")
 lp_Ta_all = LowPass(ta_all, alpha = 0.8)
-horizon_models = HorizonEnsemble((lp_Taobs, lp_Ta_all), energy, rrr_config, horizons = (1,2))
+horizon_models = Ensemble((const, lp_Taobs, lp_Ta_all), energy, rrr_config, horizons = (1,2))
 
 # Then fit the ensemble as normal
-horizon_result = horizon_models.fit(data, return_y = True, mem = 1)
+horizon_result = horizon_models.fit(data, mem = 1)
 
 # Note, the horizon ensemble concatenates results for all horizons in one dataframe
 # Ensembles can also be updated in an online fashion
@@ -215,14 +230,6 @@ lp_square = low_pass_filter**2
 sum_transform = low_pass_filter + lp_square
 sum_transform.apply(data)
 
-#%% 5.4 Using Transformer for Efficient Data Processing
-# For complex combinations of transforms, a "Transformer" should be used to efficiently handle
-# data dependencies and recursion.
-transformer = Transformer()
-transformer.add_transforms(low_pass_filter)
-transformer.add_transforms(fs)
-transformer.transform(data)
-
 #%%============================================================================
 # SECTION 6: SOURCES
 #%%============================================================================
@@ -247,20 +254,6 @@ DefaultSource
 # DefaultSource is used if no source is provided. This is the case for the
 # built-in transformations Map and Subset, which use the DefaultSource if no source is provided.
 map_default = Map("Ta")
-
-# For a transformer, we may specify what the incoming sources are, e.g. 
-other_data = Source("Other data")
-transformer = Transformer(raw_data, other_data)
-
-# Then when transforming data, we need to provide both sources
-transformer.transform({raw_data: data, other_data: data})
-
-# In case the transformer is called with only a data argument, it will treat it
-# as the DefaultSource
-transformer = Transformer()
-transformer.transform(data)
-# is equivalent to
-transformer.transform({DefaultSource: data})
 
 #%% 6.2 Special sources
 # There are some special sources, i.e. DefaultSource, DefaultIndex, Memory, PredictorParameters, UpdatePredictor,
@@ -302,11 +295,10 @@ trend_data[("energy",0)] += 0.1*np.arange(len(trend_data))
 def obj(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
-    lp_Ta2.alpha = alpha
-    lp_Ta_all.alpha = alpha
-    return model_2h.fit_and_score(trend_data, scorefun = rmse, mem = mem)
+    lp_Ta.alpha = alpha
+    return model.fit_and_score(trend_data, scorefun = rmse, mem = mem)
 
-res = minimize(obj, x0 = [0.5, 0.5], bounds = [(0.1, 0.999), (0.1, 0.999)], method = "Nelder-Mead")
+res = minimize(obj, x0 = [0.5, 0.5], bounds = [(0, 1), (0, 1)], method = "Nelder-Mead")
 print(res)
 
 #%% 7.2 Hyperparameter Optimization for Ensembles
@@ -314,47 +306,16 @@ print(res)
 def obj_horizon(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
-    lp_Ta2.alpha = alpha
     lp_Ta_all.alpha = alpha
-    scores = models.fit_and_score(trend_data, scorefun = rmse, mem = mem)
+    scores = horizon_models.fit_and_score(trend_data, scorefun = rmse, mem = mem)
     return np.mean(list(scores.values()))
 
-res_horizon = minimize(obj_horizon, x0 = [1, 0.8], bounds = [(0.1, 0.99), (0.1, 0.99)], method = "L-BFGS-B")
+res_horizon = minimize(obj_horizon, x0 = [0.5, 0.5], bounds = [(0, 1), (0, 1)], method = "Nelder-Mead")
 print(res_horizon)
-
-#%%=============================================================================
-# SECTION 8: MULTISTEP FORECASTING
-#%%=============================================================================
-# The above examples have focused on individual "1-step" ahead forecasts each fitted
-# to a specific horizon. However, the framework also supports multistep forecasting, 
-# as usually done with ARMAX type models.
-
-#%% 8.1 The ARX model
-# ARX models can be used in the framework, by instantiating the ARX class. We chose to forecast 2 horizons,
-horizon = 2
-# The exogenous input should include forecasts for all the horizons, e.g. in this case 1 and 2 hour ahead forecasts of Ta.
-exog = Subset("Ta", horizons = (1,2)) 
-# We then create the ARX model, using autoregressive order p=2
-arx_model = ARX(exog, energy, p = 2, horizon = horizon, predictor_init_params={"tilde_k_init_val": 0.001})
-
-# The ARX model by construction uses the RRR predictor for parameter estimation and generation of forecasts. 
-# Thus, any parameters for RRR can be provided when fitting the model. We use tilde_k_init_val = 0.001 here to avoid singularities for the initial fit.
-arx_result = arx_model.fit(data)
-
-fig, ax = plt.subplots()
-data[[("energy",0)]].plot(ax = ax)
-arx_result["mean"].fc.lag().plot(ax = ax)
-
-#%% 8.2 The Exogenous transform
-# The ARX model uses a special Exogenous transformation to handle the exogenous inputs.
-ExogenousTransform(exog, 2).apply(data)
-# The transform checks that all required forecast horizons are present and sorts the forecasts
-# to ensure consistent input to the ARX model.
-
 #%%============================================================================
-# SECTION 9: CUSTOM TRANSFORMS AND PREDICTORS
+# SECTION 8: CUSTOM TRANSFORMS AND PREDICTORS
 #%%============================================================================
-#%% 9.1 Custom Transform
+#%% 8.1 Custom Transform
 # Custom transforms can be created by inheriting from the Transformation class
 # and implementing the evaluate method.
 class CustomTransform(Transformation):

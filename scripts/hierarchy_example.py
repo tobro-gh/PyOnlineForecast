@@ -2,6 +2,7 @@
 from py_online_forecast.hierarchies import *
 import py_online_forecast.core as c
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # %% Load simulated data based on Møller, J.K., Nystrup, P., Madsen, H., 2024. Likelihood-based inference in temporal hierarchies. International Journal of Forecasting 40, 515–531.
 # NOTE: the data uses phi1 = 0.75 and phi2 = 0.2 for simulation
@@ -119,8 +120,8 @@ axes[1, 1].set_title(f"Reconciled top level, rmse: {rmse_rec_top:.3f}")
 plt.tight_layout()
 
 #%% To see how the reconciler works, we can manually apply data transformations to retrieve the design matrix and target variables
-X_rec = reconciler.model.X.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
-Y_rec = reconciler.model.Y.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+X_rec = reconciler.X.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+Y_rec = reconciler.Y.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
 
 # Notice, X_rec is a dict with keys "X_pred" and "X_train", where X_train is the same as X_pred but lagged according to the forecast horizon (2 in this case).
 

@@ -328,7 +328,6 @@ def read_forecast_csv(*args, horizon_pattern = None, **kwargs) -> DataFrame:
 if os.path.exists(data_folder) and 'simulated_data.csv' in os.listdir(data_folder):
     sample_data = read_forecast_csv(data_folder + '/simulated_data.csv', horizon_pattern=".k",parse_dates=['t'], index_col = "t")
     
-
 class Source:
     """
     Placeholder class for specifying data sources in transformations.
@@ -379,8 +378,6 @@ PredictorParameters = Source("PredictorParameters")
 UpdatePredictor = Source("UpdatePredictor")
 X_init = Source("X_init")
 Y_init = Source("Y_init")
-
-
 
 class Transformation(Source):
 
@@ -447,7 +444,6 @@ class Transformation(Source):
             raise ValueError("No evaluate method found.")
 
     def __repr__(self):
-#        return f"{self.__class__.__name__}({self.apply_args}, {self.apply_kwargs})"
         return f"{self.__class__.__name__}"
 
     #TODO: add check for circular dependencies
@@ -472,7 +468,10 @@ class Transformation(Source):
     def _accepts_any_kwargs(self):
         return self._var_keyword_arg is not None
 
-    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, predictor_params = {}):
+    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, eval_mode = False, **predictor_params):
+
+        # Extract "shared" predictor params
+        shared_predictor_params = {k: v for k,v in predictor_params.items() if not isinstance(k, Prediction)}
 
         data = parse_data(data, ref = ref)
 
@@ -502,11 +501,11 @@ class Transformation(Source):
                 t_val = update_predictor
             
             elif val is PredictorParameters:
-                t_val = predictor_params
+                t_val = shared_predictor_params | predictor_params.get(self, {})
 
             # Attempt to fetch transformation dependencies if not provided directly.
             elif isinstance(val, Transformation):
-                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True)
+                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, eval_mode=eval_mode, **predictor_params)
 
                 new_recursion_pars.update(t_rec_pars)
 
@@ -554,114 +553,11 @@ class Transformation(Source):
             else:
                 print(f"{indent}  - {dep}")
 
-class Transformer:
-
-    def __init__(self, *sources, max_dependency_depth = 100, ref = None):
-        # TODO: Check that sources are valid (subclasses of Source?)
-        self.sources = sources
-        if len(sources) == 0:
-            self.sources = (DefaultSource,)
-        self.max_dependency_depth = max_dependency_depth
-        self.transforms = []
-        self.sorted_transforms = None
-        self.data_format = None
-        self.ref = ref
-
-    def add_transforms(self, *transforms):
-        for transform in transforms:
-
-            if transform in self.transforms:
-                raise ValueError(f"Transform {transform} already added.")
-            else:
-                self.transforms.append(transform)
-
-    def set_transforms(self):
-
-        # Get all transforms
-        current_transforms = self.transforms.copy()
-        check_list = current_transforms
-        deps_to_include = set()
-
-        i = 0
-        while len(check_list) > 0:
-            deps = []
-            for t in check_list:
-                if not t in self.sources:
-                    deps.extend(t.dependencies)
-            check_list = [t for t in deps if t not in current_transforms]
-            deps_to_include.update(deps)
-            i += 1
-            if i > self.max_dependency_depth:
-                raise ValueError("Dependency depth exceeded. Check for circular dependencies or increase max_dependency_depth.")
-
-        all_transforms = current_transforms.copy()
-
-        # Add missing dependencies to all_transforms
-        for t in deps_to_include:
-            if t not in all_transforms:
-                all_transforms.append(t)
-
-        # Sort transforms
-        to_sort = all_transforms.copy()
-        self.sorted_transforms = {}
-        i = 0
-        while len(to_sort) > 0:
-            for t in to_sort:
-                
-                if t in self.sources or all(d in self.sorted_transforms for d in t.dependencies): # Does transforms have all dependencies available, either throug transforms or sources?
-                    self.sorted_transforms[t] = None
-                    to_sort.remove(t)
-            i += 1
-            if i > self.max_dependency_depth:
-                raise ValueError("Dependency depth exceeded. Check for circular dependencies or increase max_dependency_depth.")
-
-    def transform(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = True, update_predictor = True, predictor_params = None):
-
-        # Initialize if not done
-        if self.sorted_transforms is None:
-            self.set_transforms()
-            
-        # Parse data
-        data = parse_data(data, ref = self.ref)
-
-        # Initialise data format if not done
-        if self.data_format is None:
-            self.data_format = DataFormat.from_reference(data)
-
-        # Check data according to data format
-        if check:
-            self.data_format.check(data)
-
-        # Check all promised sources are available
-        if not all(s in data for s in self.sources):
-            missing = [s for s in self.sources if not s in data]
-            raise ValueError(f"Missing data for sources: {missing}.")
-
-        for t, memory in self.sorted_transforms.items():
-
-            if not t in data: # Skip if data was provided as input
-
-                # Apply the transform
-                new_data, rec_pars = t.apply(data = data, memory = memory, return_recursion_pars=True, update_predictor = update_predictor, predictor_params = predictor_params)
-
-                # Store transformed data and memory (returned in rec_pars dict)
-                self.sorted_transforms[t] = rec_pars.get(t, None)
-
-                data[t] = new_data
-
-        return data
-
-    def reset_state(self):
-        self.sorted_transforms = None
-        self.data_format = None
-
-
 ### Numpy / Pandas conversion utilities
 def data_decorator(func):
     """
     Decorator to apply a function to each value in a dictionary.
     """
-
     @functools.wraps(func)
     def wrapper(val, *args, **kwargs):
         if isinstance(val, dict):
@@ -674,6 +570,26 @@ def data_decorator(func):
         else:
             return func(val, *args, **kwargs)
     return wrapper
+
+@data_decorator
+def shift(data, amount):
+    if isinstance(data, (pd.Series, pd.DataFrame)):
+        return data.shift(amount)
+    elif isinstance(data, np.ndarray):
+        if amount > 0:
+            shifted = np.empty_like(data)
+            shifted[:amount] = np.nan
+            shifted[amount:] = data[:-amount]
+            return shifted
+        elif amount < 0:
+            shifted = np.empty_like(data)
+            shifted[amount:] = np.nan
+            shifted[:amount] = data[-amount:]
+            return shifted
+        else:
+            return data
+    else:
+        raise ValueError(f"Cannot shift type {type(data)}.")
 
 @data_decorator
 def empty_like(ref: dict | pd.DataFrame | pd.Series | np.ndarray):
@@ -707,9 +623,17 @@ def get_num_obs(val):
         return val.shape[0]
 
 @data_decorator
+def get_element(val, i):
+    if isinstance(val, np.ndarray):
+        return val[i]
+    elif isinstance(val, pd.DataFrame):
+        return val.iloc[i]
+    else:
+        return val
+
+@data_decorator
 def get_dim(val, axis = 1):
     return val.shape[axis]
-    
 
 def get_index(data: dict | pd.DataFrame | pd.Series, share_index = True):
     if isinstance(data, dict):
@@ -1671,7 +1595,7 @@ class Select(Transformation):
     Select specific keys from a dict or columns from a DataFrame.
     """
 
-    def __init__(self, *keys, data = DefaultSource):
+    def __init__(self, data, *keys):
         super().__init__(data = data)
         self.keys = keys
     
@@ -1687,7 +1611,7 @@ class Select(Transformation):
         else:
             raise ValueError(f"Cannot select keys from {type(data)}.")
 
-class SelectColumns(Transformation):
+class SelectIndices(Transformation):
 
     def __init__(self, indices, data = DefaultSource):
         super().__init__(data = data)
@@ -1757,7 +1681,7 @@ def combine_data(data: dict, use_format = None, index = None, columns = None, us
                     if n_vars == 1:
                         cols = [path]
                     else:
-                        cols = [(path, i) for i in range(n_vars)]
+                        cols = [(path, f"/{i}") for i in range(n_vars)]
 
                 # If use_fc_format, create MultiIndex tuples
                 if use_fc_format:
@@ -1790,18 +1714,46 @@ def combine_data(data: dict, use_format = None, index = None, columns = None, us
     return result, columns
 
 class Combine(Transformation):
-    def __init__(self, *sources, format_result = None, index = DefaultIndex, use_fc_format = True):
+    def __init__(self, *sources, format_result = None, index = DefaultIndex, use_fc_format = True, as_dict = False, names = None):
         super().__init__(*sources, index = index, columns = Memory)
         self.format_result = format_result
         self.use_fc_format = use_fc_format
+        self.as_dict = as_dict
+        self.sources = sources
+        if names is not None:
+            if len(names) != len(sources):
+                raise ValueError("Length of names must match number of sources.")
+        else:
+            names = self.sources
+        self.names = names
 
     def evaluate(self, *data, index = None, columns = None):
-
-        data_dict = {k: v for k, v in zip(self.apply_args, data)}
+        data_dict = {name: v for name, v in zip(self.names, data)}
+        if self.as_dict:
+            return data_dict, columns
 
         result, columns = combine_data(data_dict, use_format = self.format_result, index = index, columns = columns, use_fc_format = self.use_fc_format)
 
         return result, columns
+
+class ToPandas(Transformation):
+
+    def __init__(self, data, columns, index = DefaultIndex):
+        super().__init__(data = data, index = index)
+        self.new_columns = columns
+
+    def evaluate(self, data, index = None):
+        return to_pandas(data, index, self.new_columns)
+
+class RenameColumns(Transformation):
+
+    def __init__(self, data, new_columns):
+        super().__init__(data = data)
+        self.new_columns = new_columns
+
+    def evaluate(self, data):
+        data.columns = self.new_columns
+        return data
 
 class FillMissing(Transformation):
 
@@ -1926,7 +1878,7 @@ class Lag(Transformation):
 
         result = {}
         for k, v in data.items():
-            result[k], prev_values[k] = self.evaluate(v, prev_values[k], offset)
+            result[k], prev_values[k] = self.evaluate_offset(v, prev_values[k], offset)
 
         return result, prev_values
 
@@ -1947,7 +1899,7 @@ class Lag(Transformation):
         result = prev_values.update(data)
 
         return result, prev_values
-    
+
 class PredictorConfiguration:
 
     def __init__(self, predictor_type: type[Predictor], *args, output_as = None, outer_prod = None, predictor_params = {}, **kwargs):
@@ -1981,7 +1933,6 @@ class PredictorConfiguration:
         predictor.output_as = self.output_as
         predictor.outer_prod = self.outer_prod.copy() if self.outer_prod is not None else None
         return predictor
-
 
 class Predictor(ABC):
 
@@ -2609,6 +2560,8 @@ class CircularBuffer:
     A class for efficiently storing and retrieving the "size" most recent rows of data in a circular buffer.
     """
 
+    # TODO: consider generalizing to n-dimensional arrays
+
     def __init__(self, size, m, default_value = np.nan):
         self.offset = 0
         self.size = size
@@ -2694,18 +2647,35 @@ def rmse(x):
     return np.sqrt(np.mean(x**2))
 
 class Prediction(Transformation):
-
+    """ 
+    Defines a prediction of the type (Y_{t+h}, Z_{t+h}) = f(X_t) + noise, where
+    - Y is the target variable to predict
+    - X is a set of predictor variables
+    - Z is a set of additional predicted variables
+    - h is the prediction horizon
+    - f is a predictor function, which can be either an online or batch predictor.
+    """
     def __init__(self, X, Y, horizon, predictor_config: PredictorConfiguration, apply_format = True):
         self.X = X
         self.Y = Y
         self.horizon = horizon
-        self.config = predictor_config
-        self._apply_format = apply_format
+        self.update_config(predictor_config, apply_format = apply_format)
 
         self.X_train = Lag(X, amount=horizon)
         self.Y_hat = Lag(self, amount=horizon)
 
         super().__init__(X, Y, update_predictor = UpdatePredictor, predictor_params = PredictorParameters, state = Memory)
+
+    def update_config(self, predictor_config: PredictorConfiguration, apply_format = True):
+        self.config = predictor_config
+        self._apply_format = apply_format
+
+    def apply(self, data, memory=None, recursion_pars=None, return_recursion_pars=False, ref=None, update_predictor=True, eval_mode = False, **predictor_params):
+        if eval_mode:
+            # Return self.Y shifted by horizon
+            return {self.config.predictor_type.target: shift(self.Y.apply(data), -self.horizon)}, {}
+
+        return super().apply(data, memory, recursion_pars, return_recursion_pars, ref, update_predictor, **predictor_params)
 
     def evaluate(self, X, Y, update_predictor, predictor_params, state = None, apply_format = None):
         
@@ -2768,115 +2738,160 @@ class Prediction(Transformation):
         # Return result and state
         return result, (predictor, X_state, Y_hat_state, output_format)
 
-class Model(ABC):
-    """
-    Defines a model of the type Y_{t+h} = f(X_t) + noise, where
-    - Y is the target variable to predict
-    - X is a set of predictor variables
-    - h is the prediction horizon
-    - f is a predictor function, which can be either an online or batch predictor.
-    The predictor return additional variables, such as multi step predictions (multiples of h),
-    prediction intervals, variances etc. The predictor may also use past predictions as input.
-    """
-    def __init__(self, prediction: Prediction, max_dependency_depth = 100, sources = None, ref = None, apply_format = True):
-        super().__init__()
-
-        # Create transformers
-        if sources is None:
-            sources = (DefaultSource,)
-        self.transformer = Transformer(*sources, max_dependency_depth = max_dependency_depth, ref = ref)
-        self.prediction = prediction
-        self.transformer.add_transforms(self.X, self.Y)        
-        self.state = None
-
-    @property
-    def X(self):
-        return self.prediction.X
-
-    @property
-    def Y(self):
-        return self.prediction.Y
-
-    @property
-    def horizon(self):
-        return self.prediction.horizon
 
     @classmethod
-    def construct(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizon = 1, max_dependency_depth = 100, sources = None, ref = None, apply_format = True):
-
+    def construct(cls, X: tuple | Source, Y: tuple | Source, predictor_configuration: PredictorConfiguration, horizon = 1, apply_format = True):
         if isinstance(X, tuple):
             X = Combine(*X)
         if isinstance(Y, tuple):
             Y = Combine(*Y)
-            # TODO: check if Y depends on old Y_hat, if so raise error
 
-        return cls(Prediction(X, Y, horizon, predictor_configuration, apply_format = apply_format), max_dependency_depth = max_dependency_depth, sources = sources, ref = ref, apply_format = apply_format)
+        return cls(X, Y, horizon, predictor_configuration, apply_format = apply_format)
 
-    def configure_prediction(self, predictor_configuration: PredictorConfiguration, apply_format = True):
-        self.prediction = Prediction(self.X, self.Y, self.horizon, predictor_configuration, apply_format = apply_format)
+    def __repr__(self):
+        return f"Prediction(horizon={self.horizon}, predictor={self.config.predictor_type.__name__})"
 
-    def reset_state(self):
-        self.transformer.reset_state()
+
+class PredictionTarget(Transformation):
+    
+    def __init__(self, prediction: Prediction):
+        super().__init__(prediction)
+        self.target = prediction.config.predictor_type.target
+
+    def evaluate(self, prediction):
+        Y_hat = prediction[self.target or next(iter(prediction))]
+        return Y_hat
+
+def make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None):
+    predictions = []
+
+    if input_horizons is None:
+        input_horizons = {h: (0, h) for h in horizons}
+    
+    if isinstance(Y, (tuple, list)):
+        Y_sub = [GetHorizons(Y_i, drop_horizon=True) for Y_i in Y] 
+        Y = Combine(*Y_sub)  
+    else:
+        Y = GetHorizons(Y, drop_horizon=True)
+
+    for h, h_in in input_horizons.items():
+        if isinstance(X, (tuple, list)):
+            X_sub = [GetHorizons(data = X_i, horizons = h_in) for X_i in X]
+            X_h = Combine(*X_sub)
+        else:
+            X_h = GetHorizons(data = X, horizons = h_in)
+
+        prediction = Prediction(X_h, Y, h, predictor_configuration, apply_format = apply_format)
+        predictions.append(prediction)
+
+    return predictions
+
+class Model:
+    def __init__(self, *output: Source, sources = None, scorefun = rmse, burn_in = 0, remove_nan = True):
+        if sources is None:
+            sources = (DefaultSource,)
+        self.output = Combine(*output, as_dict = True)
         self.state = None
+        self.data_format = None
 
-    @property
-    def predictor_config(self):
-        return self.prediction.config
+        # Construct transforms for scoring predictions
+        targets = []
+        for o in output:
+            if isinstance(o, Prediction):
+                target = PredictionTarget(o)
+                targets.append(target)
+            else:
+                targets.append(o)
 
-    def update(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = False, return_y = False, update_predictor = True, **params):
+        self.targets = Combine(*targets, as_dict = True)
+        self.scorefun = scorefun
+        self.burn_in = burn_in
+        self.remove_nan = remove_nan
 
-        # Check for unused parameters
-        for k in params.keys():
-            if k not in self.predictor_config.predictor_type.params:
-                raise ValueError(f"Parameter '{k}' not used by predictor of type {self.predictor_config.predictor_type.__name__}.")
+        # Fetch all Prediction dependencies in output recursively
+        self.predictions = []
+        def fetch_predictions(source):
+            if isinstance(source, Prediction):
+                self.predictions.append(source)
 
-        # Place data in dict format with some meta data
-        data = parse_data(data, ref = self.transformer.ref)
+            if isinstance(source, Transformation):
+                for dep in source.dependencies:
+                    fetch_predictions(dep)
 
-        # Transform data
-        data = self.transformer.transform(data, check = check, update_predictor=update_predictor, predictor_params = params)
-
-        # Predict and update state
-        result, self.state = self.prediction.apply(data, recursion_pars = self.state, return_recursion_pars=True, update_predictor=update_predictor, predictor_params = params)
-
-        if return_y:
-            result[self.Y] = data[self.Y]
-
-        return result
+        for o in output:
+            fetch_predictions(o)
 
     @property
     def predictor(self):
-        return self.state[self.prediction][0]
+        result = {p: self.state[p][0] for p in self.predictions}
+        if len(result) == 1:
+            return next(iter(result.values()))
+        return result
 
-    def fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, return_y = False, **predictor_params):
+    @classmethod
+    def construct(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons = 1, sources = None, apply_format = True, scorefun = rmse, burn_in = 0, remove_nan = True):
+
+        prediction = Prediction.construct(X, Y, predictor_configuration, horizons, apply_format = apply_format)
+
+        return cls(prediction, sources = sources, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
+
+    @classmethod
+    def construct_ensemble(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None, scorefun = rmse, burn_in = 0, remove_nan = True):
+
+        predictions = make_prediction_ensemble(X, Y, predictor_configuration, horizons, apply_format = apply_format, input_horizons = input_horizons)
+
+        return cls(*predictions, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
+
+    def reset_state(self):
+        self.state = None
+        self.data_format = None
+
+    def update(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = False, update_predictor = True, **predictor_params):
+
+        if self.data_format is None:
+            self.data_format = DataFormat.from_reference(data)
+
+        if check:
+            self.data_format.check(data)
+
+        # Transform data
+        result, self.state = self.output.apply(data, recursion_pars = self.state, update_predictor=update_predictor, return_recursion_pars=True, **predictor_params)
+        
+        if len(result) == 1:
+            return next(iter(result.values()))
+
+        return result
+
+    def fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, **predictor_params):
         self.reset_state()
-        return self.update(data, return_y=return_y, **predictor_params)
+        return self.update(data, **predictor_params)
 
-    def fit_and_score(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, scorefun = None, burn_in = 0, **predictor_params):
+    def fit_and_score(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, **predictor_params):
         """
         A method for optimization of model parameters.
         """
-        if scorefun is None:
-            scorefun = rmse
 
-        result = self.fit(data, return_y = True, **predictor_params)
-        Y_hat = result[self.predictor.target or next(iter(result))]
+        result = self.targets.apply(data, eval_mode = False, **predictor_params)
+        ref_result = self.targets.apply(data, eval_mode = True, **predictor_params)
 
-        Y = result[self.Y]
+        scores = evaluate_score(result, ref_result, burn_in = self.burn_in, remove_nan = self.remove_nan, scorefun = self.scorefun)
 
-        # Ensure numpy arrays
-        Y = to_numpy(Y)
-        Y_hat = to_numpy(Y_hat)
+        if len(scores) == 1:
+            return next(iter(scores.values()))
 
-        resid = Y[self.horizon:] - Y_hat[:-self.horizon]
+        # Rename to outputs
+        scores = {o: s for o, s in zip(self.output.names, scores.values())}
+
+        return scores
         
-        if burn_in > 0:
-            resid = resid[burn_in:]
-        
-        mask = ~np.isnan(resid).any(axis=1)
-        score = scorefun(resid[mask])
-        return score
-        
+    def configure_prediction(self, predictor_configuration: PredictorConfiguration, apply_format = True, prediction = None):
+        if prediction is None:
+            prediction = self.predictions
+        elif isinstance(prediction, Prediction):
+            prediction = [prediction]
+        for p in prediction:
+            p.update_config(predictor_configuration, apply_format = apply_format)
+
     def save_model(self, name: str = None):
         if name is None:
             return pickle.dumps(self)
@@ -2886,136 +2901,55 @@ class Model(ABC):
             pickle.dump(self, f)
 
     def print_model_tree(self):
-        print("X")
-        self.X.print_dependency_tree()
-        print("\nY")
-        self.Y.print_dependency_tree()
+        self.output.print_dependency_tree()
 
-class Ensemble:
+@data_decorator    
+def evaluate_score(Y_hat, Y, burn_in = 0, remove_nan = True, scorefun = rmse):
+    resid = Y - Y_hat
 
-    def __init__(self, *models: Model):
-        self.models = models
-        
-    def update(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = False, return_y = False, update_predictor = True, model_params_dict = None, **params):
-        results = {}
-        for model in self.models:
-            model_params = {k: v for k, v in params.items() if k in model.predictor_config.predictor_type.params}
-            if model_params_dict is not None and model in model_params_dict:
-                model_params = model_params | model_params_dict[model]
-            result = model.update(data, check=check, return_y=return_y, update_predictor=update_predictor, **model_params)
-            results[model] = result
+    if burn_in > 0:
+        resid = resid[burn_in:]
+    if remove_nan:
+        mask = ~np.isnan(resid).any(axis=1)
+        resid = resid[mask]
 
-        return results
+    return scorefun(resid)
 
-    def fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, update_predictor = True, **params):
-        self.reset_state()
-        return self.update(data, update_predictor=update_predictor, **params)
-    
-    def _fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, return_y = False, **params):
-        self.reset_state()
-        return Ensemble.update(self, data, return_y=return_y, update_predictor=True, **params)
+class Ensemble(Model):
 
-    def fit_and_score(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, scorefun = None, burn_in = 0, **params):
-        if scorefun is None:
-            scorefun = rmse
-
-        # TODO: fix, maybe horizons align incorrectly?
-        result = self._fit(data, return_y = True, **params)
-        scores = {}
-        for model in self.models:
-            Y_hat = result[model][model.predictor.target or next(iter(result[model]))]
-            Y = result[model][model.Y]
-            if not isinstance(Y, np.ndarray):
-                Y = Y.to_numpy()
-            resid = Y[model.horizon:] - Y_hat[:-model.horizon]
-            
-            if burn_in > 0:
-                resid = resid[burn_in:]
-            
-            mask = ~np.isnan(resid).any(axis=1)
-            scores[model] = scorefun(resid[mask])
-        return scores        
+    def __init__(self, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None, scorefun = rmse, burn_in = 0, remove_nan = True):
+        predictions = make_prediction_ensemble(X, Y, predictor_configuration, horizons, apply_format = apply_format, input_horizons = input_horizons)
+        super().__init__(*predictions, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
+        self.ref = predictions[0]
+        self._column_names = {}
+        self.X = X
+        self.Y = Y
 
     def reset_state(self):
-        for model in self.models:
-            model.reset_state()
+        super().reset_state()
+        self._column_names = {}
 
-    def get_parameters(self):
-        return {model: model.predictor.get_model_params() for model in self.models}
+    def update(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = False, update_predictor = True, combine_horizons = True, **predictor_params):
+        result = super().update(data, check, update_predictor, **predictor_params)
 
-    def configure_prediction(self, config: PredictorConfiguration, model = None, apply_format = True):
-        models = [model] if model is not None else self.models
-        for model in models:
-            model.configure_prediction(config, apply_format = apply_format)
-            model.reset_state()
+        if combine_horizons:
+            combined_results = {}
+            for name in result[self.ref].keys():
+                combined_results[name], self._column_names[name] = combine_data({p.horizon: result[p][name] for p in self.output.sources}, columns = self._column_names.get(name, None))
 
-    def save_model(self, name: str = None):
-        if name is None:
-            return pickle.dumps(self)
-        if not name.endswith(".pkl"):
-            name = name + ".pkl"
-        with open(name, 'wb') as f:
-            pickle.dump(self, f)
+            # Remove individual horizon results
+            for p in self.output.sources:
+                del result[p]
 
-class HorizonEnsemble(Ensemble):
+            result[self] = combined_results
 
-    def __init__(self, X, Y, predictor_config, horizons: tuple = (1,), max_dependency_depth = 100, input_horizons: dict = None, ref = None, apply_format = True):
-        self.horizons = horizons
-        if input_horizons is None:
-            input_horizons = {h: (0, h) for h in horizons}
-        models = []
-
-        if isinstance(Y, (tuple, list)):
-            Y_sub = [GetHorizons(Y_i, drop_horizon=True) for Y_i in Y] 
-            Y = Combine(*Y_sub)  
-        else:
-            Y = GetHorizons(Y, drop_horizon=True)  # Cheating a bit here to ensure formatting is correct.
-
-        for h, h_in in input_horizons.items():
-            if isinstance(X, (tuple, list)):
-                X_sub = [GetHorizons(data = X_i, horizons = h_in) for X_i in X]
-                X_h = Combine(*X_sub)
-            else:
-                X_h = GetHorizons(data = X, horizons = h_in)
-                
-            model = Model.construct(X_h, Y, predictor_config, horizon = h, max_dependency_depth = max_dependency_depth, ref = ref, apply_format = apply_format)
-            models.append(model)
+        if len(result) == 1:
+            return next(iter(result.values()))
         
-        self.X, self.Y = X, Y
+        return result
 
-        self._column_names = {}
-        super().__init__(*models)
-
-    def reset_state(self):
-        self._column_names = {}
-        return super().reset_state()
-
-    def update(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, check = True, return_y = False, update_predictor = True, model_params_dict = None, **params):
-        results = super().update(data, check, return_y, update_predictor, model_params_dict, **params)
-
-        # reverse dict from model: name to name: model. Use models[0] as reference for outputs
-        ref_m = self.models[0]
-
-        combined_results = {}
-        for name in results[ref_m].keys():
-            combined_results[name], self._column_names[name] = combine_data({m.horizon: results[m][name] for m in self.models}, columns = self._column_names.get(name, None))
-
-        if return_y:
-            combined_results[self.Y] = results[ref_m][ref_m.Y]
-
-        return combined_results
-
-    def get_model_parameters(self):
-        return {model.horizon: model.predictor.get_model_params() for model in self.models}
-
-    def configure_prediction(self, predictor_config: PredictorConfiguration, horizon: int = None):
-        model = self.models[self.horizons.index(horizon)] if horizon is not None else None
-        return super().configure_prediction(predictor_config, model)
-
-    def fit_and_score(self, data, scorefun=None, burn_in=0, **params):
-        res = super().fit_and_score(data, scorefun, burn_in, **params)
-        return {h: res_h for h, res_h in zip(self.horizons, res.values())}
-
+    def fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, combine_horizons = True, **predictor_params):
+        return self.update(data, combine_horizons=combine_horizons, **predictor_params)
 
 def load_model(file_name):
     if not file_name.endswith(".pkl"):
