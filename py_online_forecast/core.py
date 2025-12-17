@@ -370,14 +370,24 @@ class Source:
     def __rpow__(self, other):
         return PowTransformation(other, self)
 
-# Placeholder keywords for specifying data sources
-Memory = Source("Memory")
-DefaultSource = Source("DefaultSource")
-DefaultIndex = Source("DefaultIndex")
-PredictorParameters = Source("PredictorParameters")
-UpdatePredictor = Source("UpdatePredictor")
-X_init = Source("X_init")
-Y_init = Source("Y_init")
+# NOTE: a special class and __reduce__ method is required for keywords for serialization with pickle
+class KeywordSource(Source):
+    _registry = {}
+    def __reduce__(self):
+        return make_keyword, (self._name,)
+
+def make_keyword(name: str) -> Source:
+    if name not in KeywordSource._registry:
+        KeywordSource._registry[name] = KeywordSource(name)
+    return KeywordSource._registry[name]
+    
+Memory = make_keyword("Memory")
+DefaultSource = make_keyword("DefaultSource")
+DefaultIndex = make_keyword("DefaultIndex")
+PredictorParameters = make_keyword("PredictorParameters")
+UpdatePredictor = make_keyword("UpdatePredictor")
+X_init = make_keyword("X_init")
+Y_init = make_keyword("Y_init")
 
 class Transformation(Source):
 
@@ -468,12 +478,14 @@ class Transformation(Source):
     def _accepts_any_kwargs(self):
         return self._var_keyword_arg is not None
 
-    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, eval_mode = False, **predictor_params):
+    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, eval_mode = False, copy_data = True, **predictor_params):
+
+        # NOTE: copy_data is used to avoid modifying input data (unless requested). When applied recursively, copy_data should be False, as we do want to update the data with intermediate results.
 
         # Extract "shared" predictor params
         shared_predictor_params = {k: v for k,v in predictor_params.items() if not isinstance(k, Prediction)}
 
-        data = parse_data(data, ref = ref)
+        data = parse_data(data, ref = ref, copy = copy_data)
 
         evaluate_kwargs = {}
         evaluate_args = []
@@ -505,11 +517,11 @@ class Transformation(Source):
 
             # Attempt to fetch transformation dependencies if not provided directly.
             elif isinstance(val, Transformation):
-                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, eval_mode=eval_mode, **predictor_params)
+                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, eval_mode=eval_mode, copy_data=False, **predictor_params)
 
                 new_recursion_pars.update(t_rec_pars)
 
-                data = data | {val: t_val} # Note, creates new data dict to avoid modifying input data
+                data[val] = t_val # Store in data for potential reuse
 
             else:
                 raise ValueError(f"Missing data for input: {val} in {self}.")
@@ -535,6 +547,17 @@ class Transformation(Source):
             return result, new_recursion_pars
         else:
             return result
+
+    def ancestors(self) -> list[Source]:
+        # Recursively get the top most dependencies (sources)
+        result = set()
+        for dep in self.sources:
+            if isinstance(dep, Transformation):
+                for anc in dep.ancestors():
+                    result.add(anc)
+            elif dep not in [Memory, PredictorParameters, UpdatePredictor]:
+                result.add(dep)
+        return list(result)
 
     def evaluate(self) -> tuple[DataFrame, dict] | DataFrame:
         # In: signature can be freely defined by subclasses.
@@ -651,10 +674,12 @@ def get_index(data: dict | pd.DataFrame | pd.Series, share_index = True):
     else:
         return None
 
-def parse_data(data : dict | pd.DataFrame | pd.Series | np.ndarray, ref = None):
+def parse_data(data : dict | pd.DataFrame | pd.Series | np.ndarray, ref = None, copy = True):
     if not isinstance(data, dict):
         data = {DefaultSource: data}
-
+    elif copy:
+        data = data.copy()
+    
     ref_val = data[ref or next(iter(data))]
  
     if not DefaultSource in data:
@@ -821,6 +846,7 @@ def standardize_wrapper(*inputs, ensure_dim = None, output_as: str | dict = None
     """
 
     def decorator(func):
+        # TODO: consider efficiency improvements for repeated calls
         sig = inspect.signature(func)
         # Check that inputs match signature
         for name in inputs:
@@ -870,6 +896,7 @@ def standardize_wrapper(*inputs, ensure_dim = None, output_as: str | dict = None
     return decorator
 
 ### Transformations
+
 class BackShift(Transformation):
 
     def __init__(self, shifts: list | dict, data = DefaultSource, skip_duplicates = False, initial_value = np.nan):
@@ -905,21 +932,16 @@ class BackShift(Transformation):
         self.initial_value = initial_value
         super().__init__(data = data, memory = Memory)
 
+    @standardize_wrapper("data", ensure_dim=2)
     def evaluate(self, data, memory = None):
-        ndim = data.ndim
-        if isinstance(data, (pd.Series, pd.DataFrame)):
-            data = to_numpy(data)
-
         # Fetch data from memory
         # TODO: use CircularBuffer for efficiency
         if memory is None:
             old_data = np.full((self.max_shift, self.m), self.initial_value)
             if self.skip_duplicates:
-                offset = self.max_shift
+                offset = 0
         else:
             old_data, offset = memory
-
-        data = to_numpy(data, ensure_dim = 2)
 
         all_data = np.vstack((old_data, data))
 
@@ -940,7 +962,7 @@ class BackShift(Transformation):
             X = np.full((t, self.n), np.nan)
 
             # Get mask to select every max(lag)'th row, starting from an offset
-            mask = np.arange(offset, t, self.max_shift + 1)
+            mask = np.arange(self.max_shift - offset, t, self.max_shift + 1)
             X[mask, :] = 0
 
             # Update offset
@@ -955,9 +977,6 @@ class BackShift(Transformation):
             for (i,j), lag in self.shifts.items():
 
                 X[:, i] += shifted_data[(j, lag)]
-
-        if ndim == 1:
-            X = squeeze_last(X)
 
         if self.skip_duplicates:
             return X, (all_data[-self.max_shift:], offset)
@@ -1183,16 +1202,25 @@ class ForgettingVariance(Transformation):
         else:
             super().__init__(data = data, state = Memory)
 
-        if covariance:
-            self.evaluate = standardize_wrapper("data","mean", output_as = "data", outer_prod = True, ensure_dim = 2)(self.evaluate)
-        else:
-            self.evaluate = standardize_wrapper("data","mean", output_as = "data", ensure_dim = 2)(self.evaluate)
-
         self.forgetting = forgetting
         self.track_memory = track_memory
         self.covariance = covariance
 
     def evaluate(self, data, mean = None, state = None):
+        if self.covariance:
+            return self._eval_covariance(data, mean, state)
+        else:
+            return self._eval(data, mean, state)
+
+    @standardize_wrapper("data","mean", output_as = "data", outer_prod = True, ensure_dim = 2)
+    def _eval_covariance(self, data, mean = None, state = None):
+        return self._evaluate(data, mean, state)
+    
+    @standardize_wrapper("data","mean", output_as = "data", ensure_dim = 2)
+    def _eval(self, data, mean = None, state = None):
+        return self._evaluate(data, mean, state)
+
+    def _evaluate(self, data, mean = None, state = None):
         
         # Compute unentered variance
         if self.covariance:
@@ -1275,8 +1303,8 @@ class FSDay(Transformation):
 class Disruption(Transformation):
     # A class for modelling disruptions at a specific day and hour
 
-    def __init__(self, hour, dayofweek = None, duration = None, horizons: int | list = 0):
-        super().__init__(index = DefaultIndex)
+    def __init__(self, hour, dayofweek = None, duration = None, horizons: int | list = 0, index = DefaultIndex):
+        super().__init__(index = index)
         self.hour = hour
         self.dayofweek = dayofweek
         self.duration = duration
@@ -1291,6 +1319,7 @@ class Disruption(Transformation):
         return result
 
     def evaluate_horizon(self, index, horizon):
+        # TODO: consider pre-computing for efficiency
         pred_time = index + pd.Timedelta(hours=horizon)
         if self.duration is not None:
             if self.hour < self.end_hour:
@@ -1584,6 +1613,7 @@ class Map(Transformation):
         self.vars = list(vars)
     
     def evaluate(self, data):
+        # TODO: consider storing index to make this more efficient
         return data[self.vars]
 
     def __repr__(self):
@@ -2670,12 +2700,12 @@ class Prediction(Transformation):
         self.config = predictor_config
         self._apply_format = apply_format
 
-    def apply(self, data, memory=None, recursion_pars=None, return_recursion_pars=False, ref=None, update_predictor=True, eval_mode = False, **predictor_params):
+    def apply(self, data, memory=None, recursion_pars=None, return_recursion_pars=False, ref=None, update_predictor=True, eval_mode = False, copy_data = True, **predictor_params):
         if eval_mode:
             # Return self.Y shifted by horizon
             return {self.config.predictor_type.target: shift(self.Y.apply(data), -self.horizon)}, {}
 
-        return super().apply(data, memory, recursion_pars, return_recursion_pars, ref, update_predictor, **predictor_params)
+        return super().apply(data, memory, recursion_pars, return_recursion_pars, ref, update_predictor, copy_data=copy_data, **predictor_params)
 
     def evaluate(self, X, Y, update_predictor, predictor_params, state = None, apply_format = None):
         
@@ -2787,9 +2817,7 @@ def make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Trans
     return predictions
 
 class Model:
-    def __init__(self, *output: Source, sources = None, scorefun = rmse, burn_in = 0, remove_nan = True):
-        if sources is None:
-            sources = (DefaultSource,)
+    def __init__(self, *output: Source, scorefun = rmse, burn_in = 0, remove_nan = True):
         self.output = Combine(*output, as_dict = True)
         self.state = None
         self.data_format = None
@@ -2829,11 +2857,11 @@ class Model:
         return result
 
     @classmethod
-    def construct(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons = 1, sources = None, apply_format = True, scorefun = rmse, burn_in = 0, remove_nan = True):
+    def construct(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons = 1, apply_format = True, scorefun = rmse, burn_in = 0, remove_nan = True):
 
         prediction = Prediction.construct(X, Y, predictor_configuration, horizons, apply_format = apply_format)
 
-        return cls(prediction, sources = sources, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
+        return cls(prediction, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
 
     @classmethod
     def construct_ensemble(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None, scorefun = rmse, burn_in = 0, remove_nan = True):
