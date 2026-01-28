@@ -1,5 +1,6 @@
 #%%
 from __future__ import annotations
+from unittest import result
 import numpy as np
 import pandas as pd
 import re
@@ -453,6 +454,16 @@ class Transformation(Source):
         else:
             raise ValueError("No evaluate method found.")
 
+        # Overwrite init to capture parameters
+        original_init = cls.__init__
+        @functools.wraps(original_init)
+        def new_init(self, *args, **kwargs):
+            original_init(self, *args, **kwargs)
+            self._init_params = inspect.signature(original_init).bind(self, *args, **kwargs).arguments
+            del self._init_params['self']
+
+        cls.__init__ = new_init
+
     def __repr__(self):
         return f"{self.__class__.__name__}"
 
@@ -576,6 +587,51 @@ class Transformation(Source):
             else:
                 print(f"{indent}  - {dep}")
 
+    def get_all_dependencies(self) -> list[Transformation]:
+        # Recursively get all dependencies
+        result = set()
+        for dep in self.dependencies:
+            result.add(dep)
+            if isinstance(dep, Transformation):
+                for sub_dep in dep.get_all_dependencies():
+                    result.add(sub_dep)
+        return list(result)
+
+    def get_graph(self, use_names = True) -> dict:
+        # Get all unique nodes
+        nodes = self.get_all_dependencies() + [self]
+
+        result = {}
+        counts = {}
+        names = {}
+        for node in nodes:
+            # Get name; either from _name or using class name + count
+            if use_names:
+                name = node._name
+                if name is None and node not in names:
+                    class_name = node.__class__.__name__
+                    count = counts.get(class_name, 0) + 1
+                    counts[class_name] = count
+                    name = f"{class_name}_{count}"
+                    names[node] = name
+            else:
+                names[node] = node
+
+            result[names[node]] = {
+                "class": node.__class__.__name__,
+                "params": node._init_params,
+                }
+            
+        if use_names:
+            # Replace params Sources with their names
+            for node_name, node_info in result.items():
+                for key, val in node_info["params"].items():
+                    if isinstance(val, Source):
+                        if val in names:
+                            result[node_name]["params"][key] = names[val]
+
+        return result
+    
 ### Numpy / Pandas conversion utilities
 def data_decorator(func):
     """
@@ -919,7 +975,6 @@ class BackShift(Transformation):
                 shifts = {(i, j): s for i, s in enumerate(shifts) for j, s in enumerate(s) if s is not None}
 
         self.n = max(i for i, j in shifts.keys()) + 1 # Number of outputs
-        self.m = max(j for i, j in shifts.keys()) + 1 # Number of inputs in data
 
         if self.n == 0:
             raise ValueError("Shifts cannot be empty")
@@ -937,7 +992,7 @@ class BackShift(Transformation):
         # Fetch data from memory
         # TODO: use CircularBuffer for efficiency
         if memory is None:
-            old_data = np.full((self.max_shift, self.m), self.initial_value)
+            old_data = np.full((self.max_shift, data.shape[1]), self.initial_value)
             if self.skip_duplicates:
                 offset = 0
         else:
@@ -1165,9 +1220,9 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
 
     else:
         # Assume saturated memory and update mean estimate directly (old_est is mean)
-        result[0] = forgetting * old_est + (1 - forgetting) * data[0]
+        result[0] = forgetting * old_est + (1 - forgetting) * clean_data[0]
         for i in range(1, n):
-            result[i] = forgetting * result[i-1] + (1 - forgetting) * data[i]
+            result[i] = forgetting * result[i-1] + (1 - forgetting) * clean_data[i]
 
         # Store data for next iteration
         new_est = result[-1]
@@ -2527,7 +2582,6 @@ class RRR(OnlinePredictor):
     
         self.inner_var_theta = np.linalg.solve(K, temp1.T).T # K^-1 kappa K^-1^T
 
-
         if estimate_V and self._n_updates >= self.burn_in:
             resid = y_i - y_i_hat
             if self._full_cov:
@@ -2554,7 +2608,7 @@ class RRR(OnlinePredictor):
 
         result['mean'] = x.T @ self.theta
 
-        # Compute covariance (u x V)
+        # Compute covariance of prediction error
         var_pred_err = self.V*(1 + x.T @ self.inner_var_theta @ x)
 
         if not self._full_cov:

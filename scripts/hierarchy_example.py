@@ -18,6 +18,7 @@ B = [1, 0] # [Y_{H,t-1}, Y_{H,t-0}]
 
 # We can then instantiate a TemporalReconciler for online reconciliation.
 config = c.RRR.configure()
+#config = SRRR.configure(S_top = S_top, predictor_params = {"l_shrink": "auto"})
 temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
 
 # The parameters are as follows:

@@ -92,7 +92,7 @@ class HierarchyRegressor(c.Transformation):
 
 class HierarchyRegressand(c.Transformation):
     """
-    Returns Y = Y - Y_hat_bot
+    Returns Y = Y_bot - Y_hat_bot, lagged by horizon
     """
 
     def __init__(self, Y_bot, Y_hat_bot, S_top, horizon: int):
@@ -169,7 +169,7 @@ class SRRR(c.RRR):
             else:
                 self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
 
-                # x_i contains coherency erros, from which top level errors can be computed
+                # x_i contains coherency errors, from which top level errors can be computed
                 self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
 
             cov_top_hat_d = np.diag(self.sigma_top_hat_d)
@@ -187,6 +187,15 @@ class SRRR(c.RRR):
         theta_tilde = np.linalg.solve(b0, b1)
 
         return super().online_update(x_i, y_i, y_i_hat, Q, theta_tilde, mem=mem, V=V)
+
+    @classmethod
+    def configure(cls, S_top, *args, **kwargs):
+
+        result = super().configure(*args, **kwargs)
+
+        result.kwargs["S_top"] = S_top
+
+        return result
 
 class SumHierarchy(c.Transformation):
     def __init__(self, Y_bot: c.Source, S_top):

@@ -45,7 +45,7 @@ pred_mat = np.array([[phiA, phiA], [0, phiH], [0, phiH**2]])
 predictions = Y_test @ pred_mat.T
 
 #%% Export bottom level observations and all predictions to csv
-columns = pd.MultiIndex.from_tuples([("Y_A", 0), ("Y_H", 0), ("pred_Y_A", 2), ("pred_Y_H", 2), ("pred_Y_H", 1)])
+columns = pd.MultiIndex.from_tuples([("Y_A", 0), ("Y_H", 0), ("pred_Y_A", 2), ("pred_Y_H", 1), ("pred_Y_H", 2)])
 Y_test_top = Y_test.sum(axis=1).reshape(-1,1)
 fc_data = pd.DataFrame(np.hstack([Y_test_top, Y_test[:, [1]], predictions]), columns=columns).fc.convert()
 
@@ -85,3 +85,5 @@ if __name__ == "__main__":
 # %%
 fc_data.to_csv("../py_online_forecast/data/hierarchical_data.csv", index = False)
 
+
+# %%
