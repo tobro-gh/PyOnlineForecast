@@ -12,14 +12,16 @@ data = sample_hierarchical_data
 S = np.array([[1,1],[1,0],[0,1]])
 S_top = S[[0]]
 
+
 #%% Since this is a temporal hierarchy, we setup a backshift matrix B for obtaining the lagged observations
 # Our hierarchy requires [Y_{H,t-1}, Y_{H,t}] as input columns
 B = [1, 0] # [Y_{H,t-1}, Y_{H,t-0}]
 
 # We can then instantiate a TemporalReconciler for online reconciliation.
-config = c.RRR.configure()
+#config = c.RRR.configure()
 #config = SRRR.configure(S_top = S_top, predictor_params = {"l_shrink": "auto"})
-temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
+#temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
+temporal_reconciler = TemporalRidgeReconciler(S_top, B, horizon = 2, full_cov = True, skip_duplicates=True, apply_format = True, opt_shrink = False)
 
 # The parameters are as follows:
 # S_top: The summation matrix for the top level(s) of the hierarchy
@@ -53,7 +55,8 @@ for t in range(len(Y_bot)):
 result_df = pd.concat(result)
 result_cov_df = pd.concat(result_cov)
 #%% For general hierarchies, we instead use the Reconciler class, which does not use the backshift structure
-reconciler = Reconciler(S_top, config, horizon = 2, variance_name = "cov")
+#reconciler = Reconciler(S_top, config, horizon = 2, variance_name = "cov")
+reconciler = RidgeReconciler(S_top, horizon = 2, opt_shrink = True)
 
 # Alternatively,
 
@@ -75,10 +78,9 @@ rec_result = reconciler.rec_fit(Y_bot_lagged, Y_hat)
 # The output contains both mean and covariance estimates (if we use RRR), so we extract the mean forecasts
 Y_hat_rec = rec_result["mean"]
 
-#%% To plot the data, we 
+#%% Plot the data
 Y_top = data[["Y_A"]]
 
-#%%
 n_start = 100
 n_plot = 50
 fig, (ax1, ax2) = plt.subplots(2, 1)

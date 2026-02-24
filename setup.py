@@ -14,7 +14,7 @@ setup(
 #    license='MIT',
 #    author_email='...',
     package_dir={'': '.'},
-    py_modules=['core'],
+    py_modules=['core', 'hierarchies'],
     python_requires='>=3.12.3',
     install_requires=install_requires,
     include_package_data=True,

@@ -42,13 +42,14 @@ ta = Subset("Ta", horizons = (1,))
 const = One()
 
 #%% 1.2 Create Simple OLS Model
-ols_config = WLS.configure()
+
 # Model energy_{t+1} = f(X(Taobs_t, Ta_t)) using low-pass filters
 lp_Taobs = LowPass(taobs, alpha = 0.7)
 lp_Ta = LowPass(ta, alpha = 0.8)
 
 # We then create a Prediction for the 1-hour ahead forecast
-pred = Prediction.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
+X = Combine(const, lp_Taobs, lp_Ta)
+pred = WLS(X, energy, horizon = 1)
 
 # And to manage data and access additional functionality, we wrap it in a Model
 model = Model(pred)
@@ -63,18 +64,20 @@ result = model.fit(data)
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
 data.plot(y="energy", ax = ax)
-result["mean"].shift(1).plot(ax = ax) # Shift predictions 1 hour ahead
+result.shift(1).plot(ax = ax) # Shift predictions 1 hour ahead
 plt.legend(["Observations", "Forecast"])
 plt.show()
 
 # Compare with least squares estimate
-beta_ols = model.predictor.get_model_params()
-model.reset_state()
-X = pred.X.apply(data)
-X_train = X.shift(1)
-Y = pred.Y.apply(data)
+beta_ols = model.predictor
 
-beta_np = np.linalg.lstsq(X_train[1:], Y.to_numpy()[1:], rcond=None)[0]
+#%%
+model.reset_state()
+X_data = pred.X.apply(data)
+X_train_data = X_data.shift(1)
+Y_data = pred.Y.apply(data)
+
+beta_np = np.linalg.lstsq(X_train_data[1:], Y_data.to_numpy()[1:], rcond=None)[0]
 
 print(f"Model parameters from OLS model: {beta_ols}")
 print(f"Model parameters from numpy lstsq: {beta_np}")
@@ -86,11 +89,9 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 #%% 3.1 Configure Model for Online Forecasting
 # In an online setting, switch to recursive ridge regressor (RRR).
 
-# We make a new predictor configuration
-rrr_config = RRR.configure(track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
-
-# And then update the prediction configuration
-pred.update_config(rrr_config)
+# We make a new prediction for RRR
+pred = RRR(X, energy, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
+model = Model(pred)
 
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
@@ -104,7 +105,7 @@ plt.show()
 #%% 3.3 Multivariate target
 # The model also supports multivariate targets, e.g. energy and Taobs
 target = Map("energy", "Taobs")
-model_multi = Model.construct((const, lp_Taobs, lp_Ta), target, rrr_config, 1)
+model_multi = Model(RRR(X, target, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001))
 result_multi = model_multi.fit(data, mem = 1)
 fig, ax = plt.subplots()
 data.plot(y="energy", ax = ax)
@@ -149,8 +150,10 @@ ta2 = Subset("Ta", horizons = (2,)) # Use all available forecasts of Ta
 # Low-pass filter for the new model
 lp_Ta2 = LowPass(ta2, alpha = 0.8)
 
+X2 = Combine(const, lp_Taobs, lp_Ta2)
+
 # We then make a prediction for the 2-hour ahead forecast
-pred_2h = Prediction.construct((const, lp_Taobs, lp_Ta2), energy, rrr_config, 2)
+pred_2h = RRR(X2, energy, horizon = 2, track_memory = True, tilde_k_init_val = 0.00001)
 
 # Note, we can still run the prediction as a standalone object
 ref_1h = pred.apply(data, mem = 1)
@@ -164,19 +167,20 @@ models = Model(pred, pred_2h)
 # Fit the ensemble model
 result = models.fit(data, mem = 1)
 
-# Results are stored in a dict indexed by the predictions
+# Results are returned in a dict indexed by the predictions
 result_model_1h = result[pred]
 result_model_2h = result[pred_2h]
 
 # Note: ensembles also support the update methods, and the update_predictor argument
 
 #%% 4.3 Horizon Ensemble
-# Ensembles can also be created using the "Ensemble" subclass of the model.
+# For the RRR prediction, ensembles can also be created using the "RRREnsemble" subclass of the model.
 # In this case, we first include all forecast horizons, and let the ensemble handle
 # the separation into different models.
 ta_all = Map("Ta")
 lp_Ta_all = LowPass(ta_all, alpha = 0.8)
-horizon_models = Ensemble((const, lp_Taobs, lp_Ta_all), energy, rrr_config, horizons = (1,2))
+Xall = Combine(const, lp_Taobs, lp_Ta_all)
+horizon_models = RRREnsemble(Xall, energy, horizons = (1,2), track_memory = True, tilde_k_init_val = 0.00001)
 
 # Then fit the ensemble as normal
 horizon_result = horizon_models.fit(data, mem = 1)
@@ -247,33 +251,33 @@ lp_raw = LowPass(raw_data, alpha = 0.8)
 # sources are matched to data, e.g.,
 lp_raw.apply({raw_data: data})
 
-# In case apply is called without mentioning a source, it is asummed to be the DefaultSource
-DefaultSource
+# In case apply is called without mentioning a source, it is assumed to be the DEFAULT_SOURCE
+DEFAULT_SOURCE
 
 # For some Transformations, Source arguments are optional. In this case, the
-# DefaultSource is used if no source is provided. This is the case for the
-# built-in transformations Map and Subset, which use the DefaultSource if no source is provided.
+# DEFAULT_SOURCE is used if no source is provided. This is the case for the
+# built-in transformations Map and Subset, which use the DEFAULT_SOURCE if no source is provided.
 map_default = Map("Ta")
 
 #%% 6.2 Special sources
-# There are some special sources, i.e. DefaultSource, DefaultIndex, Memory, PredictorParameters, UpdatePredictor,
-#  X_init, Y_init, DimX and DimY.
-# DefaultSource represents the default input data, when no other source is specified.
+# There are some special sources, i.e. DEFAULT_SOURCE, DefaultIndex, MEMORY, PREDICTOR_PARAMETERS, UPDATE_PREDICTOR,
+#  X_init, Y_init, DIM_X and DIM_Y.
+# DEFAULT_SOURCE represents the default input data, when no other source is specified.
 # DefaultIndex represents the index of the default input data.
-# Memory represents the memory state of the model/transform, i.e. the recursion parameters.
-# PredictorParameters is used to pass parameters to the predictor during updates.
-# UpdatePredictor is used to indicate whether the predictor should be updated during an update.
-# X_init, Y_init, DimX and DimY are used in predictor initialization. Specifically, X_init and Y_init are placeholders
-# for the initial input and target data and DimX and DimY correspond to Dim(X_init) and Dim(Y_init). These sources are
+# MEMORY represents the memory state of the model/transform, i.e. the recursion parameters.
+# PREDICTOR_PARAMETERS is used to pass parameters to the predictor during updates.
+# UPDATE_PREDICTOR is used to indicate whether the predictor should be updated during an update.
+# X_init, Y_init, DIM_X and DIM_Y are used in predictor initialization. Specifically, X_init and Y_init are placeholders
+# for the initial input and target data and DIM_X and DIM_Y correspond to Dim(X_init) and Dim(Y_init). These sources are
 # only available within scopes when creating custom predictors.
 
-# The DefaultIndex source returns the index of the data, e.g.
-tod = TimeOfDay(DefaultIndex)
-tod.apply(data, ref = DefaultSource)
+# The DEFAULT_INDEX source returns the index of the data, e.g.
+tod = TimeOfDay(DEFAULT_INDEX)
+tod.apply(data, ref = DEFAULT_SOURCE)
 
 # The Index source data is created when data is parsed into a special dict,
 data_dict = parse_data(data)
-data_dict[DefaultIndex]
+data_dict[DEFAULT_INDEX]
 
 # They act as placeholders for the target variable, and predictions thereof. In an
 # ensemble with multiple Models, the Target and Prediction sources will be specific
@@ -292,23 +296,30 @@ data_dict[DefaultIndex]
 trend_data = data.copy()
 trend_data[("energy",0)] += 0.1*np.arange(len(trend_data))
 
+# Set score mode to true
+pred.set_score_mode()
+
+# Or via. the model
+model.set_score_mode()
+
 def obj(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
     lp_Ta.alpha = alpha
-    return model.fit_and_score(trend_data, scorefun = rmse, mem = mem)
+    return model.fit(trend_data, mem = mem)["score"]
 
 res = minimize(obj, x0 = [0.5, 0.5], bounds = [(0, 1), (0, 1)], method = "Nelder-Mead")
 print(res)
 
 #%% 7.2 Hyperparameter Optimization for Ensembles
 # And similarly for the horizon ensemble
+horizon_models.set_score_mode()
 def obj_horizon(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
     lp_Ta_all.alpha = alpha
-    scores = horizon_models.fit_and_score(trend_data, scorefun = rmse, mem = mem)
-    return np.mean(list(scores.values()))
+    result = horizon_models.fit(trend_data, mem = mem)
+    return np.mean(list(result["score"].values())) # Average score across horizons
 
 res_horizon = minimize(obj_horizon, x0 = [0.5, 0.5], bounds = [(0, 1), (0, 1)], method = "Nelder-Mead")
 print(res_horizon)
@@ -320,7 +331,7 @@ print(res_horizon)
 # and implementing the evaluate method.
 class CustomTransform(Transformation):
     def __init__(self, source, param1 = 0.5, param2 = 1.0):
-        super().__init__(data = source, old_param = Memory)
+        super().__init__(data = source, old_param = MEMORY)
         self.param1 = param1
         self.param2 = param2
     
@@ -330,5 +341,3 @@ class CustomTransform(Transformation):
         return data*param, param
 
 # In the above ...
-
-# %%

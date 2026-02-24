@@ -1,10 +1,8 @@
 #%%
 from __future__ import annotations
-from unittest import result
 import numpy as np
 import pandas as pd
 import re
-from typing import Literal
 import inspect
 import os
 import functools
@@ -201,7 +199,6 @@ class ForecastMatrix:
                         new_columns.append((col, 0))    
                 else:
                     new_columns.append((col, 0))
-
         else:
 
             # Flatten levels if more than 2
@@ -382,13 +379,14 @@ def make_keyword(name: str) -> Source:
         KeywordSource._registry[name] = KeywordSource(name)
     return KeywordSource._registry[name]
     
-Memory = make_keyword("Memory")
-DefaultSource = make_keyword("DefaultSource")
-DefaultIndex = make_keyword("DefaultIndex")
-PredictorParameters = make_keyword("PredictorParameters")
-UpdatePredictor = make_keyword("UpdatePredictor")
-X_init = make_keyword("X_init")
-Y_init = make_keyword("Y_init")
+# TODO: use CAPITALIZED names for keywords
+MEMORY = make_keyword("MEMORY")
+DEFAULT_SOURCE = make_keyword("DEFAULT_SOURCE")
+DEFAULT_INDEX = make_keyword("DEFAULT_INDEX")
+PREDICTOR_PARAMETERS = make_keyword("PREDICTOR_PARAMETERS")
+UPDATE_PREDICTOR = make_keyword("UPDATE_PREDICTOR")
+X_INIT = make_keyword("X_INIT")
+Y_INIT = make_keyword("Y_INIT")
 
 class Transformation(Source):
 
@@ -420,7 +418,7 @@ class Transformation(Source):
             if not (key in self._inputs or self._accepts_kwargs):
                 raise KeyError(f"{self} does not use input: {key}.")
             if self.apply_kwargs[key] is None:
-                self.apply_kwargs[key] = DefaultSource
+                self.apply_kwargs[key] = DEFAULT_SOURCE
 
         # Check that args and kwargs refer to valid inputs
         for val in list(apply_kwargs.values()) + list(apply_args):
@@ -489,7 +487,7 @@ class Transformation(Source):
     def _accepts_any_kwargs(self):
         return self._var_keyword_arg is not None
 
-    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, eval_mode = False, copy_data = True, **predictor_params):
+    def apply(self, data, memory = None, recursion_pars = None, return_recursion_pars = False, ref = None, update_predictor = True, copy_data = True, **predictor_params):
 
         # NOTE: copy_data is used to avoid modifying input data (unless requested). When applied recursively, copy_data should be False, as we do want to update the data with intermediate results.
 
@@ -516,19 +514,19 @@ class Transformation(Source):
             if val in data:
                 t_val = data[val]
 
-            elif val is Memory:
+            elif val is MEMORY:
                 # TODO: consider fetching default from evaluate signature
                 t_val = memory
 
-            elif val is UpdatePredictor:
+            elif val is UPDATE_PREDICTOR:
                 t_val = update_predictor
             
-            elif val is PredictorParameters:
+            elif val is PREDICTOR_PARAMETERS:
                 t_val = shared_predictor_params | predictor_params.get(self, {})
 
             # Attempt to fetch transformation dependencies if not provided directly.
             elif isinstance(val, Transformation):
-                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, eval_mode=eval_mode, copy_data=False, **predictor_params)
+                t_val, t_rec_pars = val.apply(data = data, recursion_pars = recursion_pars, return_recursion_pars = True, copy_data=False, **predictor_params)
 
                 new_recursion_pars.update(t_rec_pars)
 
@@ -566,7 +564,7 @@ class Transformation(Source):
             if isinstance(dep, Transformation):
                 for anc in dep.ancestors():
                     result.add(anc)
-            elif dep not in [Memory, PredictorParameters, UpdatePredictor]:
+            elif dep not in [MEMORY, PREDICTOR_PARAMETERS, UPDATE_PREDICTOR]:
                 result.add(dep)
         return list(result)
 
@@ -732,16 +730,16 @@ def get_index(data: dict | pd.DataFrame | pd.Series, share_index = True):
 
 def parse_data(data : dict | pd.DataFrame | pd.Series | np.ndarray, ref = None, copy = True):
     if not isinstance(data, dict):
-        data = {DefaultSource: data}
+        data = {DEFAULT_SOURCE: data}
     elif copy:
         data = data.copy()
     
     ref_val = data[ref or next(iter(data))]
  
-    if not DefaultSource in data:
-        data[DefaultSource] = ref_val
+    if not DEFAULT_SOURCE in data:
+        data[DEFAULT_SOURCE] = ref_val
 
-    data[DefaultIndex] = get_index(ref_val)
+    data[DEFAULT_INDEX] = get_index(ref_val)
 
     return data
 
@@ -955,7 +953,7 @@ def standardize_wrapper(*inputs, ensure_dim = None, output_as: str | dict = None
 
 class BackShift(Transformation):
 
-    def __init__(self, shifts: list | dict, data = DefaultSource, skip_duplicates = False, initial_value = np.nan):
+    def __init__(self, shifts: list | dict, data = DEFAULT_SOURCE, skip_duplicates = False, initial_value = np.nan):
         """
         shifts: list of lists or dict. If list of lists, each inner list represents a row of the bacshift matrix, in which case None values are treated as zeros.
         If dict, keys are (i,j) tuples representing the row and column indices of non-zero entries, and values are the corresponding shifts.
@@ -985,7 +983,7 @@ class BackShift(Transformation):
         self.shifts = shifts
         self.skip_duplicates = skip_duplicates
         self.initial_value = initial_value
-        super().__init__(data = data, memory = Memory)
+        super().__init__(data = data, memory = MEMORY)
 
     @standardize_wrapper("data", ensure_dim=2)
     def evaluate(self, data, memory = None):
@@ -1040,7 +1038,7 @@ class BackShift(Transformation):
 
 class Index(Transformation):
 
-    def __init__(self, data = DefaultSource):
+    def __init__(self, data = DEFAULT_SOURCE):
         super().__init__(data = data)
     
     def evaluate(self, data):
@@ -1056,7 +1054,7 @@ def get_horizons(columns: pd.MultiIndex | tuple):
 
 class Horizons(Transformation):
     
-    def __init__(self, data = DefaultSource):
+    def __init__(self, data = DEFAULT_SOURCE):
         super().__init__(data = data)
 
     def evaluate(self, data):
@@ -1075,8 +1073,8 @@ class Dim(Transformation):
     def evaluate(self, data):
         return get_dim(data, axis = self.axis)
     
-DimX = Dim(X_init)
-DimY = Dim(Y_init)
+DIM_X = Dim(X_INIT)
+DIM_Y = Dim(Y_INIT)
 
 class Length(Transformation):
     
@@ -1088,7 +1086,7 @@ class Length(Transformation):
 
 class One(Transformation):
     
-    def __init__(self, index = DefaultIndex):
+    def __init__(self, index = DEFAULT_INDEX):
         super().__init__(index = index)
 
     def evaluate(self, index):
@@ -1099,7 +1097,7 @@ class One(Transformation):
         
 class LowPass(Transformation):
     def __init__(self, var, alpha = 0):
-        super().__init__(data=var, prev_value = Memory)
+        super().__init__(data=var, prev_value = MEMORY)
         self.alpha = alpha
 
     @standardize_wrapper("data", ensure_dim=2, output_as = "data")
@@ -1140,9 +1138,9 @@ class FourierSeries(Transformation):
 
 class SlidingSum(Transformation):
 
-    def __init__(self, data = DefaultSource, window_size = 1, *args, **kwargs):
+    def __init__(self, data = DEFAULT_SOURCE, window_size = 1, *args, **kwargs):
         self.window_size = window_size
-        super().__init__(data = data, old_data = Memory)
+        super().__init__(data = data, old_data = MEMORY)
         self._args = args
         self._kwargs = kwargs
 
@@ -1168,7 +1166,7 @@ class SlidingMean(Transformation):
         self._args = args
         self._kwargs = kwargs
         self.window_size = window_size
-        super().__init__(data = data, old_data = Memory)
+        super().__init__(data = data, old_data = MEMORY)
 
     @standardize_wrapper("data", ensure_dim=2, output_as = "data")
     def evaluate(self, data, old_data = None):
@@ -1235,8 +1233,8 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
 
 class ForgettingMean(Transformation):
 
-    def __init__(self, forgetting, data = DefaultSource, track_memory = True):
-        super().__init__(data, state = Memory)
+    def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True):
+        super().__init__(data, state = MEMORY)
         self.forgetting = forgetting
         self.track_memory = track_memory
         self.data = data
@@ -1247,15 +1245,15 @@ class ForgettingMean(Transformation):
 
 class ForgettingVariance(Transformation):
 
-    def __init__(self, forgetting, data = DefaultSource, track_memory = True, center = True, covariance = False):
+    def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True, center = True, covariance = False):
         if center:
             if isinstance(center, Transformation):
                 mean = center
             else:
                 mean = ForgettingMean(forgetting, data = data, track_memory = track_memory)
-            super().__init__(mean = mean, data = data, state = Memory)
+            super().__init__(mean = mean, data = data, state = MEMORY)
         else:
-            super().__init__(data = data, state = Memory)
+            super().__init__(data = data, state = MEMORY)
 
         self.forgetting = forgetting
         self.track_memory = track_memory
@@ -1298,11 +1296,11 @@ class ForgettingVariance(Transformation):
 
 class FSDay(Transformation):
     
-    def __init__(self, freq, t = DefaultIndex, nharmonics = 1, horizons = None):
+    def __init__(self, freq, t = DEFAULT_INDEX, nharmonics = 1, horizons = None):
         self.nharmonics = nharmonics
         self.freq = freq
         self.horizons = [0] if horizons is None else horizons
-        super().__init__(t = t, pre_computed = Memory)
+        super().__init__(t = t, pre_computed = MEMORY)
 
     def evaluate(self, t, pre_computed = None):
         if isinstance(t, pd.DataFrame):
@@ -1358,7 +1356,7 @@ class FSDay(Transformation):
 class Disruption(Transformation):
     # A class for modelling disruptions at a specific day and hour
 
-    def __init__(self, hour, dayofweek = None, duration = None, horizons: int | list = 0, index = DefaultIndex):
+    def __init__(self, hour, dayofweek = None, duration = None, horizons: int | list = 0, index = DEFAULT_INDEX):
         super().__init__(index = index)
         self.hour = hour
         self.dayofweek = dayofweek
@@ -1408,7 +1406,7 @@ class SumHorizons(Transformation):
     """
 
     def __init__(self, variable, start = None, end = None):
-        super().__init__(variable = variable, indexer = Memory)
+        super().__init__(variable = variable, indexer = MEMORY)
         self.start = start
         self.end = end
         self.name = f'sum_{variable}'
@@ -1578,7 +1576,7 @@ class PowTransformation(PrimitiveTransformation):
 
 class TimeOfDay(Transformation):
 
-    def __init__(self, t = DefaultIndex):
+    def __init__(self, t = DEFAULT_INDEX):
         super().__init__(t = t)
 
     def evaluate(self, t):
@@ -1597,7 +1595,7 @@ class TimeOfDay(Transformation):
 
 class TimeOfYear(Transformation):
 
-    def __init__(self, t=DefaultIndex):
+    def __init__(self, t=DEFAULT_INDEX):
         super().__init__(t=t)
 
     def evaluate(self, t):
@@ -1620,7 +1618,7 @@ class TimeOfYear(Transformation):
 
 class TimeOfWeek(TimeOfDay):
 
-    def __init__(self, t=DefaultIndex):
+    def __init__(self, t=DEFAULT_INDEX):
         super().__init__(t=t)
 
     def evaluate(self, t):
@@ -1663,7 +1661,7 @@ class ToArray(Transformation):
 
 class Map(Transformation):
 
-    def __init__(self, *vars, data = DefaultSource):
+    def __init__(self, *vars, data = DEFAULT_SOURCE):
         super().__init__(data = data)
         self.vars = list(vars)
     
@@ -1698,7 +1696,7 @@ class Select(Transformation):
 
 class SelectIndices(Transformation):
 
-    def __init__(self, indices, data = DefaultSource):
+    def __init__(self, indices, data = DEFAULT_SOURCE):
         super().__init__(data = data)
         self.indices = list(indices)
     
@@ -1799,8 +1797,8 @@ def combine_data(data: dict, use_format = None, index = None, columns = None, us
     return result, columns
 
 class Combine(Transformation):
-    def __init__(self, *sources, format_result = None, index = DefaultIndex, use_fc_format = True, as_dict = False, names = None):
-        super().__init__(*sources, index = index, columns = Memory)
+    def __init__(self, *sources, format_result = None, index = DEFAULT_INDEX, use_fc_format = True, as_dict = False, names = None):
+        super().__init__(*sources, index = index, columns = MEMORY)
         self.format_result = format_result
         self.use_fc_format = use_fc_format
         self.as_dict = as_dict
@@ -1823,7 +1821,7 @@ class Combine(Transformation):
 
 class ToPandas(Transformation):
 
-    def __init__(self, data, columns, index = DefaultIndex):
+    def __init__(self, data, columns, index = DEFAULT_INDEX):
         super().__init__(data = data, index = index)
         self.new_columns = columns
 
@@ -1857,7 +1855,7 @@ class Subset(Transformation):
     def __init__(self, *variables, data = None, horizons = None):
         self.horizons = horizons
         self.variables = list(variables)
-        super().__init__(data = data, indices = Memory)
+        super().__init__(data = data, indices = MEMORY)
 
 
     def evaluate(self, data, indices = None):
@@ -1878,7 +1876,7 @@ class Subset(Transformation):
 class GetHorizons(Transformation):
 
     def __init__(self, data, horizons: int | tuple = 0, drop_horizon = False):
-        super().__init__(data = data, indices = Memory)
+        super().__init__(data = data, indices = MEMORY)
         self.horizons = horizons if isinstance(horizons, tuple) else (horizons,)
         self.drop_horizon = drop_horizon
 
@@ -1925,7 +1923,7 @@ class Lag(Transformation):
             for h in self.offsets:
                 if h > amount:
                     raise ValueError(f"Offset {h} must be less than lag amount {amount}.")
-        super().__init__(data = data, prev_values = Memory)
+        super().__init__(data = data, prev_values = MEMORY)
 
 
     def evaluate(self, data, prev_values = None):
@@ -1985,104 +1983,6 @@ class Lag(Transformation):
 
         return result, prev_values
 
-class PredictorConfiguration:
-
-    def __init__(self, predictor_type: type[Predictor], *args, output_as = None, outer_prod = None, predictor_params = {}, **kwargs):
-        self.predictor_type = predictor_type
-        self.args = args
-        self.kwargs = kwargs
-        self.predictor_params = predictor_params
-        self.output_as = output_as
-        self.outer_prod = {k: True for k in outer_prod} if outer_prod else None
-
-    def get_value(self, v, data):
-        if isinstance(v, Source):
-            if v in data:
-                return data[v]
-            elif isinstance(v, Transformation):
-                return v.apply(data)
-        else:
-            return v
-
-    def create(self, X, Y) -> Predictor:
-        data = {X_init: X, Y_init: Y}
-        # Construct init params using data if required
-        args = []
-        for arg in self.args:
-            args.append(self.get_value(arg, data))
-        kwargs = {}
-        for k, v in self.kwargs.items():
-            kwargs[k] = self.get_value(v, data)
-
-        predictor = self.predictor_type(*args, **kwargs)
-        predictor.output_as = self.output_as
-        predictor.outer_prod = self.outer_prod.copy() if self.outer_prod is not None else None
-        return predictor
-
-class Predictor(ABC):
-
-    target = None # Default target variable name. Used to extract from prediction results if needed.
-    ensure_dim = None # If set, ensures that input data has this many dimensions.
-
-    def __init__(self):
-        self.output_as = None
-        self.outer_prod = None
-
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls.set_params()
-        
-    @classmethod
-    def set_params(cls):
-        raise NotImplementedError("This method should be overridden by subclasses to set parameters.")
-    
-    @abstractmethod
-    def update(self, X, Y, X_train, Y_hat, horizon, **params) -> np.ndarray | dict:
-        pass
-
-    @abstractmethod
-    def predict(self, X: dict | np.ndarray, horizon, **params) -> np.ndarray | dict:
-        # Should return either Y, or (Y, other_results)
-        pass
-
-    @abstractmethod
-    def get_model_params(self):
-        # Should return fitted model parameters
-        pass
-
-    @classmethod
-    def configure(cls, *args, output_as = None, outer_prod = None, **kwargs):
-        return PredictorConfiguration(cls, *args, output_as = output_as, outer_prod = outer_prod, **kwargs)
-
-class BatchPredictor(Predictor):
-
-    @classmethod
-    def set_params(cls):
-        # Set update parameters for the predictor
-        update_sig = inspect.signature(cls.batch_update)
-        cls.params = [k for k, v in list(update_sig.parameters.items())[1:] if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD) and k not in ["X", "Y", "X_pred", "Y_hat"]]
-
-        # Set parameters for the predict method
-        predict_sig = inspect.signature(cls.predict)
-        predict_params = [
-            k for k, v in list(predict_sig.parameters.items())[1:]
-            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.predict_params = predict_params
-
-    def update(self, X, Y, X_train, Y_hat, horizon = None, **params):
-
-        forecast = self.batch_update(X, Y, X_train, Y_hat, horizon, **params)
-
-        return forecast
-
-    @abstractmethod
-    def batch_update(self, X, Y, X_train, Y_hat, horizon = None, **params) -> tuple[pd.DataFrame] | pd.DataFrame:
-        pass
-
-    @abstractmethod
-    def predict(self, X, horizon = None, **params):
-        pass
 
 def stack_results(forecasts: list[dict] | list[np.ndarray]) -> dict | np.ndarray:
 
@@ -2112,531 +2012,6 @@ def stack_results(forecasts: list[dict] | list[np.ndarray]) -> dict | np.ndarray
         forecasts[key] = np.array(values)
     
     return forecasts
-
-class OnlinePredictor(Predictor):
-
-    @classmethod
-    def set_params(cls):
-        cls.set_predict_params()
-        cls.set_update_model_params()
-        cls.params = cls.predict_params + cls.update_model_params
-
-    @classmethod
-    def set_predict_params(cls):
-        predict_sig = inspect.signature(cls.predict)
-        predict_params =  [
-            k for k, v in list(predict_sig.parameters.items())[1:]
-            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.predict_params = predict_params
-
-    @classmethod
-    def set_update_model_params(cls):
-        update_model_sig = inspect.signature(cls.online_update)
-        update_model_params = [
-            k for k, v in list(update_model_sig.parameters.items())[1:]
-            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.update_model_params = update_model_params
-
-    def update(self, X: np.ndarray, Y: np.ndarray, X_train: np.ndarray, Y_hat: np.ndarray, horizon = None, **params):
-        # Distribute params
-        update_params = {k: v for k, v in params.items() if k in self.update_model_params}
-        predict_params = {k: v for k, v in params.items() if k in self.predict_params}
-
-        # Assuming X, Y, X_train and Y_hat are numpy arrays with first dimension as number of samples
-        if Y_hat is None:
-            Y_hat = np.full_like(Y, np.nan)
-        
-        new_shape = (horizon, *Y_hat.shape[1:])
-        Y_hat_new = np.full(new_shape, np.nan)
-
-        Y_hat_all = np.vstack((Y_hat, Y_hat_new))
-
-        n = X.shape[0]
-
-        forecasts = []
-
-        # Loop over each row of data
-        for i in range(n):
-            
-            x = X[i]
-            y = Y[i]
-            x_train = X_train[i]
-            y_hat = Y_hat_all[i]
-            y_ready = not np.isnan(y).any()
-            x_train_ready = not np.isnan(x_train).any()
-   
-            # Only update if data is valid
-            if x_train_ready and y_ready:
-                self.online_update(x_train, y, y_hat, **update_params)
-
-            forecast = self.online_predict(x, **predict_params)
-
-            target = self.target or next(iter(forecast))
-
-            # Update Y_hat
-            Y_hat_all[i+horizon] = forecast[target]
- 
-            forecasts.append(forecast)
-
-        forecasts = stack_results(forecasts)
-
-        return forecasts
-
-    def predict(self, X: np.ndarray, horizon = None, **params):
-        # Check parameters
-        for k in params.keys():
-            if k not in self.predict_params:
-                raise ValueError(f"Parameter '{k}' not recognized for prediction.")
-
-        # Predict multiple rows.
-        n = X.shape[0]
-        forecasts = []
-
-        for i in range(n):
-            x = X[i]
-            forecast = self.online_predict(x, **params)
-            forecasts.append(forecast)
-
-        forecasts = stack_results(forecasts)
-
-        return forecasts
-
-    @abstractmethod
-    def online_update(self, x_i, y_i, y_i_hat, **params):
-        """
-        Update model with new data rows x_i, y_i, and old predictions y_i_hat.
-        """
-
-    @abstractmethod
-    def online_predict(self, x_i, **params) -> tuple[pd.Series] | pd.Series:
-        # Predict a single row.
-        pass
-
-class OLS(BatchPredictor):
-
-    target = "mean"
-    ensure_dim = 2
-
-    def __init__(self, n, m):
-        self.theta = np.zeros((n, m))
-        self._n_updates = 0
-
-    def batch_update(self, X: np.ndarray, Y: np.ndarray, X_train: np.ndarray, Y_hat: np.ndarray, horizon, **params):
-        # Fit OLS model
-        mask = ~np.isnan(X_train).any(axis=1) & ~np.isnan(Y).any(axis=1)
-        X_fit = X_train[mask]
-        Y_fit = Y[mask]
-        self.theta = np.linalg.lstsq(X_fit, Y_fit, rcond=None)[0]
-        
-        pred = self.predict(X, horizon)
-
-        return pred
-
-    def predict(self, X: np.ndarray, horizon):
-        # Predict
-        pred = X @ self.theta
-        return {"mean": pred}
-
-    def get_model_params(self):
-        return self.theta
-
-    @classmethod
-    def configure(cls):
-        return super().configure(n = DimX, m = DimY, output_as = "Y")
-
-class WLS(BatchPredictor):
-    
-    target = "mean"
-    ensure_dim = 2
-
-    def __init__(self, n, m):
-        self.theta = np.zeros((n, m))
-        self._n_updates = 0
-
-    def batch_update(self, X: np.ndarray, Y: np.ndarray, X_train: np.ndarray, Y_hat: np.ndarray, horizon, W: np.ndarray = None, **params):
-        # Fit WLS model
-        mask = ~np.isnan(X_train).any(axis=1) & ~np.isnan(Y).any(axis=1)
-        X_fit = X_train[mask]
-        Y_fit = Y[mask]
-
-        if W is None:
-            W = np.eye(X_fit.shape[0])
-        else:
-            W = W[np.ix_(mask, mask)]
-
-        XtW = X_fit.T @ W
-        self.theta = np.linalg.solve(XtW @ X_fit, XtW @ Y_fit)
-
-        pred = self.predict(X)
-
-        return pred
-
-    def predict(self, X: np.ndarray):
-        # Predict
-        pred = X @ self.theta
-        return {"mean": pred}
-
-    def get_model_params(self):
-        return self.theta
-
-    @classmethod
-    def configure(cls):
-        return super().configure(n = DimX, m = DimY, output_as = "Y")
-
-
-class RLS(OnlinePredictor):
-
-    target = "mean"
-    ensure_dim = 2
-
-    def __init__(self, n_x, n_y, R_scale = 1/10000, burn_in = 1, estimate_variance = False):
-        super().__init__()
-        # For variance estimation
-        self.memory = None
-        self.variance_estimate = None
-
-        # Method to setup class after initialization
-        theta, R = np.zeros((n_x, n_y)), R_scale*np.eye(n_x)
-        
-        self.theta: np.ndarray = theta
-        self.R: np.ndarray = R
-        self.burn_in = burn_in
-        self._n_updates = 0
-        self.estimate_variance = estimate_variance
-
-    def online_update(self, x_i, y_i, y_i_hat, rls_lambda = 0.99):
-        self.R = rls_lambda * self.R + np.outer(x_i, x_i)
-        self.theta = self.theta + np.outer(np.linalg.solve(self.R, x_i), y_i - x_i.T @ self.theta)
-
-
-        if self.estimate_variance:
-            resid = - y_i_hat.sub(y_i.values)
-            if self.variance_estimate is None:
-                self.variance_estimate = np.outer(resid, resid)
-            else:
-                outer = np.outer(resid, resid)
-                # If outer product contains nan, don't update variance estimate, else
-                if not np.isnan(outer).any():
-                    # Check if variance estimate is nan, if so, set to outer product of residuals
-                    if np.isnan(self.variance_estimate).any():
-                        self.variance_estimate = outer
-                    else:
-                        # Update variance estimate
-                        self.variance_estimate = rls_lambda * self.variance_estimate + (1 - rls_lambda) * outer
-
-        self._n_updates += 1        
-
-    def predict(self, x: np.ndarray):
-#        pred = np.dot(x.T, self.theta)
-        pred = x @ self.theta
-        
-        if self.estimate_variance:
-            var_est = self.variance_estimate.astype(float) # TODO: check, is this the intended return value?
-            return {"mean": pred, "var": var_est}
-
-        return {"mean": pred}
-
-    def get_model_params(self):
-        return self.theta
-
-class RidgePredictor(BatchPredictor):
-
-    target = "mean"
-    ensure_dim = 2
-
-    def __init__(self, m, V = None):
-        super().__init__()
-        self.V = np.eye(m) if V is None else V
-        self._old_U = None
-
-    def batch_update(self, X: np.ndarray, Y: np.ndarray, X_train: np.ndarray, Y_hat: np.ndarray, P: np.ndarray = None,
-                Q: np.ndarray = None, theta_tilde: np.ndarray = None, U: np.ndarray = None, V: np.ndarray = None,
-                estimate_V: bool = False, return_var: bool = False, return_var_theta: bool = False):
-
-        # Copy X, Y
-        X_all = X_train.copy()
-        Y_all = Y.copy()
-
-        # Remove missing values
-        X_mask = ~np.isnan(X_all).any(axis=1)
-        Y_mask = ~np.isnan(Y_all).any(axis=1)
-        mask = X_mask & Y_mask
-        X_train = X_all[mask]
-        Y = Y_all[mask]
-
-        # Prepare arrays
-        t, n = X_train.shape
-        m = Y.shape[1]
-
-        if theta_tilde is None:
-            theta_tilde = np.zeros((n, m))
-
-        if P is None:
-            P = np.eye(t)
-        
-        elif not np.allclose(P, P.T):
-            P = P + P.T
-
-        if Q is None:
-            Q = np.zeros((n, n))
-        elif isinstance(Q, (int, float)):
-            Q = np.eye(n) * Q
-
-        elif not np.allclose(Q, Q.T):
-            Q = Q + Q.T
-       
-        self.K = K = X_train.T @ P @ X_train + Q
-        R = X_train.T @ P @ Y + Q @ theta_tilde
-
-        # Solve
-        self.theta = np.linalg.solve(K, R)
-
-        # Predict
-        pred = self.predict(X, return_var = False)
-
-        # Estimate variance
-        if estimate_V:
-            if V is not None:
-                raise ValueError("Cannot estimate variance when V is provided.")
-            
-            if U is None:
-                # Assume U is identity
-
-                # Combine old predictions and new
-                Y_hat[self.horizon:] = pred[:-self.horizon]
-
-                Y_hat_mask = ~np.isnan(Y_hat).any(axis=1)
-                resid_mask = Y_hat_mask & Y_mask
-
-                resid = Y_all[resid_mask] - Y_hat[resid_mask]
-
-                # Estimate variance
-                self.V = np.cov(resid, rowvar=False)
-
-            else:
-                raise NotImplementedError("Variance estimation conditional on provided U is not implemented in RidgePredictor.")
-
-        V = self.V if V is None else V
-
-        if U is None:
-            U = np.eye(X_all.shape[0])
-
-        # Compute variance component in U
-        temp1 = P @ X_train
-                
-        temp2 = temp1.T @ U[np.ix_(mask, mask)] @ temp1
-        
-        temp3 = np.linalg.solve(K, temp2)
-
-        self.inner_var_vec_theta = np.linalg.solve(K, temp3.T)
-
-        result = {"mean": pred}
-
-        # If required, compute the decomposed out of sample variance (U, V). Note: this should be partly in sample, but is not feasible without assumptions on U.
-        if return_var:
-            var_vec_Y_hat_err_U = self.get_out_of_sample_variance(X, U)
-            result["var"] = var_vec_Y_hat_err_U
-            result["V"] = V
-
-        if return_var_theta:
-            var_theta = self.get_var_theta(V)
-            result["var_theta"] = var_theta
-
-        return result
-
-    def get_model_params(self):
-        return self.theta
-
-    def get_out_of_sample_variance(self, X: np.ndarray = None, U: np.ndarray = None):
-
-        # Initialise U
-        if U is None:
-            U = np.eye(X.shape[0])
-        else:
-            if not np.allclose(U, U.T):
-                raise ValueError("U must be symmetric.")
-
-        # Compute the decomposed out of sample variance (U, V)
-        return U + X @ self.inner_var_vec_theta @ X.T
-
-    def get_var_theta(self, V: np.ndarray = None):
-        if V is None:
-            V = self.V
-
-        # Compute the variance of theta
-        var_theta = np.kron(V, self.inner_var_vec_theta)
-
-        return var_theta
-
-    def predict(self, X: np.ndarray, U: np.ndarray = None, V: np.ndarray = None, return_var: bool = False, return_var_theta = False):
-
-        if V is None:
-            V = self.V
-
-        # Predict
-        pred = X @ self.theta
-
-        result = [pred]
-
-        if return_var:
-            var_vec_Y_hat_err_U = self.get_out_of_sample_variance(X, U, V)
-            result.extend([var_vec_Y_hat_err_U, V])
-
-        if return_var_theta:
-            result.append(self.get_var_theta(V))
-
-        return result if len(result) > 1 else result[0]
-
-
-    def configure(cls, predictor_params = {}):
-        return super().configure(n = DimX, m = DimY, output_as = {"mean": "Y", "cov": "Y"}, outer_prod = ["cov"], predictor_params = predictor_params)
-
-class RRR(OnlinePredictor):
-    # Recursive Ridge Regressor
-    # Recursively solves the problem
-    # min theta || X_t theta - Y_t ||_{F, D_t} + || theta - tilde_theta_t ||_{F, Q_t}
-    # where D = diag(lambda^(t-1), ... , lambda^(t-t)) is a matrix for exponential forgetting,
-    # Q is a symmetric weight matrix for the ridge penalty, and tilde_theta_t is a regularization term / prior for theta. 
-    # F denotes the Frobenius norm.
-    # The solution is used to predict in the model
-    # Y_t = X_t theta + E_t, where E_t ~ MN(0, I, V_t).
-
-    target = "mean"
-    ensure_dim = 2
-
-    def __init__(self, n, m, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True, full_cov = True):
-        self.tilde_K = np.eye(n) * tilde_k_init_val
-        self.tilde_R = np.zeros((n,m))
-        self.burn_in = burn_in
-        self._n_updates = 0
-        self.kappa = np.zeros((n, n))
-        self.theta = np.full((n, m), np.nan)
-        self.inner_var_theta = np.full((n, n), np.nan)
-        self.V = np.full((m, m), np.nan)
-        self.track_memory = track_memory
-        if track_memory:
-            self._memory = 0
-            self._total_var = np.zeros((m, m))
-
-        self.combine_variance = combine_variance
-        self.n, self.m = n, m
-        self._forgetting_var_state = None
-        self._full_cov = full_cov
-
-    @classmethod
-    def configure(cls, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True, full_cov = True, predictor_params = {}):
-        params = {"n": DimX, "m": DimY, "burn_in": burn_in, "tilde_k_init_val": tilde_k_init_val, "track_memory": track_memory, "combine_variance": combine_variance, 
-                  "full_cov": full_cov, "output_as": {"mean": "Y", "cov": "Y"}, "predictor_params": predictor_params}
-        if combine_variance:
-            params["outer_prod"] = ["cov"]
-
-        return super().configure(**params)
-
-    def online_update(self, x_i, y_i, y_i_hat, Q: np.ndarray | float = None, theta_tilde: np.ndarray = None, V: np.ndarray = None, estimate_V = True, mem = 0.99):
-
-        if mem < 0 or mem > 1:
-            raise ValueError("Memory must be between 0 and 1.")
-
-        n, m = self.n, self.m
-
-        if theta_tilde is None:
-            theta_tilde = np.zeros((n, m))
-        
-        if Q is None:
-            Q = np.zeros((n, n))
-        elif isinstance(Q, (float, int)):
-            Q = np.eye(n) * Q
-
-        elif not np.allclose(Q, Q.T):
-            raise ValueError("Q must be symmetric.")
-
-        if theta_tilde is None:
-            theta_tilde = np.zeros((n, m))
-
-        if not V is None:
-            self.V = V
-
-        x_outer = np.outer(x_i, x_i)
-
-        if self.tilde_K is None:
-            self.tilde_K = x_outer
-        else:
-            self.tilde_K = mem*self.tilde_K + x_outer
-
-        if self.tilde_R is None:
-            self.tilde_R = np.outer(x_i, y_i)
-        else:
-            self.tilde_R = mem*self.tilde_R + np.outer(x_i, y_i)
-
-        K = self.tilde_K + Q
-        R = self.tilde_R + Q @ theta_tilde
-
-        self.theta = np.linalg.solve(K, R)
-
-        # Update estimate of variance
-        self.kappa = mem**2*self.kappa + x_outer
-
-        temp1 = np.linalg.solve(K, self.kappa)
-    
-        self.inner_var_theta = np.linalg.solve(K, temp1.T).T # K^-1 kappa K^-1^T
-
-        if estimate_V and self._n_updates >= self.burn_in:
-            resid = y_i - y_i_hat
-            if self._full_cov:
-                sse = np.outer(resid, resid)
-                # Pad to make (1, m, m) for use with forgetting_mean
-                sse = sse.reshape(1, m, m)
-            else:
-                sse = resid**2 
-                sse = sse.reshape(1, m)
-            
-            _V, self._forgetting_var_state = forgetting_mean(mem, sse, self._forgetting_var_state, track_memory=self.track_memory)
-            if self._full_cov:
-                self.V = _V[0]
-            else:
-                self.V = np.diag(_V[0])
-
-        self._n_updates += 1
-
-    def online_predict(self, x: np.ndarray, V = None, return_var_theta = False):
-        result = {}
-
-        if V is None:
-            V = self.V
-
-        result['mean'] = x.T @ self.theta
-
-        # Compute covariance of prediction error
-        var_pred_err = self.V*(1 + x.T @ self.inner_var_theta @ x)
-
-        if not self._full_cov:
-            var_pred_err = np.diag(var_pred_err)
-
-        result['cov'] = var_pred_err
-
-        # Compute variance of theta
-        if return_var_theta:
-            result["cov_theta"] = np.kron(V, self.inner_var_theta)
-
-        return result
-
-    def get_var_vec_theta(self, V: np.ndarray = None):
-        """
-        Returns the variance of the model parameters theta.
-        If V is not provided, uses the internal V.
-        """
-        if V is None:
-            V = self.V
-
-        # Compute the variance of theta
-        var_theta = np.kron(V, self.inner_var_theta)
-
-        return var_theta
-
-    def get_model_params(self):
-        return self.theta
 
 class CircularBuffer:
 
@@ -2731,122 +2106,165 @@ def rmse(x):
     return np.sqrt(np.mean(x**2))
 
 class Prediction(Transformation):
-    """ 
-    Defines a prediction of the type (Y_{t+h}, Z_{t+h}) = f(X_t) + noise, where
-    - Y is the target variable to predict
-    - X is a set of predictor variables
-    - Z is a set of additional predicted variables
-    - h is the prediction horizon
-    - f is a predictor function, which can be either an online or batch predictor.
-    """
-    def __init__(self, X, Y, horizon, predictor_config: PredictorConfiguration, apply_format = True):
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.set_params()
+
+    @classmethod
+    def set_params(cls):
+        # Set update parameters for the predictor
+        update_sig = inspect.signature(cls.update)
+        cls.params = [k for k, v in list(update_sig.parameters.items())[1:] if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD) and k not in ["state", "X", "Y", "X_train"]]
+
+        # Set parameters for the predict method
+        predict_sig = inspect.signature(cls.predict)
+        predict_params = [
+            k for k, v in list(predict_sig.parameters.items())[1:]
+            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        ]
+        cls.predict_params = predict_params
+
+    def __init__(self, X, Y, horizon, *args, score_mode = False, default_params = None, **kwargs):
+        """
+        Generic transformation providing a base class for predictors.
+        Parameters:
+        - X: input data (Transformation with output that can be used with Lag)
+        - Y: target data (Transformation with output that can be used with Lag)
+        - horizon: forecast horizon (int)
+        - predictor_params: default parameters to be supplied to the predictors update and predict methods.
+        - args, kwargs: arguments to be used by the create method to initialise the predictor.
+        """
         self.X = X
         self.Y = Y
-        self.horizon = horizon
-        self.update_config(predictor_config, apply_format = apply_format)
+        self.X_train = Lag(X, amount = horizon)
+        self.args = args
+        self.kwargs = kwargs
+        self._score_mode = score_mode
+        self._default_params = default_params or {}
 
-        self.X_train = Lag(X, amount=horizon)
-        self.Y_hat = Lag(self, amount=horizon)
+        # Check that default_params are valid
+        for param in self._default_params.keys():
+            if param not in self.params:
+                raise ValueError(f"Parameter '{param}' not recognized for predictor.")
 
-        super().__init__(X, Y, update_predictor = UpdatePredictor, predictor_params = PredictorParameters, state = Memory)
+        super().__init__(X, Y, update_predictor = UPDATE_PREDICTOR, predictor_params = PREDICTOR_PARAMETERS, state = MEMORY)
+    
+    @property
+    def score_mode(self):
+        return self._score_mode
 
-    def update_config(self, predictor_config: PredictorConfiguration, apply_format = True):
-        self.config = predictor_config
-        self._apply_format = apply_format
+    @score_mode.setter
+    def score_mode(self, value: bool):
+        self._score_mode = value
 
-    def apply(self, data, memory=None, recursion_pars=None, return_recursion_pars=False, ref=None, update_predictor=True, eval_mode = False, copy_data = True, **predictor_params):
-        if eval_mode:
-            # Return self.Y shifted by horizon
-            return {self.config.predictor_type.target: shift(self.Y.apply(data), -self.horizon)}, {}
-
-        return super().apply(data, memory, recursion_pars, return_recursion_pars, ref, update_predictor, copy_data=copy_data, **predictor_params)
-
-    def evaluate(self, X, Y, update_predictor, predictor_params, state = None, apply_format = None):
+    def set_score_mode(self):
+        self._score_mode = True
+    
+    def unset_score_mode(self):
+        self._score_mode = False
         
-        # Determine whether to apply format
-        apply_format = self._apply_format if apply_format is None else apply_format
+    def _get_value(self, v, data):
+        if isinstance(v, Source):
+            if v in data:
+                return data[v]
+            elif isinstance(v, Transformation):
+                return v.apply(data)
+        else:
+            return v
 
-        # Extract relevant predictor parameters
-        params = self.config.predictor_params | predictor_params
+    def _create(self, X, Y):
+        data = {X_INIT: X, Y_INIT: Y}
+        # Construct init params using data if required
+        args = []
+        for arg in self.args:
+            args.append(self._get_value(arg, data))
+        kwargs = {}
+        for k, v in self.kwargs.items():
+            kwargs[k] = self._get_value(v, data)
+
+        # Call create method with constructed params
+        return self.create(*args, **kwargs)
+
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        """
+        Method to create the predictor state. Should be implemented by subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def update(self, state, X, Y, X_train, **predictor_params) -> tuple:
+        """
+        Method to update the predictor with new data. Should be implemented by subclasses. Return value should be the prediction for the current time step and the updated state of the predictor.
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, state, X, **predictor_params):
+        """
+        Method to make predictions. Should be implemented by subclasses.
+        """
+        pass
+
+    def score(self, state, X, Y, prediction, **predictor_params):
+        raise NotImplementedError("Score method not implemented for this predictor.")
+    
+
+    def evaluate(self, X, Y, update_predictor, predictor_params, state = None):
+
+        # Combine provided and default predictor parameters
+        predictor_params = self._default_params | predictor_params
 
         if state is None:
-            # Create predictor
-            predictor = self.config.create(X, Y)
+            # Create predictor state
+            predictor_state = self._create(X, Y)
+
             X_state = None
-            _, Y_hat_state = self.Y_hat.evaluate(empty_like(Y), None)
-            ref_data = {"X": X, "Y": Y}
-            if isinstance(predictor.output_as, str):
-                output_format = DataFormat(get_vars(ref_data[predictor.output_as]), outer_prod = predictor.outer_prod)
-            else:
-                ref_vals = {k: ref_data[v] for k, v in predictor.output_as.items()}
-                output_format = DataFormat(get_vars(ref_vals), outer_prod = predictor.outer_prod)
-
+            
         else:
-            predictor, X_state, Y_hat_state, output_format = state
-
-        # Store index if output format requires it
-        if predictor.output_as is not None:
-            index = get_index(X)
-
-        # Convert inputs to numpy arrays?
-        if predictor.ensure_dim is not None:
-            X = to_numpy(X, predictor.ensure_dim)
+            predictor_state, X_state = state
 
         if update_predictor:
-            
-            if predictor.ensure_dim is not None:
-                Y = to_numpy(Y, predictor.ensure_dim)
 
             # Get training data
             X_train, X_state = self.X_train.evaluate(X, X_state)
-
-            # Get old predictions
-            old_Y_hat = Y_hat_state.get(get_num_obs(Y)).reshape(Y.shape)
-
-            result = predictor.update(X, Y, X_train, old_Y_hat, self.horizon, **params)
-
-            # Update storage
-            Y_hat = result[predictor.target or next(iter(result))]
-            _, Y_hat_state = self.Y_hat.evaluate(Y_hat, Y_hat_state)
+            result, predictor_state = self.update(predictor_state, X, Y, X_train, **predictor_params)
 
         else:
-            result = predictor.predict(X, self.horizon, **params)
+            result = self.predict(predictor_state, X, **predictor_params)
 
-        # Format output?
-        if predictor.output_as is not None:
-
-            # Apply format
-            if apply_format:
-                result = output_format.apply(result, index = index)
+        if self.score_mode:
+            result = self.score(predictor_state, X, Y, result, **predictor_params)
 
         # Return result and state
-        return result, (predictor, X_state, Y_hat_state, output_format)
+        return result, (predictor_state, X_state)
 
+def make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Transformation, prediction_type, horizons, *args, input_horizons: dict = None, **kwargs):
+    predictions = []
 
-    @classmethod
-    def construct(cls, X: tuple | Source, Y: tuple | Source, predictor_configuration: PredictorConfiguration, horizon = 1, apply_format = True):
-        if isinstance(X, tuple):
-            X = Combine(*X)
-        if isinstance(Y, tuple):
-            Y = Combine(*Y)
-
-        return cls(X, Y, horizon, predictor_configuration, apply_format = apply_format)
-
-    def __repr__(self):
-        return f"Prediction(horizon={self.horizon}, predictor={self.config.predictor_type.__name__})"
-
-
-class PredictionTarget(Transformation):
+    if input_horizons is None:
+        input_horizons = {h: (0, h) for h in horizons}
     
-    def __init__(self, prediction: Prediction):
-        super().__init__(prediction)
-        self.target = prediction.config.predictor_type.target
+    if isinstance(Y, (tuple, list)):
+        Y_sub = [GetHorizons(Y_i, drop_horizon=True) for Y_i in Y] 
+        Y = Combine(*Y_sub)  
+    else:
+        Y = GetHorizons(Y, drop_horizon=True)
 
-    def evaluate(self, prediction):
-        Y_hat = prediction[self.target or next(iter(prediction))]
-        return Y_hat
+    for h, h_in in input_horizons.items():
+        if isinstance(X, (tuple, list)):
+            X_sub = [GetHorizons(data = X_i, horizons = h_in) for X_i in X]
+            X_h = Combine(*X_sub)
+        else:
+            X_h = GetHorizons(data = X, horizons = h_in)
 
-def make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None):
+        predictions.append(prediction_type(X_h, Y, h, *args, **kwargs))
+
+    return predictions
+
+
+def old_make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None):
     predictions = []
 
     if input_horizons is None:
@@ -2871,24 +2289,11 @@ def make_prediction_ensemble(X: dict | tuple | Transformation, Y : tuple | Trans
     return predictions
 
 class Model:
-    def __init__(self, *output: Source, scorefun = rmse, burn_in = 0, remove_nan = True):
+
+    def __init__(self, *output: Source):
         self.output = Combine(*output, as_dict = True)
         self.state = None
         self.data_format = None
-
-        # Construct transforms for scoring predictions
-        targets = []
-        for o in output:
-            if isinstance(o, Prediction):
-                target = PredictionTarget(o)
-                targets.append(target)
-            else:
-                targets.append(o)
-
-        self.targets = Combine(*targets, as_dict = True)
-        self.scorefun = scorefun
-        self.burn_in = burn_in
-        self.remove_nan = remove_nan
 
         # Fetch all Prediction dependencies in output recursively
         self.predictions = []
@@ -2903,19 +2308,23 @@ class Model:
         for o in output:
             fetch_predictions(o)
 
+        # Store which predictions are directly in the output
+        self.direct_predictions = [p for p in self.predictions if p in output]
+
+    def set_score_mode(self):
+        for p in self.direct_predictions:
+            p.score_mode = True
+        
+    def unset_score_mode(self):
+        for p in self.direct_predictions:
+            p.score_mode = False
+
     @property
     def predictor(self):
         result = {p: self.state[p][0] for p in self.predictions}
         if len(result) == 1:
             return next(iter(result.values()))
         return result
-
-    @classmethod
-    def construct(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons = 1, apply_format = True, scorefun = rmse, burn_in = 0, remove_nan = True):
-
-        prediction = Prediction.construct(X, Y, predictor_configuration, horizons, apply_format = apply_format)
-
-        return cls(prediction, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
 
     @classmethod
     def construct_ensemble(cls, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None, scorefun = rmse, burn_in = 0, remove_nan = True):
@@ -2948,32 +2357,6 @@ class Model:
         self.reset_state()
         return self.update(data, **predictor_params)
 
-    def fit_and_score(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, **predictor_params):
-        """
-        A method for optimization of model parameters.
-        """
-
-        result = self.targets.apply(data, eval_mode = False, **predictor_params)
-        ref_result = self.targets.apply(data, eval_mode = True, **predictor_params)
-
-        scores = evaluate_score(result, ref_result, burn_in = self.burn_in, remove_nan = self.remove_nan, scorefun = self.scorefun)
-
-        if len(scores) == 1:
-            return next(iter(scores.values()))
-
-        # Rename to outputs
-        scores = {o: s for o, s in zip(self.output.names, scores.values())}
-
-        return scores
-        
-    def configure_prediction(self, predictor_configuration: PredictorConfiguration, apply_format = True, prediction = None):
-        if prediction is None:
-            prediction = self.predictions
-        elif isinstance(prediction, Prediction):
-            prediction = [prediction]
-        for p in prediction:
-            p.update_config(predictor_configuration, apply_format = apply_format)
-
     def save_model(self, name: str = None):
         if name is None:
             return pickle.dumps(self)
@@ -2997,11 +2380,11 @@ def evaluate_score(Y_hat, Y, burn_in = 0, remove_nan = True, scorefun = rmse):
 
     return scorefun(resid)
 
-class Ensemble(Model):
+class RRREnsemble(Model):
 
-    def __init__(self, X: dict | tuple | Transformation, Y : tuple | Transformation, predictor_configuration: PredictorConfiguration, horizons, apply_format = True, input_horizons: dict = None, scorefun = rmse, burn_in = 0, remove_nan = True):
-        predictions = make_prediction_ensemble(X, Y, predictor_configuration, horizons, apply_format = apply_format, input_horizons = input_horizons)
-        super().__init__(*predictions, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
+    def __init__(self, X: dict | tuple | Transformation, Y : tuple | Transformation, horizons, *args, input_horizons: dict = None, **kwargs):
+        predictions = make_prediction_ensemble(X, Y, RRR, *args, horizons = horizons, input_horizons = input_horizons, **kwargs)
+        super().__init__(*predictions)
         self.ref = predictions[0]
         self._column_names = {}
         self.X = X
@@ -3016,8 +2399,12 @@ class Ensemble(Model):
 
         if combine_horizons:
             combined_results = {}
-            for name in result[self.ref].keys():
-                combined_results[name], self._column_names[name] = combine_data({p.horizon: result[p][name] for p in self.output.sources}, columns = self._column_names.get(name, None))
+            for name in result[self.ref]:
+                if name == "score":
+                    # Combine scores in a dict per horizon
+                    combined_results[name] = {p.horizon: result[p][name] for p in self.output.sources}
+                else:
+                    combined_results[name], self._column_names[name] = combine_data({p.horizon: result[p][name] for p in self.output.sources}, columns = self._column_names.get(name, None))
 
             # Remove individual horizon results
             for p in self.output.sources:
@@ -3031,6 +2418,7 @@ class Ensemble(Model):
         return result
 
     def fit(self, data: dict | pd.DataFrame | pd.Series | np.ndarray, combine_horizons = True, **predictor_params):
+        self.reset_state()
         return self.update(data, combine_horizons=combine_horizons, **predictor_params)
 
 def load_model(file_name):
@@ -3038,4 +2426,337 @@ def load_model(file_name):
         file_name = file_name + ".pkl"
     with open(file_name, 'rb') as f:
         return pickle.load(f)
+    
+class WLS(Prediction):
+
+    def __init__(self, X, Y, horizon, format_as_Y = True):
+        self.format_as_Y = format_as_Y
+        super().__init__(X, Y, horizon, n = DIM_X, m = DIM_Y)
+
+    def create(self, n, m):
+        # Initialize state as parameters of WLS model (theta)
+        return np.zeros((n, m))
+
+    def evaluate(self, X, Y, update_predictor, predictor_params, state = None):
+        result, state = super().evaluate(X, Y, update_predictor, predictor_params, state)
+
+        # Format output as Y
+        if self.format_as_Y and isinstance(Y, (pd.DataFrame, pd.Series)):
+            result = format_like(result, Y)
+
+        return result, state
+
+    def update(self, state, X: np.ndarray, Y: np.ndarray, X_train: np.ndarray, W: np.ndarray = None):
+        if isinstance(X, pd.DataFrame):
+            X = X.to_numpy()
+        if isinstance(Y, pd.DataFrame):
+            Y = Y.to_numpy()
+        if isinstance(X_train, pd.DataFrame):
+            X_train = X_train.to_numpy()
+
+        # Fit WLS model
+        mask = ~np.isnan(X_train).any(axis=1) & ~np.isnan(Y).any(axis=1)
+        X_fit = X_train[mask]
+        Y_fit = Y[mask]
+
+        if W is None:
+            W = np.eye(X_fit.shape[0])  # Default to identity weights if W is not provided
+        else:
+            W = W[np.ix_(mask, mask)]  # Subset W to match the filtered data
+
+        XtW = X_fit.T @ W
+        theta = np.linalg.solve(XtW @ X_fit, XtW @ Y_fit)
+
+        pred = self.predict(theta, X)
+
+        return pred, theta
+    
+    def predict(self, state, X: np.ndarray):
+        # Predict
+        pred = X @ state
+        return pred
+
+class OnlinePrediction(Prediction):
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.set_params()
+
+    @classmethod
+    def set_params(cls):
+        cls.set_predict_params()
+        cls.set_update_model_params()
+        cls.params = cls.predict_params + cls.update_model_params
+
+    @classmethod
+    def set_predict_params(cls):
+        predict_sig = inspect.signature(cls.online_predict)
+        predict_params =  [
+            k for k, v in list(predict_sig.parameters.items())[1:]
+            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        ]
+        cls.predict_params = predict_params
+
+    @classmethod
+    def set_update_model_params(cls):
+        update_model_sig = inspect.signature(cls.online_update)
+        update_model_params = [
+            k for k, v in list(update_model_sig.parameters.items())[1:]
+            if v.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        ]
+        cls.update_model_params = update_model_params
+
+    def update(self, state, X: np.ndarray | pd.DataFrame, Y: np.ndarray | pd.DataFrame, X_train: np.ndarray | pd.DataFrame, **params):
+        # Convert to numpy arrays if inputs are pandas dataframes
+        if isinstance(X, pd.DataFrame):
+            X = X.to_numpy()
+        if isinstance(Y, pd.DataFrame):
+            Y = Y.to_numpy()
+        if isinstance(X_train, pd.DataFrame):
+            X_train = X_train.to_numpy()
+
+        # Ensure 2D arrays
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
+        if Y.ndim == 1:
+            Y = Y.reshape(-1, 1)
+        if X_train.ndim == 1:
+            X_train = X_train.reshape(-1, 1)
+            
+        # Distribute params
+        update_params = {k: v for k, v in params.items() if k in self.update_model_params}
+        predict_params = {k: v for k, v in params.items() if k in self.predict_params}
+
+        n = X.shape[0]
+        forecasts = []
+
+        # Loop over each row of data
+        for i in range(n):
+            
+            x = X[i]
+            y = Y[i]
+            x_train = X_train[i]
+            y_ready = not np.isnan(y).any()
+            x_train_ready = not np.isnan(x_train).any()
+   
+            # Only update if data is valid
+            if x_train_ready and y_ready:
+                forecast, state = self.online_update(state, x, y, x_train, **update_params)
+            else:
+                forecast = self.online_predict(state, x, **predict_params)
+ 
+            forecasts.append(forecast)
+
+        forecasts = stack_results(forecasts)
+
+        return forecasts, state
+
+    def predict(self, state, X: np.ndarray, **params):
+        # Check parameters
+        for k in params.keys():
+            if k not in self.predict_params:
+                raise ValueError(f"Parameter '{k}' not recognized for prediction.")
+
+        # Predict multiple rows.
+        n = X.shape[0]
+        forecasts = []
+
+        for i in range(n):
+            x = X[i]
+            forecast = self.online_predict(state, x, **params)
+            forecasts.append(forecast)
+
+        forecasts = stack_results(forecasts)
+
+        return forecasts
+
+    @abstractmethod
+    def online_update(self, state, x_i, y_i, x_train_i, **params) -> tuple:
+        """
+        Update model with new data rows x_train_i, y_i, and make prediction for x_i. Should return the prediction for x_i and the updated state of the model.
+        """
+
+    @abstractmethod
+    def online_predict(self, state, x_i, **params) -> tuple[pd.Series] | pd.Series:
+        # Predict a single row.
+        pass
+
+class RRRPredictor:
+    
+    def __init__(self, n, m, horizon, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True, full_cov = True):
+        self.tilde_K = np.eye(n) * tilde_k_init_val
+        self.tilde_R = np.zeros((n,m))
+        self.burn_in = burn_in
+        self._n_updates = 0
+        self.kappa = np.zeros((n, n))
+        self.theta = np.full((n, m), np.nan)
+        self.inner_var_theta = np.full((n, n), np.nan)
+        self.V = np.full((m, m), np.nan)
+        self.track_memory = track_memory
+        if track_memory:
+            self._memory = 0
+            self._total_var = np.zeros((m, m))
+
+        self.combine_variance = combine_variance
+        self.n, self.m = n, m
+        self._forgetting_var_state = None
+        self._full_cov = full_cov
+        self.Y_hat = CircularBuffer(horizon, m)
+
+    def online_update(self, x_i, y_i, x_train_i, Q: np.ndarray | float = None, theta_tilde: np.ndarray = None, V: np.ndarray = None, estimate_V = True, mem = 0.99, return_var_theta = False):        
+
+        if mem < 0 or mem > 1:
+            raise ValueError("Memory must be between 0 and 1.")
+
+        n, m = self.n, self.m
+
+        if theta_tilde is None:
+            theta_tilde = np.zeros((n, m))
+        
+        if Q is None:
+            Q = np.zeros((n, n))
+        elif isinstance(Q, (float, int)):
+            Q = np.eye(n) * Q
+
+        elif not np.allclose(Q, Q.T):
+            raise ValueError("Q must be symmetric.")
+
+        if theta_tilde is None:
+            theta_tilde = np.zeros((n, m))
+
+        if not V is None:
+            self.V = V
+
+        x_outer = np.outer(x_train_i, x_train_i)
+
+        if self.tilde_K is None:
+            self.tilde_K = x_outer
+        else:
+            self.tilde_K = mem*self.tilde_K + x_outer
+
+        if self.tilde_R is None:
+            self.tilde_R = np.outer(x_train_i, y_i)
+        else:
+            self.tilde_R = mem*self.tilde_R + np.outer(x_train_i, y_i)
+
+        K = self.tilde_K + Q
+        R = self.tilde_R + Q @ theta_tilde
+
+        self.theta = np.linalg.solve(K, R)
+
+        # Update estimate of variance
+        self.kappa = mem**2*self.kappa + x_outer
+
+        temp1 = np.linalg.solve(K, self.kappa)
+    
+        self.inner_var_theta = np.linalg.solve(K, temp1.T).T # K^-1 kappa K^-1^T
+
+        if estimate_V and self._n_updates >= self.burn_in:
+            y_i_hat = self.Y_hat.get_slice(0, 1)[0] # Get oldest prediction
+            resid = y_i - y_i_hat
+            if self._full_cov:
+                sse = np.outer(resid, resid)
+                # Pad to make (1, m, m) for use with forgetting_mean
+                sse = sse.reshape(1, m, m)
+            else:
+                sse = resid**2 
+                sse = sse.reshape(1, m)
+            
+            _V, self._forgetting_var_state = forgetting_mean(mem, sse, self._forgetting_var_state, track_memory=self.track_memory)
+            if self._full_cov:
+                self.V = _V[0]
+            else:
+                self.V = np.diag(_V[0])
+
+        # Make prediction
+        result = self.online_predict(x_i, V = V, return_var_theta=return_var_theta)
+
+        # Store prediction for future variance estimation
+        self.Y_hat.append(result['mean'])
+
+        self._n_updates += 1
+
+        return result
+        
+    def online_predict(self, x: np.ndarray, V = None, return_var_theta = False):
+        result = {}
+
+        if V is None:
+            V = self.V
+
+        result['mean'] = x.T @ self.theta
+
+        # Compute covariance of prediction error
+        var_pred_err = self.V*(1 + x.T @ self.inner_var_theta @ x)
+
+        if not self._full_cov:
+            var_pred_err = np.diag(var_pred_err)
+
+        result['cov'] = var_pred_err
+
+        # Compute variance of theta
+        if return_var_theta:
+            result["cov_theta"] = self.get_var_vec_theta(V)
+
+        return result
+
+    def get_var_vec_theta(self, V: np.ndarray = None):
+        """
+        Returns the variance of the model parameters theta.
+        If V is not provided, uses the internal V.
+        """
+        if V is None:
+            V = self.V
+
+        # Compute the variance of theta
+        var_theta = np.kron(V, self.inner_var_theta)
+
+        return var_theta
+
+    def get_model_params(self):
+        return self.theta
+
+class RRR(OnlinePrediction):
+
+    #TODO: consider including batch functionality into this class
+
+    def __init__(self, X, Y, horizon, burn_in = 1, tilde_k_init_val = 0, track_memory = False, combine_variance = True, full_cov = True, format_as_Y = True, scorefun = rmse, default_params = None):
+        self.horizon = horizon
+        self.format_as_Y = format_as_Y
+        self.Y_hat = Lag(self, amount = horizon)
+        self.scorefun = scorefun
+        super().__init__(X, Y, horizon, n = DIM_X, m = DIM_Y, burn_in=burn_in, tilde_k_init_val=tilde_k_init_val, track_memory=track_memory, combine_variance=combine_variance, full_cov=full_cov, default_params = default_params)
+
+    def evaluate(self, X, Y, update_predictor, predictor_params, state = None):
+        result, state = super().evaluate(X, Y, update_predictor, predictor_params, state)
+
+        # Format output as Y
+        if self.format_as_Y and isinstance(Y, (pd.DataFrame, pd.Series)):
+            result["mean"] = to_pandas_like(result["mean"], Y)
+            result["cov"] = to_pandas_like(result["cov"], Y, outer_prod=True)
+
+        return result, state
+
+    def create(self, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov, **default_params):
+        return RRRPredictor(n, m, self.horizon, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov)
+
+    def online_update(self, state: RRRPredictor, x_i, y_i, x_train_i, Q: np.ndarray | float = None, theta_tilde: np.ndarray = None, V: np.ndarray = None, estimate_V = True, mem = 0.99, return_var_theta = False):
+        result = state.online_update(x_i, y_i, x_train_i=x_train_i, Q=Q, theta_tilde=theta_tilde, V=V, estimate_V=estimate_V, mem=mem, return_var_theta=return_var_theta)
+        return result, state
+
+    def online_predict(self, state: RRRPredictor, x_i, V = None, return_var_theta = False):
+        return state.online_predict(x_i, V = V, return_var_theta=return_var_theta)
+    
+    def score(self, state, X, Y, prediction, **predictor_params):
+        n = len(Y)
+
+        # Get old predictions from state
+        Y_hat = state.Y_hat.get(n)
+
+        # Overwrite last n-horizon entries with new predictions (discard )
+        Y_hat[self.horizon:] = prediction["mean"][:-self.horizon]
+
+        # Evaluate score and update prediction
+        prediction["score"] = evaluate_score(Y_hat, Y, burn_in = state.burn_in, remove_nan = True, scorefun = self.scorefun)
+        return prediction
 # %%

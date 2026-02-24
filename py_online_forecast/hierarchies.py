@@ -82,8 +82,13 @@ class HierarchyRegressor(c.Transformation):
         super().__init__(Y_hat_top = Y_hat_top, Y_hat_bot = Y_hat_bot)
         self.S_top = S_top
     
-    @c.standardize_wrapper("Y_hat_top", "Y_hat_bot", ensure_dim = 2, output_as = "Y_hat_top")
+#    @c.standardize_wrapper("Y_hat_top", "Y_hat_bot", ensure_dim = 2, output_as = "Y_hat_top")
     def evaluate(self, Y_hat_top, Y_hat_bot):
+        # Convert to numpy arrays if not already
+        if not isinstance(Y_hat_top, np.ndarray):
+            Y_hat_top = np.asarray(Y_hat_top)
+        if not isinstance(Y_hat_bot, np.ndarray):
+            Y_hat_bot = np.asarray(Y_hat_bot)
 
         # Top level forecasts minus summed bottom level forecasts (reconciliation error)
         X = Y_hat_top - (Y_hat_bot @ self.S_top.T)
@@ -99,11 +104,16 @@ class HierarchyRegressand(c.Transformation):
         self.horizon = horizon
         self.S_top = S_top
         self.m = S_top.shape[1]
-        super().__init__(Y_bot = Y_bot, Y_hat_bot = Y_hat_bot, Y_hat_bot_old = c.Memory)
+        super().__init__(Y_bot = Y_bot, Y_hat_bot = Y_hat_bot, Y_hat_bot_old = c.MEMORY)
     
-    @c.standardize_wrapper("Y_bot", "Y_hat_bot", ensure_dim = 2, output_as = "Y_bot")
+#    @c.standardize_wrapper("Y_bot", "Y_hat_bot", ensure_dim = 2, output_as = "Y_bot")
     def evaluate(self, Y_bot, Y_hat_bot, Y_hat_bot_old = None):
         
+        if not isinstance(Y_bot, np.ndarray):
+            Y_bot = np.asarray(Y_bot)
+        if not isinstance(Y_hat_bot, np.ndarray):
+            Y_hat_bot = np.asarray(Y_hat_bot)
+
         if Y_hat_bot_old is None:
             Y_hat_bot_old = np.full((self.horizon, self.m), np.nan)
 
@@ -114,97 +124,156 @@ class HierarchyRegressand(c.Transformation):
 
         return Y, Y_hat_bot_fit[-self.horizon:]
 
-class SRRR(c.RRR):
+class RidgeReconciliation(c.Transformation):
 
-    def __init__(self, n, m, S_top, *args, **kwargs):
-        super().__init__(n, m, *args, **kwargs)
+    def __init__(self, Y_bot, Y_hat, S_top, horizon, apply_format = True, full_hierarchy_cov = False, opt_shrink = False, **kwargs):
         self.S_top = S_top
-        self.sigma_bot_hat_d = np.zeros(self.m)
-        self.sigma_top_hat_d = np.zeros(self.n)
+        nsm, m = S_top.shape
+        n = m + nsm
+        self.n, self.m = n, m
 
-        self.Q = np.zeros((self.n, self.n))
-
-        # Initialise full covariance estimate and higher order variance estimates for shrinkage parameter estimation
-        npm = self.n + self.m
-        self.sigma_hat = np.zeros((npm, npm))
-        self.var_sigma_hat = np.zeros((npm, npm))
-        self.diag_mask = np.eye(npm, dtype=bool)
-
-    def online_update(self, x_i, y_i, y_i_hat, l_shrink = 0, V = None, mem=0.99):
-
-        # TODO: consider not subclassing RRR to implement (slightly?) more efficiently.
-
-        err_top = self.S_top @ y_i - x_i
-
-        if l_shrink == "auto": # Estimate shrinkage parameter using full covariance matrix
-
-            if mem == 1:
-                raise ValueError("Automatic shrinkage parameter estimation is not supported for no forgetting (mem=1).")
-    
-
-            err_full = np.append(err_top, y_i)
-
-            self.sigma_hat = mem * self.sigma_hat + (1 - mem) * np.outer(err_full, err_full)
-
-            err_sq = err_full**2
-            sigma_sq = self.sigma_hat**2
-
-            # Update higer order variance estimates
-            self.var_sigma_hat = mem*(1-mem)**2 * (np.outer(err_sq, err_sq) - sigma_sq) + mem**2 * self.var_sigma_hat
-
-            # Sum non-diagonal elements to estimate shrinkage parameter
-            l_shrink = np.where(self.diag_mask, 0, self.var_sigma_hat).sum() / np.where(self.diag_mask, 0, sigma_sq).sum()
-#            print(f"n_updates: {self._n_updates}, l_shrink: {l_shrink}")
-
-            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[:self.n, :self.n]))
-            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n:, self.n:]))
-
-        else: # Estimate covariance diagonal
-
-            if mem == 1: # Special case: no forgetting
-                self.sigma_bot_hat_d = (self.sigma_bot_hat_d*self._n_updates + y_i**2)/(self._n_updates + 1)
-                self.sigma_top_hat_d = (self.sigma_top_hat_d*self._n_updates + err_top**2)/(self._n_updates + 1)
-
-            # y_i contains bottom level errors
-            else:
-                self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
-
-                # x_i contains coherency errors, from which top level errors can be computed
-                self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
-
-            cov_top_hat_d = np.diag(self.sigma_top_hat_d)
-            cov_bot_hat_d = np.diag(self.sigma_bot_hat_d)
-
-        b0 = cov_top_hat_d + self.S_top @ cov_bot_hat_d @ self.S_top.T
-        b1 = self.S_top @ cov_bot_hat_d
-
-        if mem == 1:
-            Q  = (self._n_updates+1)*(l_shrink/(1-l_shrink))*b0
-        else:
-            # TODO: check correctnnes, and consider comparing with article on adaptive temporal hierarchies.
-            Q = 1/(1 - mem) * (l_shrink/(1-l_shrink))*b0 # Check that this is correct. Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
-
-        theta_tilde = np.linalg.solve(b0, b1)
-
-        return super().online_update(x_i, y_i, y_i_hat, Q, theta_tilde, mem=mem, V=V)
-
-    @classmethod
-    def configure(cls, S_top, *args, **kwargs):
-
-        result = super().configure(*args, **kwargs)
-
-        result.kwargs["S_top"] = S_top
-
-        return result
-
-class SumHierarchy(c.Transformation):
-    def __init__(self, Y_bot: c.Source, S_top):
-        super().__init__(Y_bot)
-        self.S_top = S_top
+        self.apply_format = apply_format
+        self.full_hierarchy_cov = full_hierarchy_cov
         self.S = np.vstack((S_top, np.eye(S_top.shape[1])))
 
-    def evaluate(self, Y_bot):
-        return Y_bot @ self.S.T
+        Y_hat_top = c.SelectIndices(range(nsm), data = Y_hat) # First n-m columns
+        Y_hat_bot = c.SelectIndices(range(nsm, n), data = Y_hat) # Last m columns
+
+        X = HierarchyRegressor(Y_hat_top, Y_hat_bot, S_top)
+        Y = HierarchyRegressand(Y_bot, Y_hat_bot, S_top, horizon)
+
+        if opt_shrink:
+            self.prediction = SRRR(X, Y, horizon, S_top, format_as_Y=False, **kwargs)
+        else:
+            self.prediction = c.RRR(X, Y, horizon, format_as_Y=False, **kwargs)        
+
+        super().__init__(Y_hat_bot, Y_hat, self.prediction)
+
+    def evaluate(self, Y_hat_bot, Y_hat, pred):
+
+        if not isinstance(Y_hat_bot, np.ndarray):
+            Y_hat_bot = np.asarray(Y_hat_bot)
+
+        # Prepare result
+        res = pred.copy()
+
+        # Get predicted bottom level errors
+        err_bot_hat = pred["mean"]
+
+        # Reconciled bottom level forecasts
+        Y_bot_rec = Y_hat_bot + err_bot_hat
+
+        # Sum to get reconciled forecasts at all levels
+        Y_hat_rec = Y_bot_rec @ self.S.T
+
+        # Format like input
+        if self.apply_format:
+            Y_hat_rec = c.format_like(Y_hat_rec, Y_hat)
+
+        # Store reconciled forecasts in result
+        res["mean"] = Y_hat_rec
+
+        # Compute (co)variance
+        var_bot = pred["cov"]
+
+        # If variance is given as diagonal, convert to full covariance matrix (assuming zero correlations)
+        if var_bot.ndim == 2:
+
+            t, n = var_bot.shape
+
+            var_bot_full = np.full((t, n, n), np.nan)
+
+            # Get mask for valid rows
+            valid_rows = ~np.any(np.isnan(var_bot), axis=1)
+
+            # Initialise valid rows to zero
+            var_bot_full[valid_rows] = 0
+
+            # Assign diagonal elements
+            ran = np.arange(n)
+            var_bot_full[:,  ran, ran] = var_bot[ :, ran]
+
+            var_bot = var_bot_full
+
+        # Compute reconciled variance S V[x] S.T
+        rec_var_est = self.S @ var_bot @ self.S.T
+
+        # Fetch only diagonal? (TODO: consider doing self.S @ var_bot @ self.S.T more efficiently if only diagonal is needed)
+        if not self.full_hierarchy_cov:
+            rec_var_est = np.diagonal(rec_var_est, axis1=1, axis2=2)
+
+        # Format like input and store result
+        if self.apply_format:
+            rec_var_est = c.format_like(rec_var_est, Y_hat, outer_prod = self.full_hierarchy_cov)
+        res["cov"] = rec_var_est
+
+        return res
+
+class RidgeReconciler(c.Model):
+
+    def __init__(self, S_top, horizon = 1, Y_bot: c.Source = None, Y_hat: c.Source = None, full_hierarchy_cov = False, apply_format = True, opt_shrink = False, **kwargs):
+        self.Y_bot = Y_bot or c.Source("Y_bot")
+        self.Y_hat = Y_hat or c.Source("Y_hat")
+        self.rec_err = c.Source("rec_err")
+        self.rec_pred = RidgeReconciliation(self.Y_bot, self.Y_hat, S_top, horizon, apply_format = apply_format, full_hierarchy_cov = full_hierarchy_cov, opt_shrink=opt_shrink, **kwargs)
+        super().__init__(self.rec_pred)
+
+    @property
+    def X(self):
+        return self.rec_pred.prediction.X
+    
+    @property
+    def Y(self):
+        return self.rec_pred.prediction.Y
+
+    @property
+    def predictor(self):
+        return self.state[self.rec_pred.prediction][0]
+
+    def set_score_mode(self):
+        self.rec_pred.prediction.set_score_mode()
+    
+    def unset_score_mode(self):
+        self.rec_pred.prediction.unset_score_mode()
+
+    def rec_update(self, Y_bot, Y_hat, **kwargs):
+        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
+
+    def rec_fit(self, Y_bot, Y_hat, **kwargs):
+        self.reset_state()
+        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
+
+    @property
+    def P(self):
+        # Returns the projection matrix P as computed from the model parameters.
+        nsm, m = self.S_top.shape
+        n = m + nsm
+        theta = self.predictor.get_model_params()
+        
+        if theta is None:
+            raise ValueError("Model not fitted yet")
+
+        null = np.full((n-m, m), 0)
+        P = (np.vstack((null, np.eye(m))) + np.vstack((np.eye(n-m), -self.S_top.T)) @ theta).T
+        return P
+
+class TemporalRidgeReconciler(RidgeReconciler):
+
+    def __init__(self, S_top, B: list | dict, horizon = 1, Z_bot: c.Source = None, Y_hat: c.Source = None, skip_duplicates = False, full_hierarchy_cov = False, apply_format = True, opt_shrink = False, **kwargs):
+        # Construct backshift operator
+        self.Z_bot = Z_bot or c.Source("Z_bot")
+        Y_bot = c.BackShift(B, skip_duplicates=skip_duplicates, data=self.Z_bot)
+
+        # Initialize Reconciler with lagged bottom level data as regressand input
+        super().__init__(S_top, horizon, Y_bot, Y_hat, full_hierarchy_cov = full_hierarchy_cov, apply_format = apply_format, opt_shrink=opt_shrink, **kwargs)
+
+    def rec_update(self, Y_bot, Y_hat = None, **model_params):
+        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
+
+    def rec_fit(self, Y_bot, Y_hat=None, **model_params):
+        self.reset_state()
+        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
+    
 
 class Hierarchy(c.Transformation):
 
@@ -360,6 +429,166 @@ class TemporalReconciler(Reconciler):
         self.reset_state()
         return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
     
+
+class SRRRPredictor(c.RRRPredictor):
+    def __init__(self, S_top, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov):
+        super().__init__(n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov)
+        self.S_top = S_top
+        npm = n+m
+        self.sigma_bot_hat_d = np.zeros(m)
+        self.sigma_top_hat_d = np.zeros(n)
+        self.sigma_hat = np.zeros((npm, npm))
+        self.var_sigma_hat = np.zeros((npm, npm))
+        self.diag_mask = np.eye(npm, dtype=bool)
+
+    def update_prior(self, x_i, y_i, mem, l_shrink):
+        # Compute optimal Q and theta_tilde based on current error estimates
+        err_top = self.S_top @ y_i - x_i
+
+        if l_shrink == "auto": # Estimate shrinkage parameter using full covariance matrix
+
+            if mem == 1:
+                raise ValueError("Automatic shrinkage parameter estimation is not supported for no forgetting (mem=1).")
+    
+            err_full = np.append(err_top, y_i)
+
+            self.sigma_hat = mem * self.sigma_hat + (1 - mem) * np.outer(err_full, err_full)
+
+            err_sq = err_full**2
+            sigma_sq = self.sigma_hat**2
+
+            # Update higer order variance estimates
+            self.var_sigma_hat = mem*(1-mem)**2 * (np.outer(err_sq, err_sq) - sigma_sq) + mem**2 * self.var_sigma_hat
+
+            # Sum non-diagonal elements to estimate shrinkage parameter
+            l_shrink = np.where(self.diag_mask, 0, self.var_sigma_hat).sum() / np.where(self.diag_mask, 0, sigma_sq).sum()
+
+            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[:self.n, :self.n]))
+            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n:, self.n:]))
+
+        else: # Estimate covariance diagonal
+
+            # y_i contains bottom level errors
+            self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
+
+            # x_i contains coherency errors, from which top level errors can be computed
+            self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
+
+            cov_top_hat_d = np.diag(self.sigma_top_hat_d)
+            cov_bot_hat_d = np.diag(self.sigma_bot_hat_d)
+
+        b0 = cov_top_hat_d + self.S_top @ cov_bot_hat_d @ self.S_top.T
+        b1 = self.S_top @ cov_bot_hat_d
+
+        Q = 1/(1 - mem) * (l_shrink/(1-l_shrink))*b0 # Check that this is correct. Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
+
+        theta_tilde = np.linalg.solve(b0, b1)
+
+        return Q, theta_tilde
+ 
+class SRRR(c.RRR):
+
+    def __init__(self, X, Y, horizon, S_top, **kwargs):
+        super().__init__(X, Y, horizon, **kwargs)
+        self.S_top = S_top
+
+    def create(self, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov):
+        return SRRRPredictor(self.S_top, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov)
+
+    def online_update(self, state: SRRRPredictor, x_i, y_i, x_train_i, mem=0.99, l_shrink = "auto", **kwargs):
+
+        # Compute optimal Q and theta_tilde based on current error estimates
+        Q, theta_tilde = state.update_prior(x_i, y_i, mem, l_shrink) # x_i or x_train_i?
+
+        # Call parent online_update with computed Q and theta_tilde
+        result = state.online_update(x_i, y_i, x_train_i, Q, theta_tilde, mem=mem, **kwargs)
+
+        # Return result and updated state
+        return result, state
+
+class OldSRRR(c.RRR):
+
+    def __init__(self, n, m, S_top, *args, **kwargs):
+        super().__init__(n, m, *args, **kwargs)
+        self.S_top = S_top
+        self.sigma_bot_hat_d = np.zeros(self.m)
+        self.sigma_top_hat_d = np.zeros(self.n)
+
+        self.Q = np.zeros((self.n, self.n))
+
+        # Initialise full covariance estimate and higher order variance estimates for shrinkage parameter estimation
+        npm = self.n + self.m
+        self.sigma_hat = np.zeros((npm, npm))
+        self.var_sigma_hat = np.zeros((npm, npm))
+        self.diag_mask = np.eye(npm, dtype=bool)
+
+    def online_update(self, x_i, y_i, y_i_hat, l_shrink = 0, V = None, mem=0.99):
+
+        # TODO: consider not subclassing RRR to implement (slightly?) more efficiently.
+
+        err_top = self.S_top @ y_i - x_i
+
+        if l_shrink == "auto": # Estimate shrinkage parameter using full covariance matrix
+
+            if mem == 1:
+                raise ValueError("Automatic shrinkage parameter estimation is not supported for no forgetting (mem=1).")
+    
+
+            err_full = np.append(err_top, y_i)
+
+            self.sigma_hat = mem * self.sigma_hat + (1 - mem) * np.outer(err_full, err_full)
+
+            err_sq = err_full**2
+            sigma_sq = self.sigma_hat**2
+
+            # Update higer order variance estimates
+            self.var_sigma_hat = mem*(1-mem)**2 * (np.outer(err_sq, err_sq) - sigma_sq) + mem**2 * self.var_sigma_hat
+
+            # Sum non-diagonal elements to estimate shrinkage parameter
+            l_shrink = np.where(self.diag_mask, 0, self.var_sigma_hat).sum() / np.where(self.diag_mask, 0, sigma_sq).sum()
+#            print(f"n_updates: {self._n_updates}, l_shrink: {l_shrink}")
+
+            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[:self.n, :self.n]))
+            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n:, self.n:]))
+
+        else: # Estimate covariance diagonal
+
+            if mem == 1: # Special case: no forgetting
+                self.sigma_bot_hat_d = (self.sigma_bot_hat_d*self._n_updates + y_i**2)/(self._n_updates + 1)
+                self.sigma_top_hat_d = (self.sigma_top_hat_d*self._n_updates + err_top**2)/(self._n_updates + 1)
+
+            # y_i contains bottom level errors
+            else:
+                self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
+
+                # x_i contains coherency errors, from which top level errors can be computed
+                self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
+
+            cov_top_hat_d = np.diag(self.sigma_top_hat_d)
+            cov_bot_hat_d = np.diag(self.sigma_bot_hat_d)
+
+        b0 = cov_top_hat_d + self.S_top @ cov_bot_hat_d @ self.S_top.T
+        b1 = self.S_top @ cov_bot_hat_d
+
+        if mem == 1:
+            Q  = (self._n_updates+1)*(l_shrink/(1-l_shrink))*b0
+        else:
+            # TODO: check correctnnes, and consider comparing with article on adaptive temporal hierarchies.
+            Q = 1/(1 - mem) * (l_shrink/(1-l_shrink))*b0 # Check that this is correct. Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
+
+        theta_tilde = np.linalg.solve(b0, b1)
+
+        return super().online_update(x_i, y_i, y_i_hat, Q, theta_tilde, mem=mem, V=V)
+
+    @classmethod
+    def configure(cls, S_top, *args, **kwargs):
+
+        result = super().configure(*args, **kwargs)
+
+        result.kwargs["S_top"] = S_top
+
+        return result
+
 def find_nodes(func):
     def wrapper(self, *args, **kwargs):
         nodes = []

@@ -1,15 +1,15 @@
 from __future__ import annotations
 import pandas as pd
 import numpy as np
-from .core import Transformation, DefaultSource, DefaultIndex, Memory, ForgettingMean, ForgettingVariance, subset_columns
+from .core import Transformation, DEFAULT_SOURCE, DEFAULT_INDEX, MEMORY, ForgettingMean, ForgettingVariance, subset_columns
 from typing import Literal
 
 class DataCleaner(Transformation):
 
-    def __init__(self, forgetting, data = DefaultSource, z_thresh = 3, forward_fill = True, track_memory = True, freq: str = None):
+    def __init__(self, forgetting, data = DEFAULT_SOURCE, z_thresh = 3, forward_fill = True, track_memory = True, freq: str = None):
         mean = ForgettingMean(forgetting, track_memory = track_memory, data = data)
         variance = ForgettingVariance(forgetting, track_memory = track_memory, center = mean, covariance = False, data = data)
-        super().__init__(data, variance = variance, mean = mean, last_state = Memory)
+        super().__init__(data, variance = variance, mean = mean, last_state = MEMORY)
         self.z_thresh = z_thresh
         self.forward_fill = forward_fill
         self.freq = freq
@@ -52,7 +52,7 @@ class DataCleaner(Transformation):
 class AlignIndex(Transformation):
     # Align dataframes/series to expected index
 
-    def __init__(self, *data, expected_index = DefaultIndex, method: str = None):
+    def __init__(self, *data, expected_index = DEFAULT_INDEX, method: str = None):
         super().__init__(*data, expected_index = expected_index)
         self.method = method
     
@@ -72,8 +72,8 @@ class AlignIndex(Transformation):
 
 class Scaler(Transformation):
 
-    def __init__(self, data = DefaultSource, var_scales: dict[str, float] = None):
-        super().__init__(data, state = Memory)
+    def __init__(self, data = DEFAULT_SOURCE, var_scales: dict[str, float] = None):
+        super().__init__(data, state = MEMORY)
         self.var_scales = var_scales
 
     def evaluate(self, data, state = None):
@@ -109,7 +109,7 @@ class Scaler(Transformation):
 
 class Aggregator(Transformation):
 
-    def __init__(self, freq, data = DefaultSource, agg_type: Literal["sum", "mean"] = "mean"):
+    def __init__(self, freq, data = DEFAULT_SOURCE, agg_type: Literal["sum", "mean"] = "mean"):
         self.freq = freq
         if agg_type not in ["sum", "mean"]:
             raise ValueError("agg_type must be either 'sum' or 'mean'.")
