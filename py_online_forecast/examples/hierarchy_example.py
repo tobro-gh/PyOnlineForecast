@@ -1,12 +1,14 @@
 #%%
+import numpy
 from py_online_forecast.hierarchies import *
 import py_online_forecast.core as c
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 # %% Load simulated data based on Møller, J.K., Nystrup, P., Madsen, H., 2024. Likelihood-based inference in temporal hierarchies. International Journal of Forecasting 40, 515–531.
 # NOTE: the data uses phi1 = 0.75 and phi2 = 0.2 for simulation
-data = sample_hierarchical_data
+from py_online_forecast.datasets import sample_hierarchical_data as data
 
 #%% We first setup the summation matrix for the hierarchy,
 S = np.array([[1,1],[1,0],[0,1]])
@@ -69,7 +71,7 @@ reconciler = RidgeReconciler(S_top, horizon = 2, opt_shrink = True)
 # NOTE: in sample results on variance-reduction are not guaranteed in the online setting, hence, forecasts may get worse depending on the setup
 
 # Since the hierarchy is temporal, we need to manually lag the bottom level observations. For this we use the BackShift class (which is also used internally by the TemporalReconciler).
-bs = c.BackShift([[1], [0]], skip_duplicates=True)
+bs = f.BackShift([[1], [0]], skip_duplicates=True)
 Y_bot_lagged = bs.apply(Y_bot)
 
 # Then we can fit the reconciler using rec_fit
@@ -103,10 +105,10 @@ resid_base_top = -Y_hat[["pred_Y_A"]].fc.lag().sub(Y_top.to_numpy())
 resid_rec_bot = -Y_hat_rec[["pred_Y_H"]].fc.lag().sub(Y_bot.to_numpy(), axis = 0)
 resid_rec_top = -Y_hat_rec[["pred_Y_A"]].fc.lag().sub(Y_top.to_numpy())
 
-rmse_base_bot = c.rmse(resid_base_bot)
-rmse_base_top = c.rmse(resid_base_top)
-rmse_rec_bot = c.rmse(resid_rec_bot)
-rmse_rec_top = c.rmse(resid_rec_top)
+rmse_base_bot = p.rmse(resid_base_bot)
+rmse_base_top = p.rmse(resid_base_top)
+rmse_rec_bot = p.rmse(resid_rec_bot)
+rmse_rec_top = p.rmse(resid_rec_top)
 
 #%% Make histograms of residuals
 fig, axes = plt.subplots(2, 2)

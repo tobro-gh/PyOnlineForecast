@@ -4,9 +4,29 @@ import numpy as np
 from .core import Transformation, DEFAULT_SOURCE, DEFAULT_INDEX, MEMORY, ForgettingMean, ForgettingVariance, subset_columns
 from typing import Literal
 
+class Reindexer(Transformation):
+
+    def __init__(self, freq, data = DEFAULT_SOURCE):
+        super().__init__(data)
+        self.freq = freq
+
+    def evaluate(self, data):
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("Reindexer can only be applied to pandas DataFrame.")
+
+        if data.index.freq != self.freq:
+            expected_index = pd.date_range(start=data.index.min(), end=data.index.max(), freq=self.freq)
+            data = data.reindex(expected_index)
+
+        return data
+
 class DataCleaner(Transformation):
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, z_thresh = 3, forward_fill = True, track_memory = True, freq: str = None):
+
+        if freq is not None:
+            data = Reindexer(freq, data)
+
         mean = ForgettingMean(forgetting, track_memory = track_memory, data = data)
         variance = ForgettingVariance(forgetting, track_memory = track_memory, center = mean, covariance = False, data = data)
         super().__init__(data, variance = variance, mean = mean, last_state = MEMORY)
@@ -17,15 +37,6 @@ class DataCleaner(Transformation):
     def evaluate(self, data, variance, mean, last_state = None):
         if not isinstance(data, pd.DataFrame):
             raise ValueError("DataCleaner can only be applied to pandas DataFrame.")
-
-        # Check frequency if freq is set
-        if self.freq is not None:
-            
-            # Check if freq is already correct
-            if data.index.freq != self.freq:
-                # Try to reindex to expected frequency
-                expected_index = pd.date_range(start=data.index.min(), end=data.index.max(), freq=self.freq)
-                data = data.reindex(expected_index)
 
         std = np.sqrt(variance)
         z_scores = np.abs((data - mean) / std)

@@ -1,5 +1,5 @@
 #%%
-from py_online_forecast.core import * 
+from py_online_forecast import *
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 # SECTION 0: DATA
 #%%============================================================================
 #%% 0.1 We use already prepared sample data
+from py_online_forecast.datasets import sample_data
+
+
+#%%
 data = sample_data.fc.subset(horizons = (0,1,2,4), end_index=200)
 
 # The sample data is a pandas dataframe, which uses a special "fc" accessor.
@@ -36,8 +40,8 @@ data.fc.convert()
 
 #%% 1.1 Define Input Variables  
 # Our goal is to model energy given ambient temperature observations and forecasts
-energy = Map("energy")
-taobs = Map("Taobs")
+energy = DEFAULT_SOURCE[["energy"]]
+taobs = DEFAULT_SOURCE[["Taobs"]]
 ta = Subset("Ta", horizons = (1,))
 const = One()
 
@@ -104,7 +108,7 @@ plt.show()
 
 #%% 3.3 Multivariate target
 # The model also supports multivariate targets, e.g. energy and Taobs
-target = Map("energy", "Taobs")
+target = DEFAULT_SOURCE[["energy", "Taobs"]]
 model_multi = Model(RRR(X, target, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001))
 result_multi = model_multi.fit(data, mem = 1)
 fig, ax = plt.subplots()
@@ -177,7 +181,7 @@ result_model_2h = result[pred_2h]
 # For the RRR prediction, ensembles can also be created using the "RRREnsemble" subclass of the model.
 # In this case, we first include all forecast horizons, and let the ensemble handle
 # the separation into different models.
-ta_all = Map("Ta")
+ta_all = DEFAULT_SOURCE[["Ta"]]
 lp_Ta_all = LowPass(ta_all, alpha = 0.8)
 Xall = Combine(const, lp_Taobs, lp_Ta_all)
 horizon_models = RRREnsemble(Xall, energy, horizons = (1,2), track_memory = True, tilde_k_init_val = 0.00001)
@@ -255,10 +259,7 @@ lp_raw.apply({raw_data: data})
 DEFAULT_SOURCE
 
 # For some Transformations, Source arguments are optional. In this case, the
-# DEFAULT_SOURCE is used if no source is provided. This is the case for the
-# built-in transformations Map and Subset, which use the DEFAULT_SOURCE if no source is provided.
-map_default = Map("Ta")
-
+# DEFAULT_SOURCE is used if no source is provided.
 #%% 6.2 Special sources
 # There are some special sources, i.e. DEFAULT_SOURCE, DefaultIndex, MEMORY, PREDICTOR_PARAMETERS, UPDATE_PREDICTOR,
 #  X_init, Y_init, DIM_X and DIM_Y.
@@ -270,6 +271,9 @@ map_default = Map("Ta")
 # X_init, Y_init, DIM_X and DIM_Y are used in predictor initialization. Specifically, X_init and Y_init are placeholders
 # for the initial input and target data and DIM_X and DIM_Y correspond to Dim(X_init) and Dim(Y_init). These sources are
 # only available within scopes when creating custom predictors.
+
+from py_online_forecast.features import TimeOfDay
+from py_online_forecast.core import parse_data
 
 # The DEFAULT_INDEX source returns the index of the data, e.g.
 tod = TimeOfDay(DEFAULT_INDEX)
