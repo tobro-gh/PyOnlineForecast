@@ -1,59 +1,55 @@
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 from .core import (
     Source,
     MEMORY,
     DEFAULT_SOURCE,
-    DEFAULT_INDEX,
     UPDATE_PREDICTOR,
     X_INIT,
     Y_INIT,
-    Z_INIT
+    Z_INIT,
+    DesignMatrix,
+    Combine
 ) 
 
 from .features import (
-    Combine,
     One,
     Lag,
-    BackShift,
     LowPass,
     FourierSeries,
     SlidingSum,
     SlidingMean,
     ForgettingMean,
-    ForgettingVariance,
-    Subset
+    ForgettingVariance
 )
 
 from .prediction import (
-    Model,
-    RRREnsemble,
+    BackShift,
     WLS,
     RRR,
-    make_prediction_ensemble
+    ARX
 )
 
-def __getattr__(name):
-    if name == "sample_data":
-        from .datasets import data
-        return data
-    
+from .tools import (
+    ForecastMatrix,
+    ForecastModel,
+    ForecastEnsemble,
+    ToExog,
+)
+  
 __all__ = [
     "__version__",
     "Source",
     "MEMORY",
     "DEFAULT_SOURCE",
-    "DEFAULT_INDEX",
     "UPDATE_PREDICTOR",
     "X_INIT",
     "Y_INIT",
     "Z_INIT",
-    "ForecastMatrix",
-    "DataFrame",
+    "DesignMatrix",
     "Combine",
     "One",
-    "Lag",
     "BackShift",
     "LowPass",
     "FourierSeries",
@@ -61,10 +57,12 @@ __all__ = [
     "SlidingMean",
     "ForgettingMean",
     "ForgettingVariance",
-    "Subset",
-    "Model",
-    "RRREnsemble",
+    "Lag",
     "WLS",
     "RRR",
-    "make_prediction_ensemble"
+    "ARX",
+    "ForecastMatrix",
+    "ForecastModel",
+    "ForecastEnsemble",
+    "ToExog"
 ]

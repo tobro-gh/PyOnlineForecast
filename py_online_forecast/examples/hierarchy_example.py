@@ -23,7 +23,7 @@ B = [1, 0] # [Y_{H,t-1}, Y_{H,t-0}]
 #config = c.RRR.configure()
 #config = SRRR.configure(S_top = S_top, predictor_params = {"l_shrink": "auto"})
 #temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
-temporal_reconciler = TemporalRidgeReconciler(S_top, B, horizon = 2, full_cov = True, skip_duplicates=True, apply_format = True, opt_shrink = False)
+temporal_reconciler = TemporalRidgeReconciliation(S_top, B, horizon = 2, full_cov = True, skip_duplicates=True, opt_shrink = False, full_hierarchy_cov=False)
 
 # The parameters are as follows:
 # S_top: The summation matrix for the top level(s) of the hierarchy
@@ -36,13 +36,20 @@ temporal_reconciler = TemporalRidgeReconciler(S_top, B, horizon = 2, full_cov = 
 # We then extract the data needed for reconciliation
 Y_hat = data[["pred_Y_A","pred_Y_H"]]
 Y_bot = data[["Y_H"]]
+
 #%% To fit the model, we use rec_fit.
-res = temporal_reconciler.rec_fit(Y_bot = Y_bot, Y_hat = Y_hat)
+res = temporal_reconciler.fit(Y_bot = Y_bot, Y_hat = Y_hat)
+#%% To fit the model with forecast matrix formatting, we can use ForecastFormat
+from py_online_forecast.tools import ForecastFormat
+formatted_reconciler = ForecastFormat(temporal_reconciler)
+
+# The ForecastFormat does not have a fit method and we need to specify the data sources which are properties of the reconciler (Z_bot = Y_bot and Y_hat)
+res = formatted_reconciler({temporal_reconciler.Z_bot: Y_bot, temporal_reconciler.Y_hat: Y_hat}, track_state = True)
 
 #%% If instead we require incremental updates (in a "real" online setting), we can use rec_update
 
 # First, reset the state of the reconciler (i.e. clear previous data and parameter estimates)
-temporal_reconciler.reset_state()
+formatted_reconciler.reset_state()
 
 # Then, loop over rows in the data and update the reconciler one step at a time
 result = []
@@ -50,7 +57,8 @@ result_cov  = []
 for t in range(len(Y_bot)):
     Y_bot_t = Y_bot.iloc[[t]]
     Y_hat_t = Y_hat.iloc[[t]]
-    rec_t = temporal_reconciler.rec_update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
+#    rec_t = temporal_reconciler.update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
+    rec_t = formatted_reconciler({temporal_reconciler.Z_bot: Y_bot_t, temporal_reconciler.Y_hat: Y_hat_t}, track_state = True)
     result.append(rec_t["mean"])
     result_cov.append(rec_t["cov"])
 
@@ -58,7 +66,7 @@ result_df = pd.concat(result)
 result_cov_df = pd.concat(result_cov)
 #%% For general hierarchies, we instead use the Reconciler class, which does not use the backshift structure
 #reconciler = Reconciler(S_top, config, horizon = 2, variance_name = "cov")
-reconciler = RidgeReconciler(S_top, horizon = 2, opt_shrink = True)
+reconciler = RidgeReconciliation(S_top, horizon = 2, opt_shrink = True)
 
 # Alternatively,
 
@@ -71,13 +79,18 @@ reconciler = RidgeReconciler(S_top, horizon = 2, opt_shrink = True)
 # NOTE: in sample results on variance-reduction are not guaranteed in the online setting, hence, forecasts may get worse depending on the setup
 
 # Since the hierarchy is temporal, we need to manually lag the bottom level observations. For this we use the BackShift class (which is also used internally by the TemporalReconciler).
-bs = f.BackShift([[1], [0]], skip_duplicates=True)
+bs = p.BackShift([[1], [0]], skip_duplicates=True)
 Y_bot_lagged = bs.apply(Y_bot)
 
 # Then we can fit the reconciler using rec_fit
-rec_result = reconciler.rec_fit(Y_bot_lagged, Y_hat)
+rec_result = reconciler.fit(Y_bot_lagged, Y_hat)
 
 # The output contains both mean and covariance estimates (if we use RRR), so we extract the mean forecasts
+Y_hat_rec = rec_result["mean"]
+
+# Or again, using ForecastFormat
+formatted_reconciler = ForecastFormat(reconciler)
+rec_result = formatted_reconciler({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat}, track_state = True)
 Y_hat_rec = rec_result["mean"]
 
 #%% Plot the data

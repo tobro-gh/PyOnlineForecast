@@ -1,5 +1,6 @@
 #%%
 from py_online_forecast import *
+from py_online_forecast.tools import Subset
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
@@ -51,37 +52,55 @@ const = One()
 lp_Taobs = LowPass(taobs, alpha = 0.7)
 lp_Ta = LowPass(ta, alpha = 0.8)
 
+#%%
+from py_online_forecast.tools import ForecastFormat
+ForecastFormat(lp_Ta)(data)
+
+
+#%%
 # We then create a Prediction for the 1-hour ahead forecast
-X = Combine(const, lp_Taobs, lp_Ta)
+X = DesignMatrix(const, lp_Taobs, lp_Ta)
 pred = WLS(X, energy, horizon = 1)
 
-# And to manage data and access additional functionality, we wrap it in a Model
-model = Model(pred)
 
 # Note, if we do not need the prediction outside the model, we can also create the model directly,
 #model = Model.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
 
 #%% 1.3 Fit Model and Make Predictions
-# Fit the model and make predictions
-result = model.fit(data)
+
+# The most direct way to apply the model is to call it on the data,
+result = pred(data, track_state = True)
+
+# This fits the model and returns predictions. If track_state is true, recursion parameters
+# such as WLS parameters are stored. The prediction allows us to fetch these,
+print(pred.predictor)
+
+#%% For convenient use with forecast matrix data, we can use the ForecastWrapper
+from py_online_forecast.tools import ForecastFormat
+w_pred = ForecastFormat(pred)
+
+# The wrapped prediction acts similar to the original, but formats outputs appropriately
+result = w_pred(data, track_state = True)
 
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
 data.plot(y="energy", ax = ax)
-result.shift(1).plot(ax = ax) # Shift predictions 1 hour ahead
+result["mean"].fc.lag().plot(ax = ax) # Shift predictions 1 hour ahead
+ax.plot(data.index, data["energy"], label = "Observations")
+
+#result
 plt.legend(["Observations", "Forecast"])
 plt.show()
 
 # Compare with least squares estimate
-beta_ols = model.predictor
-
+beta_ols = w_pred.predictor
 #%%
-model.reset_state()
-X_data = pred.X.apply(data)
-X_train_data = X_data.shift(1)
-Y_data = pred.Y.apply(data)
+w_pred.reset_state()
+X_data = pred.X(data)
+X_train_data = X_data[:-1]
+Y_data = pred.Y(data)
 
-beta_np = np.linalg.lstsq(X_train_data[1:], Y_data.to_numpy()[1:], rcond=None)[0]
+beta_np = np.linalg.lstsq(X_train_data, Y_data.to_numpy()[1:], rcond=None)[0]
 
 print(f"Model parameters from OLS model: {beta_ols}")
 print(f"Model parameters from numpy lstsq: {beta_np}")
@@ -93,9 +112,18 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 #%% 3.1 Configure Model for Online Forecasting
 # In an online setting, switch to recursive ridge regressor (RRR).
 
+# For use with forecast matrix data, we use the ForecastModel. The ForecastModel uses the RRR predictor and additionally provides,
+# - automatic use of ForecastWrapper
+# - utility for selecting input horizons in model creation
+# - convenience methods for fitting and updating the predictor
+
+X = (const, lp_Taobs, lp_Ta)
+model = ForecastModel(X, energy, 1, track_memory = True, tilde_k_init_val = 0.00001)
+
+#%%
 # We make a new prediction for RRR
-pred = RRR(X, energy, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
-model = Model(pred)
+#pred = RRR(X, energy, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
+#model = Model(pred)
 
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
@@ -107,9 +135,9 @@ plt.legend(["Observations", "Forecast"])
 plt.show()
 
 #%% 3.3 Multivariate target
-# The model also supports multivariate targets, e.g. energy and Taobs
+# The RRR prediction also supports multivariate targets, e.g. energy and Taobs
 target = DEFAULT_SOURCE[["energy", "Taobs"]]
-model_multi = Model(RRR(X, target, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001))
+model_multi = ForecastModel(X, target, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001)
 result_multi = model_multi.fit(data, mem = 1)
 fig, ax = plt.subplots()
 data.plot(y="energy", ax = ax)
@@ -154,37 +182,40 @@ ta2 = Subset("Ta", horizons = (2,)) # Use all available forecasts of Ta
 # Low-pass filter for the new model
 lp_Ta2 = LowPass(ta2, alpha = 0.8)
 
-X2 = Combine(const, lp_Taobs, lp_Ta2)
+X2 = (const, lp_Taobs, lp_Ta2)
 
 # We then make a prediction for the 2-hour ahead forecast
-pred_2h = RRR(X2, energy, horizon = 2, track_memory = True, tilde_k_init_val = 0.00001)
+model_2h = ForecastModel(X2, energy, horizon = 2, track_memory = True, tilde_k_init_val = 0.00001)
 
 # Note, we can still run the prediction as a standalone object
-ref_1h = pred.apply(data, mem = 1)
-ref_2h = pred_2h.apply(data, mem = 1)
+ref_1h = model.fit(data, mem = 1)
+ref_2h = model_2h.fit(data, mem = 1)
 
 
 #%% 4.2 Model Ensemble
-# For convenience, we can create a model of both outputs,
-models = Model(pred, pred_2h)
+# To save computation costs on shared transformations, we can combine the two models and fit them together
+models = Combine(model, model_2h)
 
-# Fit the ensemble model
-result = models.fit(data, mem = 1)
+# Apply the combined model
+result = models(data, mem = 1)
 
-# Results are returned in a dict indexed by the predictions
-result_model_1h = result[pred]
-result_model_2h = result[pred_2h]
+# Results are returned in a dict indexed by the individual transforms (models),
+result_model_1h = result[model]
+result_model_2h = result[model_2h]
 
 # Note: ensembles also support the update methods, and the update_predictor argument
 
 #%% 4.3 Horizon Ensemble
-# For the RRR prediction, ensembles can also be created using the "RRREnsemble" subclass of the model.
-# In this case, we first include all forecast horizons, and let the ensemble handle
-# the separation into different models.
+# For the RRR prediction, ensembles can also be created using the "ForecastEnsemble" transformation.
+# ForecastEnsemble creates multiple models, and splits forecast matrix data according to each horizon.
+
+# First, get all forecasts of Ta
 ta_all = DEFAULT_SOURCE[["Ta"]]
+
+# Apply low-pass filters to all forecasts of Ta.
 lp_Ta_all = LowPass(ta_all, alpha = 0.8)
-Xall = Combine(const, lp_Taobs, lp_Ta_all)
-horizon_models = RRREnsemble(Xall, energy, horizons = (1,2), track_memory = True, tilde_k_init_val = 0.00001)
+Xall = (const, lp_Taobs, lp_Ta_all)
+horizon_models = ForecastEnsemble(Xall, energy, horizons = (1,2), input_horizons = "auto", track_memory = True, tilde_k_init_val = 0.00001)
 
 # Then fit the ensemble as normal
 horizon_result = horizon_models.fit(data, mem = 1)
@@ -223,7 +254,7 @@ low_pass_filter.alpha = 0.9
 
 # Transforms can be applied to dataframes using the apply method. 
 # This returns the transformed data and any recursion parameters in a tuple.
-low_pass_filter.apply(data)
+low_pass_filter(data)
 
 #%% 5.3 Advanced Transform Usage
 # Other references to data can be used in transforms, including other transforms and some
@@ -236,7 +267,7 @@ lp_square = low_pass_filter**2
 
 # When using binary operations, care should be taken to ensure that the transformed outputs are compatible.
 sum_transform = low_pass_filter + lp_square
-sum_transform.apply(data)
+sum_transform(data)
 
 #%%============================================================================
 # SECTION 6: SOURCES
@@ -253,7 +284,7 @@ lp_raw = LowPass(raw_data, alpha = 0.8)
 
 # When evaluaintg transformations, either directly or through a Transformer, the
 # sources are matched to data, e.g.,
-lp_raw.apply({raw_data: data})
+lp_raw({raw_data: data})
 
 # In case apply is called without mentioning a source, it is assumed to be the DEFAULT_SOURCE
 DEFAULT_SOURCE
@@ -261,7 +292,7 @@ DEFAULT_SOURCE
 # For some Transformations, Source arguments are optional. In this case, the
 # DEFAULT_SOURCE is used if no source is provided.
 #%% 6.2 Special sources
-# There are some special sources, i.e. DEFAULT_SOURCE, DefaultIndex, MEMORY, PREDICTOR_PARAMETERS, UPDATE_PREDICTOR,
+# There are some special sources, i.e. DEFAULT_SOURCE, MEMORY, PREDICTOR_PARAMETERS, UPDATE_PREDICTOR,
 #  X_init, Y_init, DIM_X and DIM_Y.
 # DEFAULT_SOURCE represents the default input data, when no other source is specified.
 # DefaultIndex represents the index of the default input data.
@@ -272,22 +303,11 @@ DEFAULT_SOURCE
 # for the initial input and target data and DIM_X and DIM_Y correspond to Dim(X_init) and Dim(Y_init). These sources are
 # only available within scopes when creating custom predictors.
 
-from py_online_forecast.features import TimeOfDay
 from py_online_forecast.core import parse_data
 
-# The DEFAULT_INDEX source returns the index of the data, e.g.
-tod = TimeOfDay(DEFAULT_INDEX)
-tod.apply(data, ref = DEFAULT_SOURCE)
-
-# The Index source data is created when data is parsed into a special dict,
+# The DEFAULT_SOURCE is populated with data when parse_data is called in the transformation,
 data_dict = parse_data(data)
-data_dict[DEFAULT_INDEX]
-
-# They act as placeholders for the target variable, and predictions thereof. In an
-# ensemble with multiple Models, the Target and Prediction sources will be specific
-# to each model.
-
-# The PredictionHorizon source is used to specify the (integer) horizon for the prediction.
+data_dict[DEFAULT_SOURCE] # <- Same as data
 
 #%%============================================================================
 # SECTION 7: HYPERPARAMETER OPTIMIZATION
@@ -301,9 +321,6 @@ trend_data = data.copy()
 trend_data[("energy",0)] += 0.1*np.arange(len(trend_data))
 
 # Set score mode to true
-pred.set_score_mode()
-
-# Or via. the model
 model.set_score_mode()
 
 def obj(x):
@@ -318,6 +335,7 @@ print(res)
 #%% 7.2 Hyperparameter Optimization for Ensembles
 # And similarly for the horizon ensemble
 horizon_models.set_score_mode()
+
 def obj_horizon(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
@@ -333,6 +351,7 @@ print(res_horizon)
 #%% 8.1 Custom Transform
 # Custom transforms can be created by inheriting from the Transformation class
 # and implementing the evaluate method.
+
 class CustomTransform(Transformation):
     def __init__(self, source, param1 = 0.5, param2 = 1.0):
         super().__init__(data = source, old_param = MEMORY)
@@ -345,3 +364,5 @@ class CustomTransform(Transformation):
         return data*param, param
 
 # In the above ...
+
+# %%

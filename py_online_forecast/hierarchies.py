@@ -125,18 +125,30 @@ class HierarchyRegressand(c.Transformation):
 
 class RidgeReconciliation(c.Transformation):
 
-    def __init__(self, Y_bot, Y_hat, S_top, horizon, apply_format = True, full_hierarchy_cov = False, opt_shrink = False, **kwargs):
+    def __init__(self, S_top, Y_bot = None, Y_hat = None, horizon = 1, full_hierarchy_cov = False, opt_shrink = False, **kwargs):
+
+        Y_bot = Y_bot or c.Source("Y_bot")
+        Y_hat = Y_hat or c.Source("Y_hat")
+
+        self.Y_bot = Y_bot
+        self.Y_hat = Y_hat
+        self.rec_err = c.Source("rec_err")
+
+
         self.S_top = S_top
         nsm, m = S_top.shape
         n = m + nsm
         self.n, self.m = n, m
 
-        self.apply_format = apply_format
         self.full_hierarchy_cov = full_hierarchy_cov
         self.S = np.vstack((S_top, np.eye(S_top.shape[1])))
 
-        Y_hat_top = f.SelectIndices(range(nsm), data = Y_hat) # First n-m columns
-        Y_hat_bot = f.SelectIndices(range(nsm, n), data = Y_hat) # Last m columns
+        Y_hat_arr = f.ToArray(Y_hat) # Ensure output of Y_hat is a numpy array.
+        Y_hat_top = Y_hat_arr[:, :nsm] # First n-m columns
+        Y_hat_bot = Y_hat_arr[:, -m:] # Last m columns
+
+#        Y_hat_top = f.SelectIndices(range(nsm), data = Y_hat) # First n-m columns
+#        Y_hat_bot = f.SelectIndices(range(nsm, n), data = Y_hat) # Last m columns
 
         X = HierarchyRegressor(Y_hat_top, Y_hat_bot, S_top)
         Y = HierarchyRegressand(Y_bot, Y_hat_bot, S_top, horizon)
@@ -146,9 +158,9 @@ class RidgeReconciliation(c.Transformation):
         else:
             self.prediction = p.RRR(X, Y, horizon, format_as_Y=False, **kwargs)        
 
-        super().__init__(Y_hat_bot, Y_hat, self.prediction)
+        super().__init__(Y_hat_bot, self.prediction)
 
-    def evaluate(self, Y_hat_bot, Y_hat, pred):
+    def evaluate(self, Y_hat_bot, pred):
 
         if not isinstance(Y_hat_bot, np.ndarray):
             Y_hat_bot = np.asarray(Y_hat_bot)
@@ -164,10 +176,6 @@ class RidgeReconciliation(c.Transformation):
 
         # Sum to get reconciled forecasts at all levels
         Y_hat_rec = Y_bot_rec @ self.S.T
-
-        # Format like input
-        if self.apply_format:
-            Y_hat_rec = c.format_like(Y_hat_rec, Y_hat)
 
         # Store reconciled forecasts in result
         res["mean"] = Y_hat_rec
@@ -201,53 +209,35 @@ class RidgeReconciliation(c.Transformation):
         if not self.full_hierarchy_cov:
             rec_var_est = np.diagonal(rec_var_est, axis1=1, axis2=2)
 
-        # Format like input and store result
-        if self.apply_format:
-            rec_var_est = c.format_like(rec_var_est, Y_hat, outer_prod = self.full_hierarchy_cov)
         res["cov"] = rec_var_est
 
         return res
 
-class RidgeReconciler(p.Model):
-
-    def __init__(self, S_top, horizon = 1, Y_bot: c.Source = None, Y_hat: c.Source = None, full_hierarchy_cov = False, apply_format = True, opt_shrink = False, **kwargs):
-        self.Y_bot = Y_bot or c.Source("Y_bot")
-        self.Y_hat = Y_hat or c.Source("Y_hat")
-        self.rec_err = c.Source("rec_err")
-        self.rec_pred = RidgeReconciliation(self.Y_bot, self.Y_hat, S_top, horizon, apply_format = apply_format, full_hierarchy_cov = full_hierarchy_cov, opt_shrink=opt_shrink, **kwargs)
-        super().__init__(self.rec_pred)
-
     @property
     def X(self):
-        return self.rec_pred.prediction.X
+        return self.prediction.X
     
     @property
     def Y(self):
-        return self.rec_pred.prediction.Y
+        return self.prediction.Y
 
     @property
     def predictor(self):
-        return self.state[self.rec_pred.prediction][0]
+        return self.recursion_pars[self.prediction][0]
 
-    def set_score_mode(self):
-        self.rec_pred.prediction.set_score_mode()
-    
-    def unset_score_mode(self):
-        self.rec_pred.prediction.unset_score_mode()
+    def update(self, Y_bot, Y_hat, **kwargs):
+        return self({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, track_state = True, **kwargs)
 
-    def rec_update(self, Y_bot, Y_hat, **kwargs):
-        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
-
-    def rec_fit(self, Y_bot, Y_hat, **kwargs):
+    def fit(self, Y_bot, Y_hat, **kwargs):
         self.reset_state()
-        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
+        return self({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
 
     @property
     def P(self):
         # Returns the projection matrix P as computed from the model parameters.
         nsm, m = self.S_top.shape
         n = m + nsm
-        theta = self.predictor.get_model_params()
+        theta = self.predictor.theta
         
         if theta is None:
             raise ValueError("Model not fitted yet")
@@ -256,177 +246,22 @@ class RidgeReconciler(p.Model):
         P = (np.vstack((null, np.eye(m))) + np.vstack((np.eye(n-m), -self.S_top.T)) @ theta).T
         return P
 
-class TemporalRidgeReconciler(RidgeReconciler):
+class TemporalRidgeReconciliation(RidgeReconciliation):
 
-    def __init__(self, S_top, B: list | dict, horizon = 1, Z_bot: c.Source = None, Y_hat: c.Source = None, skip_duplicates = False, full_hierarchy_cov = False, apply_format = True, opt_shrink = False, **kwargs):
+    def __init__(self, S_top, B: list | dict, horizon = 1, Z_bot: c.Source = None, Y_hat: c.Source = None, skip_duplicates = False, full_hierarchy_cov = False, opt_shrink = False, **kwargs):
         # Construct backshift operator
         self.Z_bot = Z_bot or c.Source("Z_bot")
-        Y_bot = f.BackShift(B, skip_duplicates=skip_duplicates, data=self.Z_bot)
+        Y_bot = p.BackShift(B, skip_duplicates=skip_duplicates, data=self.Z_bot)
 
         # Initialize Reconciler with lagged bottom level data as regressand input
-        super().__init__(S_top, horizon, Y_bot, Y_hat, full_hierarchy_cov = full_hierarchy_cov, apply_format = apply_format, opt_shrink=opt_shrink, **kwargs)
+        super().__init__(S_top, Y_bot, Y_hat, horizon, full_hierarchy_cov, opt_shrink, **kwargs)
 
-    def rec_update(self, Y_bot, Y_hat = None, **model_params):
-        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
+    def update(self, Y_bot, Y_hat = None, **model_params):
+        return self({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, track_state = True, **model_params)
 
-    def rec_fit(self, Y_bot, Y_hat=None, **model_params):
+    def fit(self, Y_bot, Y_hat=None, **model_params):
         self.reset_state()
-        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
-    
-
-class Hierarchy(c.Transformation):
-
-    def __init__(self, Y_bot, Y_hat, S_top, horizon, predictor_configuration, variance_name = None, get_full_cov = False, apply_format = True):
-        self.S_top = S_top
-        nsm, m = S_top.shape
-        n = m + nsm
-        self.n, self.m = n, m
-
-        self.S = np.vstack((S_top, np.eye(S_top.shape[1])))
-
-        Y_hat_top = c.SelectIndices(range(nsm), data = Y_hat) # First n-m columns
-        Y_hat_bot = c.SelectIndices(range(nsm, n), data = Y_hat) # Last m columns
-
-        X = HierarchyRegressor(Y_hat_top, Y_hat_bot, S_top)
-        Y = HierarchyRegressand(Y_bot, Y_hat_bot, S_top, horizon)
-
-        self.prediction = p.Prediction(X, Y, horizon, predictor_configuration, apply_format = False)        
-        self.variance_name = variance_name
-        self.get_full_cov = get_full_cov
-        self.apply_format = apply_format
-
-        super().__init__(Y_hat_bot, Y_hat, self.prediction)
-
-
-    @c.standardize_wrapper("Y_hat_bot", ensure_dim = 2)
-    def evaluate(self, Y_hat_bot, Y_hat, pred):
-
-        # Prepare result
-        res = pred.copy()
-
-        # Get name of target variable
-        target = self.prediction.config.predictor_type.target or next(iter(self.prediction.config.predictors))
-
-        # Get predicted bottom level errors
-        err_bot_hat = pred[target]
-
-        # Reconciled bottom level forecasts
-        Y_bot_rec = Y_hat_bot + err_bot_hat
-
-        # Sum to get reconciled forecasts at all levels
-        Y_hat_rec = Y_bot_rec @ self.S.T
-
-        # Format like input
-        if self.apply_format:
-            Y_hat_rec = c.format_like(Y_hat_rec, Y_hat)
-
-        # Store reconciled forecasts in result
-        res[target] = Y_hat_rec
-
-        # Compute (co)variance
-        if self.variance_name is not None:
-            var_bot = pred[self.variance_name]
-
-            # If variance is given as diagonal, convert to full covariance matrix (assuming zero correlations)
-            if var_bot.ndim == 2:
-
-                t, n = var_bot.shape
-
-                var_bot_full = np.full((t, n, n), np.nan)
-
-                # Get mask for valid rows
-                valid_rows = ~np.any(np.isnan(var_bot), axis=1)
-
-                # Initialise valid rows to zero
-                var_bot_full[valid_rows] = 0
-
-                # Assign diagonal elements
-                ran = np.arange(n)
-                var_bot_full[:,  ran, ran] = var_bot[ :, ran]
-
-                var_bot = var_bot_full
-
-            # Compute reconciled variance S V[x] S.T
-            rec_var_est = self.S @ var_bot @ self.S.T
-
-            # Fetch only diagonal? (TODO: consider doing self.S @ var_bot @ self.S.T more efficiently if only diagonal is needed)
-            if not self.get_full_cov:
-                rec_var_est = np.diagonal(rec_var_est, axis1=1, axis2=2)
-
-            # Format like input and store result
-            rec_var_est = c.format_like(rec_var_est, Y_hat, outer_prod = self.get_full_cov)
-            res[self.variance_name] = rec_var_est
-
-        return res
-
-
-class Reconciler(p.Model):
-
-    def __init__(self, S_top, predictor_configuration, horizon = 1, Y_bot: c.Source = None, Y_hat: c.Source = None, variance_name = None, get_full_cov = False, scorefun = None, burn_in = 0, remove_nan = True, apply_format = True):
-        nsm, m = S_top.shape
-        self.S_top = S_top
-        n = m + nsm
-        self.n, self.m = n, m
-
-        self.Y_bot = Y_bot or c.Source("Y_bot")
-        self.Y_hat = Y_hat or c.Source("Y_hat")
-        self.rec_err = c.Source("rec_err")
-
-        self.rec_pred = Hierarchy(self.Y_bot, self.Y_hat, S_top, horizon, predictor_configuration, variance_name, get_full_cov, apply_format = apply_format)
-
-        super().__init__(self.rec_pred, scorefun = scorefun, burn_in = burn_in, remove_nan = remove_nan)
-
-
-    @property
-    def X(self):
-        return self.rec_pred.prediction.X
-    
-    @property
-    def Y(self):
-        return self.rec_pred.prediction.Y
-
-    @property
-    def predictor(self):
-        return self.state[self.rec_pred.prediction][0]
-
-    def rec_update(self, Y_bot, Y_hat, **kwargs):
-        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
-
-    def rec_fit(self, Y_bot, Y_hat, **kwargs):
-        self.reset_state()
-        return self.update({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
-
-    @property
-    def P(self):
-        # Returns the projection matrix P as computed from the model parameters.
-        nsm, m = self.S_top.shape
-        n = m + nsm
-        theta = self.predictor.get_model_params()
-        
-        if theta is None:
-            raise ValueError("Model not fitted yet")
-
-        null = np.full((n-m, m), 0)
-        P = (np.vstack((null, np.eye(m))) + np.vstack((np.eye(n-m), -self.S_top.T)) @ theta).T
-        return P
-
-#def build_backshift(bot_vars: pd.Index, forecast_vars: pd.Index, skip_duplicates = False):
-class TemporalReconciler(Reconciler):
-
-    def __init__(self, S_top, B: list | dict, predictor_configuration, horizon = 1, Z_bot: c.Source = None, Y_hat: c.Source = None, variance_name = None, skip_duplicates = False, get_full_cov = False, scorefun = None, burn_in = 0, remove_nan = True, apply_format = True):
-        # Construct backshift operator
-        self.Z_bot = Z_bot or c.Source("Z_bot")
-        Y_bot = f.BackShift(B, skip_duplicates=skip_duplicates, data=self.Z_bot)
-
-        # Initialize Reconciler with lagged bottom level data as regressand input
-        super().__init__(S_top, predictor_configuration, horizon, Y_bot, Y_hat, variance_name, get_full_cov, scorefun, burn_in, remove_nan, apply_format = apply_format)
-
-    def rec_update(self, Y_bot, Y_hat = None, **model_params):
-        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
-
-    def rec_fit(self, Y_bot, Y_hat=None, **model_params):
-        self.reset_state()
-        return super().update({self.Z_bot: Y_bot, self.Y_hat: Y_hat}, **model_params)
+        return self.update(Y_bot, Y_hat, **model_params)
     
 
 class SRRRPredictor(p.RRRPredictor):
