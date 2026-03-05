@@ -37,19 +37,17 @@ temporal_reconciler = TemporalRidgeReconciliation(S_top, B, horizon = 2, full_co
 Y_hat = data[["pred_Y_A","pred_Y_H"]]
 Y_bot = data[["Y_H"]]
 
+#%% To ensure the output matches the input format (i.e. the ForecastFormat), we need to specify a formatter for the reconciler
+from py_online_forecast.forecast_tools import ForecastFormat
+temporal_reconciler.set_format(ForecastFormat)
+# If we dont specify a formatter, the reconciler won't keep track of the sources of the data and the output will just be a plain numpy array
 #%% To fit the model, we use rec_fit.
 res = temporal_reconciler.fit(Y_bot = Y_bot, Y_hat = Y_hat)
-#%% To fit the model with forecast matrix formatting, we can use ForecastFormat
-from py_online_forecast.tools import ForecastFormat
-formatted_reconciler = ForecastFormat(temporal_reconciler)
-
-# The ForecastFormat does not have a fit method and we need to specify the data sources which are properties of the reconciler (Z_bot = Y_bot and Y_hat)
-res = formatted_reconciler({temporal_reconciler.Z_bot: Y_bot, temporal_reconciler.Y_hat: Y_hat}, track_state = True)
 
 #%% If instead we require incremental updates (in a "real" online setting), we can use rec_update
 
 # First, reset the state of the reconciler (i.e. clear previous data and parameter estimates)
-formatted_reconciler.reset_state()
+temporal_reconciler.reset_state()
 
 # Then, loop over rows in the data and update the reconciler one step at a time
 result = []
@@ -57,8 +55,7 @@ result_cov  = []
 for t in range(len(Y_bot)):
     Y_bot_t = Y_bot.iloc[[t]]
     Y_hat_t = Y_hat.iloc[[t]]
-#    rec_t = temporal_reconciler.update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
-    rec_t = formatted_reconciler({temporal_reconciler.Z_bot: Y_bot_t, temporal_reconciler.Y_hat: Y_hat_t}, track_state = True)
+    rec_t = temporal_reconciler.update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
     result.append(rec_t["mean"])
     result_cov.append(rec_t["cov"])
 
@@ -89,8 +86,8 @@ rec_result = reconciler.fit(Y_bot_lagged, Y_hat)
 Y_hat_rec = rec_result["mean"]
 
 # Or again, using ForecastFormat
-formatted_reconciler = ForecastFormat(reconciler)
-rec_result = formatted_reconciler({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat}, track_state = True)
+reconciler.set_format(ForecastFormat)
+rec_result = reconciler.fit(Y_bot_lagged, Y_hat)
 Y_hat_rec = rec_result["mean"]
 
 #%% Plot the data
@@ -138,8 +135,8 @@ axes[1, 1].set_title(f"Reconciled top level, rmse: {rmse_rec_top:.3f}")
 plt.tight_layout()
 
 #%% To see how the reconciler works, we can manually apply data transformations to retrieve the design matrix and target variables
-X_rec = reconciler.X.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
-Y_rec = reconciler.Y.apply({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+X_rec = reconciler.X({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
+Y_rec = reconciler.Y({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
 
 # Notice, X_rec is a dict with keys "X_pred" and "X_train", where X_train is the same as X_pred but lagged according to the forecast horizon (2 in this case).
 

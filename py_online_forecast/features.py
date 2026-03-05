@@ -2,6 +2,41 @@ from .core import *
 from numpy.lib.stride_tricks import sliding_window_view
 
 ### Transformations
+class ToArray(Transformation):
+
+    def __init__(self, data):
+        super().__init__(data = data)
+
+    def evaluate(self, data):
+        if isinstance(data, np.ndarray):
+            return data
+        return np.asarray(data)
+
+class Combine(Transformation):
+    def __init__(self, *sources, names = None):
+        super().__init__(*sources)
+        self.sources = sources
+        if names is not None:
+            if len(names) != len(sources):
+                raise ValueError("Length of names must match number of sources.")
+        else:
+            names = self.sources
+        self.names = names
+
+    def evaluate(self, *data):
+        return {name: v for name, v in zip(self.names, data)}
+
+class DesignMatrix(Transformation):
+
+    def __init__(self, *data):
+        data = [ToArray(d) for d in data]
+        super().__init__(*data)
+    
+    def evaluate(self, *data):
+        # Reshape arrays from (t, d1, d2, ...) to (t, d1*d2*...) and stack horizontally
+        data = [d.reshape(d.shape[0], -1) for d in data]
+        return np.hstack(data)
+
 class One(Transformation):
     
     def __init__(self, ref = DEFAULT_SOURCE):
@@ -204,11 +239,82 @@ class FourierSeries(Transformation):
 
     def evaluate(self, data: np.ndarray):            
         results = []
+        if data.ndim != 2:
+            data = data.reshape(data.shape[0], -1)
         for i in range(1, self.nharmonics + 1):
             results.append(np.cos(2*np.pi*i*data))
             results.append(np.sin(2*np.pi*i*data))
     
         result = np.hstack(results)
-
         return result
-    
+
+class Lag(Transformation):
+
+    def __init__(self, data, amount = 1, default_value = None, offsets: int | list = None):
+        self.amount = amount
+        self.fill_value = float("nan") if default_value is None else default_value
+        self.offsets = [offsets] if isinstance(offsets, int) else offsets
+        # Check that if offsets is specified, all values are less than amount
+        if self.offsets is not None:
+            for h in self.offsets:
+                if h > amount:
+                    raise ValueError(f"Offset {h} must be less than lag amount {amount}.")
+        data = ToArray(data)
+        super().__init__(data = data, prev_values = MEMORY)
+
+
+    def evaluate(self, data, prev_values = None):
+        # Evaluate lag across horizons
+
+        # No specified offset
+        if self.offsets is None:
+            return self.evaluate_offset(data, prev_values, None)
+
+        # A set of offsets
+        else:
+            
+            # Initialize prev_values per offset
+            if prev_values is None:
+                prev_values = {h: None for h in self.offsets}
+            result = {}
+
+            # Evaluate per offset
+            for h in self.offsets:
+                result[h], prev_values[h] = self.evaluate_offset(data, prev_values[h], h)
+
+            return result, prev_values
+
+    def evaluate_offset(self, data, prev_values = None, offset = None):
+        if isinstance(data, np.ndarray):
+            return self.evaluate_array(data, prev_values, offset)
+        elif isinstance(data, dict):
+            return self.evaluate_dict(data, prev_values, offset)
+        else:
+            raise ValueError(f"Cannot apply Lag to data of type {type(data)}.")
+
+    def evaluate_dict(self, data, prev_values = None, offset = None):
+        if prev_values is None:
+            prev_values = {k: None for k in data}
+
+        result = {}
+        for k, v in data.items():
+            result[k], prev_values[k] = self.evaluate_offset(v, prev_values[k], offset)
+
+        return result, prev_values
+
+    def evaluate_array(self, data, prev_values = None, offset = None):
+
+        shift = self.amount
+        if offset is not None:
+            shift -= offset
+        if shift == 0:
+            return data, prev_values
+
+        if prev_values is None:
+            # Get shape of data to initialize buffer
+            m = data.shape[1]
+            prev_values = CircularBuffer(shift, m, default_value = self.fill_value)
+
+        result = prev_values.update(data)
+
+        return result, prev_values

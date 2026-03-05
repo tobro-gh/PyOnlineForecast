@@ -1,6 +1,6 @@
 #%%
 from py_online_forecast import *
-from py_online_forecast.tools import Subset
+from py_online_forecast.forecast_tools import Subset
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
@@ -43,7 +43,7 @@ data.fc.convert()
 # Our goal is to model energy given ambient temperature observations and forecasts
 energy = DEFAULT_SOURCE[["energy"]]
 taobs = DEFAULT_SOURCE[["Taobs"]]
-ta = Subset("Ta", horizons = (1,))
+ta = Subset(DEFAULT_SOURCE, "Ta", horizons = (1,))
 const = One()
 
 #%% 1.2 Create Simple OLS Model
@@ -53,7 +53,7 @@ lp_Taobs = LowPass(taobs, alpha = 0.7)
 lp_Ta = LowPass(ta, alpha = 0.8)
 
 #%%
-from py_online_forecast.tools import ForecastFormat
+from py_online_forecast.forecast_tools import ForecastFormat
 ForecastFormat(lp_Ta)(data)
 
 
@@ -75,12 +75,15 @@ result = pred(data, track_state = True)
 # such as WLS parameters are stored. The prediction allows us to fetch these,
 print(pred.predictor)
 
-#%% For convenient use with forecast matrix data, we can use the ForecastWrapper
-from py_online_forecast.tools import ForecastFormat
-w_pred = ForecastFormat(pred)
+#%% For convenient use with forecast matrix data, we can use the ForecastFormat
+from py_online_forecast.forecast_tools import ForecastFormat
+
+# The ForecastFormat is a special type of transform (a Format) that converts outputs to dataframes in the forecast matrix format.
+# Formats can be used as any other transform (e.g. ForecastFormat(pred)), or be applied using
+pred.set_format(ForecastFormat)
 
 # The wrapped prediction acts similar to the original, but formats outputs appropriately
-result = w_pred(data, track_state = True)
+result = pred(data, track_state = True)
 
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
@@ -93,9 +96,9 @@ plt.legend(["Observations", "Forecast"])
 plt.show()
 
 # Compare with least squares estimate
-beta_ols = w_pred.predictor
+beta_ols = pred.predictor
 #%%
-w_pred.reset_state()
+pred.reset_state()
 X_data = pred.X(data)
 X_train_data = X_data[:-1]
 Y_data = pred.Y(data)
@@ -120,11 +123,6 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 X = (const, lp_Taobs, lp_Ta)
 model = ForecastModel(X, energy, 1, track_memory = True, tilde_k_init_val = 0.00001)
 
-#%%
-# We make a new prediction for RRR
-#pred = RRR(X, energy, horizon = 1, track_memory = True, tilde_k_init_val = 0.00001) # Note, if memory tracking is not enabled, covariance estimation will not work properly when memory = 1. If covariance estimation is not needed, this can be left out.
-#model = Model(pred)
-
 #%% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
 result = model.fit(data, mem = 1)
@@ -133,6 +131,7 @@ data.plot(y="energy", ax = ax)
 result["mean"].shift(1).plot(ax = ax) # Shift predictions 1 hour ahead
 plt.legend(["Observations", "Forecast"])
 plt.show()
+
 
 #%% 3.3 Multivariate target
 # The RRR prediction also supports multivariate targets, e.g. energy and Taobs
@@ -168,6 +167,7 @@ predictions = pd.concat(predictions)
 print(np.allclose(result["mean"].to_numpy()[1:], predictions.to_numpy()[1:])) # Should be True
 
 
+#%%
 # Models can also be updated without updating predictor parameters, i.e. only predict,
 model.update(data, update_predictor = False)
 
@@ -177,7 +177,7 @@ model.update(data, update_predictor = False)
 
 #%% 4.1 Separate predictions for each horizon
 # Create a new model for 2-hour ahead forecasts
-ta2 = Subset("Ta", horizons = (2,)) # Use all available forecasts of Ta
+ta2 = Subset(DEFAULT_SOURCE, "Ta", horizons = (2,)) # Use all available forecasts of Ta
 
 # Low-pass filter for the new model
 lp_Ta2 = LowPass(ta2, alpha = 0.8)
@@ -351,6 +351,7 @@ print(res_horizon)
 #%% 8.1 Custom Transform
 # Custom transforms can be created by inheriting from the Transformation class
 # and implementing the evaluate method.
+from py_online_forecast.core import Transformation
 
 class CustomTransform(Transformation):
     def __init__(self, source, param1 = 0.5, param2 = 1.0):

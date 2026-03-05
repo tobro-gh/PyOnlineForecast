@@ -346,10 +346,10 @@ def check_fc_format(index: pd.Index | list | tuple, as_list = False) -> bool:
 
 class Subset(Transformation):
 
-    def __init__(self, *variables, data = None, horizons = None):
+    def __init__(self, data, *variables, horizons = None):
         self.horizons = horizons
         self.variables = list(variables)
-        super().__init__(data = data, indices = MEMORY)
+        super().__init__(data, indices = MEMORY)
 
 
     def evaluate(self, data, indices = None):
@@ -367,6 +367,29 @@ class Subset(Transformation):
     def __repr__(self):
         return super().__repr__() + f"({self.variables}, horizons={self.horizons})"
 
+class GetHorizons(Transformation):
+
+    def __init__(self, data, *horizons):
+        self.horizons = horizons
+        super().__init__(data, indices = MEMORY)
+
+    def evaluate(self, data, indices = None):
+        if isinstance(data, pd.DataFrame):
+            if indices is None:
+                indices = subset_columns(data.columns, horizons = self.horizons, return_index = True)
+            return data.iloc[:, indices], indices
+        elif isinstance(data, dict):
+            result = [data[h] for h in data if h in self.horizons]
+            # Concatenate result
+            if isinstance(result[0], pd.DataFrame):
+                result = pd.concat(result, axis = 1)
+            else:
+                # Ensure all are 2D, keeping first dimension as time
+                result = [r.reshape(r.shape[0], -1) for r in result]
+                result = np.hstack(result)
+            return result, indices
+        else:
+            return data, indices
         
 class Reindexer(Transformation):
 
@@ -455,6 +478,16 @@ class Align(Transformation):
         # Concatenate if multiple dataframes
         result = pd.concat(result, axis = 1)
 
+        return result
+
+class Concat(Transformation):
+    def __init__(self, *data, axis = 0):
+        super().__init__(*data)
+        self.axis = axis
+
+    def evaluate(self, *data):
+        return pd.concat(data, axis = self.axis)
+
 class Scaler(Transformation):
 
     def __init__(self, data = DEFAULT_SOURCE, var_scales: dict[str, float] = None):
@@ -537,18 +570,30 @@ class ToPandas(Transformation):
 class Disruption(Transformation):
     # A class for modelling disruptions at a specific day and hour
 
-    def __init__(self, index, hour, dayofweek = None, duration = None, horizons: int | list = 0):
+    def __init__(self, index, hour, dayofweek = None, duration = None, horizons: int | list = 0, as_dict = True):
         super().__init__(index = index)
         self.hour = hour
         self.dayofweek = dayofweek
         self.duration = duration
         self.end_hour = (hour + duration) % 24 if duration is not None else None
         self.horizons = horizons if isinstance(horizons, list) else [horizons]
-    
+        self.columns = make_fc_columns(["Disruption"]*len(self.horizons), self.horizons)
+        self.as_dict = as_dict
+
     def evaluate(self, index):
         result = {}
         for h in self.horizons:
-            result[h] = self.evaluate_horizon(index, h) 
+            result[h] = self.evaluate_horizon(index, h)
+
+        if self.as_dict:
+            return result
+
+        result = list(result.values())
+
+        # Concatenate into forecast matrix format
+        result = np.array(result).T
+        result.columns = self.columns
+        result.index = index
 
         return result
 
@@ -779,8 +824,8 @@ def _(source: RidgeReconciliation):
 
         if outer_prod:
             if memory is None:
-                cols = Y.columns.to_list()
-                memory = pd.MultiIndex.from_tuples([((var1, var2), max(var1[1], var2[1])) for var1 in cols for var2 in cols], names = ForecastMatrix.names)
+                horizons = Y.columns.get_level_values(1).to_list()
+                memory = make_fc_columns(Y.columns, horizons, outer_prod = True)
             result["cov"] = to_pandas(value["cov"], index = Y.index, columns = memory)
         else:
             result["cov"] = to_pandas(value["cov"], index = Y.index, columns = Y.columns)
@@ -789,11 +834,50 @@ def _(source: RidgeReconciliation):
 
     return formatter
 
-def get_forecast_columns(names, horizon, outer_prod = False):
+@ForecastFormat.register_resolver(SlidingSum)
+def _(source: SlidingSum):
+    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+
+@ForecastFormat.register_resolver(SlidingMean)
+def _(source: SlidingMean):
+    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+
+@ForecastFormat.register_resolver(ForgettingMean)
+def _(source: ForgettingMean):
+    return ForecastFormat.get_formatter(source.data)
+
+@ForecastFormat.register_resolver(ForgettingVariance)
+def _(source: ForgettingVariance):
+    mean_formatter = ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    if source.covariance:
+        def formatter(transform, state, memory = None):
+            formatted_mean = mean_formatter(source.apply_kwargs["data"], state, None)
+
+            if memory is None:
+
+                # Construct outer product format
+                names = formatted_mean.columns.to_list()
+                horizons = formatted_mean.columns.get_level_values(1).to_list()
+                memory = make_fc_columns(names, horizons, outer_prod = True)
+                            
+            # Format using memory columns and index as mean formatter
+            formatted_cov = to_pandas(state[transform], index = formatted_mean.index, columns = memory)
+
+            return formatted_cov, memory
+        return formatter
+    else:
+        return mean_formatter
+        
+
+def make_fc_columns(names, horizons, outer_prod = False):
     if outer_prod:
-        ran = range(len(names))
-        names = [(names[i], names[j]) for i in ran for j in ran]
-    return pd.MultiIndex.from_product([names, [horizon]], names = ForecastMatrix.names)
+        names = [(n1, n2) for n1 in names for n2 in names]
+        horizons = [max(h1, h2) for h1 in horizons for h2 in horizons]
+    return pd.MultiIndex.from_tuples([(name, horizon) for name, horizon in zip(names, horizons)], names = ForecastMatrix.names)
+
+def get_forecast_columns(names, horizon, outer_prod = False):
+    horizons = [horizon]*len(names)
+    return make_fc_columns(names, horizons, outer_prod = outer_prod)
 
 def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols = None):
     """
@@ -803,6 +887,9 @@ def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols
     # Fetch format if not provided
     if cols is None:
         cols = {}
+
+        if not isinstance(Y, pd.DataFrame):
+            raise ValueError("Y must be a pandas DataFrame to format forecast output.")
 
         y_vars = Y.columns
         
@@ -843,7 +930,7 @@ class ForecastModel(Transformation):
         if not isinstance(X, (tuple, list)):
             X = [X]
 
-        # If resolve_format is True, apply Format transform to each X_i
+        # If resolve_format is True, apply ForecastFormat transform to each X_i
         if resolve_format:
             X = [ForecastFormat(X_i) for X_i in X]
 
@@ -853,7 +940,7 @@ class ForecastModel(Transformation):
 
         # Subset X according to input horizons
         if input_horizons is not None:
-            X = [Subset(data = X_i, horizons = input_horizons) for X_i in X]
+            X = [GetHorizons(X_i, *input_horizons) for X_i in X]
 
         # Form design matrix for RRR
         X = DesignMatrix(*X)
@@ -861,10 +948,11 @@ class ForecastModel(Transformation):
         # Make prediction
         self.prediction = RRR(X, Y, horizon, *args, **kwargs)
 
-#        # Format prediction to match expected output format
-        formatted_prediction = ForecastFormat(self.prediction)
+        # Set format
+        self.prediction.set_format(ForecastFormat)
 
-        super().__init__(formatted_prediction)
+        super().__init__(self.prediction)
+
 
     @property
     def predictor(self):

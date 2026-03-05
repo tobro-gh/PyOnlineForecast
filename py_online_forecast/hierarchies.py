@@ -3,7 +3,6 @@ import numpy as np
 from . import core as c
 from . import prediction as p
 from . import features as f
-import os
 
 def minT(S, Y: np.ndarray, Y_hat: np.ndarray, l_shrink = 0):
     # y: bottom level observations

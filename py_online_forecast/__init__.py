@@ -5,15 +5,14 @@ from .core import (
     Source,
     MEMORY,
     DEFAULT_SOURCE,
-    UPDATE_PREDICTOR,
     X_INIT,
     Y_INIT,
-    Z_INIT,
-    DesignMatrix,
-    Combine
+    Z_INIT
 ) 
 
 from .features import (
+    DesignMatrix,
+    Combine,
     One,
     Lag,
     LowPass,
@@ -31,11 +30,12 @@ from .prediction import (
     ARX
 )
 
-from .tools import (
+from .forecast_tools import (
     ForecastMatrix,
     ForecastModel,
     ForecastEnsemble,
     ToExog,
+    Concat
 )
   
 __all__ = [
@@ -43,7 +43,6 @@ __all__ = [
     "Source",
     "MEMORY",
     "DEFAULT_SOURCE",
-    "UPDATE_PREDICTOR",
     "X_INIT",
     "Y_INIT",
     "Z_INIT",
@@ -64,5 +63,6 @@ __all__ = [
     "ForecastMatrix",
     "ForecastModel",
     "ForecastEnsemble",
-    "ToExog"
+    "ToExog",
+    "Concat"
 ]
