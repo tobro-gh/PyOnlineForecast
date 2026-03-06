@@ -345,6 +345,7 @@ class ForgettingVariance(Transformation):
         """Evaluate the running variance or covariance.
         
         Parameters
+        ----------
         data : ndarray of shape (n_obs, d)
             The input data to compute the running variance over.
         mean : ndarray of shape (n_obs, d)

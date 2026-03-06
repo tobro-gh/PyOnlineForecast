@@ -950,7 +950,7 @@ def _(val, ref_val):
 
 
 class Format(Transformation):
-    """Base class for formatting transformations.
+    """Base class for formatting transformation outputs.
     
     Formats are transformations that modify values according to a set of rules specified
     using formatting functions and resolvers. Each subclass of Format maintains a

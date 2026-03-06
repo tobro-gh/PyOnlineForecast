@@ -1,0 +1,730 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast package" href="py_online_forecast.html" />
+    <link rel="prev" title="PyOnlineForecast documentation" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py_online_forecast</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html">py_online_forecast package</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">py_online_forecast</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="py-online-forecast">
+<h1>py_online_forecast<a class="headerlink" href="#py-online-forecast" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.html">py_online_forecast package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.core">py_online_forecast.core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Apply"><code class="docutils literal notranslate"><span class="pre">Apply</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Apply.evaluate"><code class="docutils literal notranslate"><span class="pre">Apply.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Apply.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Apply.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer"><code class="docutils literal notranslate"><span class="pre">CircularBuffer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.offset"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.size"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.m"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.default_value"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.default_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.data"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.index"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.append"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.get"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.get_slice"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.get_slice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id0"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.reset"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.set_data"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.set_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.CircularBuffer.update"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Dim"><code class="docutils literal notranslate"><span class="pre">Dim</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Dim.evaluate"><code class="docutils literal notranslate"><span class="pre">Dim.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Dim.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Dim.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format"><code class="docutils literal notranslate"><span class="pre">Format</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.get_formatter"><code class="docutils literal notranslate"><span class="pre">Format.get_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.register"><code class="docutils literal notranslate"><span class="pre">Format.register()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.register_resolver"><code class="docutils literal notranslate"><span class="pre">Format.register_resolver()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.check_formatter"><code class="docutils literal notranslate"><span class="pre">Format.check_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.evaluate"><code class="docutils literal notranslate"><span class="pre">Format.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Format.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.find_formatter"><code class="docutils literal notranslate"><span class="pre">Format.find_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Format.find_resolver"><code class="docutils literal notranslate"><span class="pre">Format.find_resolver()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id1"><code class="docutils literal notranslate"><span class="pre">Format.get_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id2"><code class="docutils literal notranslate"><span class="pre">Format.register()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id3"><code class="docutils literal notranslate"><span class="pre">Format.register_resolver()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetAttrTransformation"><code class="docutils literal notranslate"><span class="pre">GetAttrTransformation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetAttrTransformation.evaluate"><code class="docutils literal notranslate"><span class="pre">GetAttrTransformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetAttrTransformation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">GetAttrTransformation.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetItemTransformation"><code class="docutils literal notranslate"><span class="pre">GetItemTransformation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetItemTransformation.evaluate"><code class="docutils literal notranslate"><span class="pre">GetItemTransformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.GetItemTransformation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">GetItemTransformation.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.KeywordSource"><code class="docutils literal notranslate"><span class="pre">KeywordSource</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.KeywordSource.list_keywords"><code class="docutils literal notranslate"><span class="pre">KeywordSource.list_keywords()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id4"><code class="docutils literal notranslate"><span class="pre">KeywordSource.list_keywords()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Param"><code class="docutils literal notranslate"><span class="pre">Param</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Param.evaluate"><code class="docutils literal notranslate"><span class="pre">Param.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Param.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Param.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Source.get_attr"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id5"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation"><code class="docutils literal notranslate"><span class="pre">Transformation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.sources"><code class="docutils literal notranslate"><span class="pre">Transformation.sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.formatter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.recursion_pars"><code class="docutils literal notranslate"><span class="pre">Transformation.recursion_pars</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.evaluate"><code class="docutils literal notranslate"><span class="pre">Transformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.apply"><code class="docutils literal notranslate"><span class="pre">Transformation.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.ancestors"><code class="docutils literal notranslate"><span class="pre">Transformation.ancestors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id6"><code class="docutils literal notranslate"><span class="pre">Transformation.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.clear_formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.clear_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id7"><code class="docutils literal notranslate"><span class="pre">Transformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.get_all_dependencies"><code class="docutils literal notranslate"><span class="pre">Transformation.get_all_dependencies()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.get_graph"><code class="docutils literal notranslate"><span class="pre">Transformation.get_graph()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.print_dependency_tree"><code class="docutils literal notranslate"><span class="pre">Transformation.print_dependency_tree()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.reset_state"><code class="docutils literal notranslate"><span class="pre">Transformation.reset_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.set_format"><code class="docutils literal notranslate"><span class="pre">Transformation.set_format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.Transformation.set_formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.set_formatter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.format_like"><code class="docutils literal notranslate"><span class="pre">format_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.make_keyword"><code class="docutils literal notranslate"><span class="pre">make_keyword()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.parse_data"><code class="docutils literal notranslate"><span class="pre">parse_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.register_format_like"><code class="docutils literal notranslate"><span class="pre">register_format_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.core.transform_wrapper"><code class="docutils literal notranslate"><span class="pre">transform_wrapper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.datasets">py_online_forecast.datasets module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.datasets.sim"><code class="docutils literal notranslate"><span class="pre">sim()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.features">py_online_forecast.features module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Combine"><code class="docutils literal notranslate"><span class="pre">Combine</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Combine.evaluate"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Combine.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.DesignMatrix"><code class="docutils literal notranslate"><span class="pre">DesignMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.DesignMatrix.evaluate"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.DesignMatrix.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingMean"><code class="docutils literal notranslate"><span class="pre">ForgettingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingVariance"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingVariance.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ForgettingVariance.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.FourierSeries"><code class="docutils literal notranslate"><span class="pre">FourierSeries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.FourierSeries.evaluate"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.FourierSeries.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Lag"><code class="docutils literal notranslate"><span class="pre">Lag</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Lag.evaluate"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.Lag.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.LowPass"><code class="docutils literal notranslate"><span class="pre">LowPass</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.LowPass.evaluate"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.LowPass.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.One"><code class="docutils literal notranslate"><span class="pre">One</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.One.evaluate"><code class="docutils literal notranslate"><span class="pre">One.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.One.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">One.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingMean"><code class="docutils literal notranslate"><span class="pre">SlidingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingSum"><code class="docutils literal notranslate"><span class="pre">SlidingSum</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingSum.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.SlidingSum.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ToArray"><code class="docutils literal notranslate"><span class="pre">ToArray</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ToArray.evaluate"><code class="docutils literal notranslate"><span class="pre">ToArray.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.ToArray.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToArray.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.features.forgetting_mean"><code class="docutils literal notranslate"><span class="pre">forgetting_mean()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.forecast_tools">py_online_forecast.forecast_tools module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Aggregator"><code class="docutils literal notranslate"><span class="pre">Aggregator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Aggregator.evaluate"><code class="docutils literal notranslate"><span class="pre">Aggregator.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Aggregator.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Aggregator.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Align"><code class="docutils literal notranslate"><span class="pre">Align</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Align.evaluate"><code class="docutils literal notranslate"><span class="pre">Align.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Align.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Align.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Concat"><code class="docutils literal notranslate"><span class="pre">Concat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Concat.evaluate"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Concat.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.DataCleaner"><code class="docutils literal notranslate"><span class="pre">DataCleaner</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.DataCleaner.evaluate"><code class="docutils literal notranslate"><span class="pre">DataCleaner.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.DataCleaner.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">DataCleaner.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Disruption"><code class="docutils literal notranslate"><span class="pre">Disruption</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Disruption.evaluate"><code class="docutils literal notranslate"><span class="pre">Disruption.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Disruption.evaluate_horizon"><code class="docutils literal notranslate"><span class="pre">Disruption.evaluate_horizon()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Disruption.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Disruption.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.FillMissing"><code class="docutils literal notranslate"><span class="pre">FillMissing</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.FillMissing.evaluate"><code class="docutils literal notranslate"><span class="pre">FillMissing.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.FillMissing.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">FillMissing.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.fit"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastEnsemble.update"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastFormat"><code class="docutils literal notranslate"><span class="pre">ForecastFormat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastFormat.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastFormat.registry"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.registry</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastFormat.resolver_registry"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.resolver_registry</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.append"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.check"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.convert"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.convert()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.drop_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.drop_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.get_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.get_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.get_horizon_tail"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.get_horizon_tail()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.horizons"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.horizons</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.join"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.join_horizon"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join_horizon()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.join_variable"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join_variable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.lag"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.lag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.n_t"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.n_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.names"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.remove_old_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.remove_old_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.subset"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.subset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastMatrix.variables"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.variables</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel"><code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.fit"><code class="docutils literal notranslate"><span class="pre">ForecastModel.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.predictor"><code class="docutils literal notranslate"><span class="pre">ForecastModel.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ForecastModel.update"><code class="docutils literal notranslate"><span class="pre">ForecastModel.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.GetHorizons"><code class="docutils literal notranslate"><span class="pre">GetHorizons</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.GetHorizons.evaluate"><code class="docutils literal notranslate"><span class="pre">GetHorizons.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.GetHorizons.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">GetHorizons.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Horizons"><code class="docutils literal notranslate"><span class="pre">Horizons</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Horizons.evaluate"><code class="docutils literal notranslate"><span class="pre">Horizons.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Horizons.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Horizons.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Index"><code class="docutils literal notranslate"><span class="pre">Index</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Index.evaluate"><code class="docutils literal notranslate"><span class="pre">Index.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Index.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Index.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Reindexer"><code class="docutils literal notranslate"><span class="pre">Reindexer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Reindexer.evaluate"><code class="docutils literal notranslate"><span class="pre">Reindexer.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Reindexer.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Reindexer.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.RenameColumns"><code class="docutils literal notranslate"><span class="pre">RenameColumns</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.RenameColumns.evaluate"><code class="docutils literal notranslate"><span class="pre">RenameColumns.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.RenameColumns.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RenameColumns.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Scaler"><code class="docutils literal notranslate"><span class="pre">Scaler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Scaler.evaluate"><code class="docutils literal notranslate"><span class="pre">Scaler.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Scaler.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Scaler.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Subset"><code class="docutils literal notranslate"><span class="pre">Subset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Subset.evaluate"><code class="docutils literal notranslate"><span class="pre">Subset.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.Subset.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Subset.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfDay"><code class="docutils literal notranslate"><span class="pre">TimeOfDay</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfDay.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfDay.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfDay.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfDay.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfWeek"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfWeek.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfWeek.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfYear"><code class="docutils literal notranslate"><span class="pre">TimeOfYear</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfYear.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfYear.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.TimeOfYear.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfYear.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToExog"><code class="docutils literal notranslate"><span class="pre">ToExog</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToExog.evaluate"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToExog.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToPandas"><code class="docutils literal notranslate"><span class="pre">ToPandas</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToPandas.evaluate"><code class="docutils literal notranslate"><span class="pre">ToPandas.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.ToPandas.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToPandas.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.check_fc_format"><code class="docutils literal notranslate"><span class="pre">check_fc_format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.fc_columns_from_product"><code class="docutils literal notranslate"><span class="pre">fc_columns_from_product()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.fc_columns_from_tuples"><code class="docutils literal notranslate"><span class="pre">fc_columns_from_tuples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.forecast_matrix_from_product"><code class="docutils literal notranslate"><span class="pre">forecast_matrix_from_product()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.format_forecast"><code class="docutils literal notranslate"><span class="pre">format_forecast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.get_forecast_columns"><code class="docutils literal notranslate"><span class="pre">get_forecast_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.get_horizons"><code class="docutils literal notranslate"><span class="pre">get_horizons()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.make_fc_columns"><code class="docutils literal notranslate"><span class="pre">make_fc_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.new_fc"><code class="docutils literal notranslate"><span class="pre">new_fc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.subset_columns"><code class="docutils literal notranslate"><span class="pre">subset_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.to_pandas"><code class="docutils literal notranslate"><span class="pre">to_pandas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.forecast_tools.to_pandas_like"><code class="docutils literal notranslate"><span class="pre">to_pandas_like()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.hierarchies">py_online_forecast.hierarchies module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressand"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressand.evaluate"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressand.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressor"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressor.evaluate"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.HierarchyRegressor.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.LaggedNode"><code class="docutils literal notranslate"><span class="pre">LaggedNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.LaggedNode.shift"><code class="docutils literal notranslate"><span class="pre">LaggedNode.shift()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.build_A_lat"><code class="docutils literal notranslate"><span class="pre">Node.build_A_lat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.build_B"><code class="docutils literal notranslate"><span class="pre">Node.build_B()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.build_S_top"><code class="docutils literal notranslate"><span class="pre">Node.build_S_top()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.get_leaf_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_leaf_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.get_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.get_top_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_top_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.is_parent"><code class="docutils literal notranslate"><span class="pre">Node.is_parent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.print_hierarchy"><code class="docutils literal notranslate"><span class="pre">Node.print_hierarchy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.Node.shift"><code class="docutils literal notranslate"><span class="pre">Node.shift()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.P"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.P</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.X"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.X</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.Y"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.Y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.evaluate"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.fit"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.predictor"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.RidgeReconciliation.update"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR"><code class="docutils literal notranslate"><span class="pre">SRRR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.create"><code class="docutils literal notranslate"><span class="pre">SRRR.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SRRR.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.online_update"><code class="docutils literal notranslate"><span class="pre">SRRR.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.params"><code class="docutils literal notranslate"><span class="pre">SRRR.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.predict_params"><code class="docutils literal notranslate"><span class="pre">SRRR.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRR.update_model_params"><code class="docutils literal notranslate"><span class="pre">SRRR.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRRPredictor"><code class="docutils literal notranslate"><span class="pre">SRRRPredictor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.SRRRPredictor.update_prior"><code class="docutils literal notranslate"><span class="pre">SRRRPredictor.update_prior()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.TemporalRidgeReconciliation"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.TemporalRidgeReconciliation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.TemporalRidgeReconciliation.fit"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.TemporalRidgeReconciliation.update"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.construct_temporal_hierarchy"><code class="docutils literal notranslate"><span class="pre">construct_temporal_hierarchy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.find_nodes"><code class="docutils literal notranslate"><span class="pre">find_nodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.form_glm"><code class="docutils literal notranslate"><span class="pre">form_glm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.hierarchy_shape"><code class="docutils literal notranslate"><span class="pre">hierarchy_shape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.make_hierarchy"><code class="docutils literal notranslate"><span class="pre">make_hierarchy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.hierarchies.minT"><code class="docutils literal notranslate"><span class="pre">minT()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast.prediction">py_online_forecast.prediction module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX"><code class="docutils literal notranslate"><span class="pre">ARX</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.p"><code class="docutils literal notranslate"><span class="pre">ARX.p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.create"><code class="docutils literal notranslate"><span class="pre">ARX.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ARX.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.online_predict"><code class="docutils literal notranslate"><span class="pre">ARX.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.online_update"><code class="docutils literal notranslate"><span class="pre">ARX.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.params"><code class="docutils literal notranslate"><span class="pre">ARX.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.predict_params"><code class="docutils literal notranslate"><span class="pre">ARX.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.score"><code class="docutils literal notranslate"><span class="pre">ARX.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.ARX.update_model_params"><code class="docutils literal notranslate"><span class="pre">ARX.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift"><code class="docutils literal notranslate"><span class="pre">BackShift</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift.n"><code class="docutils literal notranslate"><span class="pre">BackShift.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift.max_shift"><code class="docutils literal notranslate"><span class="pre">BackShift.max_shift</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift.shifts"><code class="docutils literal notranslate"><span class="pre">BackShift.shifts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift.evaluate"><code class="docutils literal notranslate"><span class="pre">BackShift.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.BackShift.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">BackShift.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.online_update"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.online_predict"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id8"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id9"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.params"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.predict"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.predict_params"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.set_params"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.set_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.update"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.OnlinePrediction.update_model_params"><code class="docutils literal notranslate"><span class="pre">OnlinePrediction.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction"><code class="docutils literal notranslate"><span class="pre">Prediction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.predictor"><code class="docutils literal notranslate"><span class="pre">Prediction.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.create"><code class="docutils literal notranslate"><span class="pre">Prediction.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.update"><code class="docutils literal notranslate"><span class="pre">Prediction.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.predict"><code class="docutils literal notranslate"><span class="pre">Prediction.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.score"><code class="docutils literal notranslate"><span class="pre">Prediction.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id10"><code class="docutils literal notranslate"><span class="pre">Prediction.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.evaluate"><code class="docutils literal notranslate"><span class="pre">Prediction.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Prediction.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id11"><code class="docutils literal notranslate"><span class="pre">Prediction.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id12"><code class="docutils literal notranslate"><span class="pre">Prediction.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id13"><code class="docutils literal notranslate"><span class="pre">Prediction.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.score_mode"><code class="docutils literal notranslate"><span class="pre">Prediction.score_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.set_params"><code class="docutils literal notranslate"><span class="pre">Prediction.set_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.set_score_mode"><code class="docutils literal notranslate"><span class="pre">Prediction.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.Prediction.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">Prediction.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id14"><code class="docutils literal notranslate"><span class="pre">Prediction.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR"><code class="docutils literal notranslate"><span class="pre">RRR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.create"><code class="docutils literal notranslate"><span class="pre">RRR.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RRR.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.online_predict"><code class="docutils literal notranslate"><span class="pre">RRR.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.online_update"><code class="docutils literal notranslate"><span class="pre">RRR.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.params"><code class="docutils literal notranslate"><span class="pre">RRR.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.predict_params"><code class="docutils literal notranslate"><span class="pre">RRR.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.score"><code class="docutils literal notranslate"><span class="pre">RRR.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRR.update_model_params"><code class="docutils literal notranslate"><span class="pre">RRR.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor"><code class="docutils literal notranslate"><span class="pre">RRRPredictor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.K"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.K</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.L"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.L</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.theta"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.theta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.psi"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.psi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.V"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.V</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.H"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.H</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.Y_hat"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.Y_hat</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.online_update"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.online_predict"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.get_var_vec_theta"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.get_var_vec_theta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.RRRPredictor.get_model_params"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.get_model_params()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id15"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.get_var_vec_theta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id16"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id17"><code class="docutils literal notranslate"><span class="pre">RRRPredictor.online_update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS"><code class="docutils literal notranslate"><span class="pre">WLS</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.create"><code class="docutils literal notranslate"><span class="pre">WLS.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">WLS.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.params"><code class="docutils literal notranslate"><span class="pre">WLS.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.predict"><code class="docutils literal notranslate"><span class="pre">WLS.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.predict_params"><code class="docutils literal notranslate"><span class="pre">WLS.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.WLS.update"><code class="docutils literal notranslate"><span class="pre">WLS.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.evaluate_score"><code class="docutils literal notranslate"><span class="pre">evaluate_score()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.prediction.rmse"><code class="docutils literal notranslate"><span class="pre">rmse()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.html#module-py_online_forecast">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX"><code class="docutils literal notranslate"><span class="pre">ARX</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.p"><code class="docutils literal notranslate"><span class="pre">ARX.p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.create"><code class="docutils literal notranslate"><span class="pre">ARX.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ARX.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.online_predict"><code class="docutils literal notranslate"><span class="pre">ARX.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.online_update"><code class="docutils literal notranslate"><span class="pre">ARX.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.params"><code class="docutils literal notranslate"><span class="pre">ARX.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.predict_params"><code class="docutils literal notranslate"><span class="pre">ARX.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.score"><code class="docutils literal notranslate"><span class="pre">ARX.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ARX.update_model_params"><code class="docutils literal notranslate"><span class="pre">ARX.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift"><code class="docutils literal notranslate"><span class="pre">BackShift</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift.n"><code class="docutils literal notranslate"><span class="pre">BackShift.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift.max_shift"><code class="docutils literal notranslate"><span class="pre">BackShift.max_shift</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift.shifts"><code class="docutils literal notranslate"><span class="pre">BackShift.shifts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift.evaluate"><code class="docutils literal notranslate"><span class="pre">BackShift.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.BackShift.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">BackShift.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Combine"><code class="docutils literal notranslate"><span class="pre">Combine</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Combine.evaluate"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Combine.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Concat"><code class="docutils literal notranslate"><span class="pre">Concat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Concat.evaluate"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Concat.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.DesignMatrix"><code class="docutils literal notranslate"><span class="pre">DesignMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.DesignMatrix.evaluate"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.DesignMatrix.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.fit"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastEnsemble.update"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.append"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.check"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.check()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.convert"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.convert()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.drop_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.drop_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.get_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.get_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.get_horizon_tail"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.get_horizon_tail()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.horizons"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.horizons</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.join"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.join_horizon"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join_horizon()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.join_variable"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.join_variable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.lag"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.lag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.n_t"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.n_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.names"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.remove_old_data"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.remove_old_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.subset"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.subset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastMatrix.variables"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.variables</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel"><code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.fit"><code class="docutils literal notranslate"><span class="pre">ForecastModel.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.predictor"><code class="docutils literal notranslate"><span class="pre">ForecastModel.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForecastModel.update"><code class="docutils literal notranslate"><span class="pre">ForecastModel.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingMean"><code class="docutils literal notranslate"><span class="pre">ForgettingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingVariance"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingVariance.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ForgettingVariance.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.FourierSeries"><code class="docutils literal notranslate"><span class="pre">FourierSeries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.FourierSeries.evaluate"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.FourierSeries.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Lag"><code class="docutils literal notranslate"><span class="pre">Lag</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Lag.evaluate"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Lag.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.LowPass"><code class="docutils literal notranslate"><span class="pre">LowPass</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.LowPass.evaluate"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.LowPass.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.One"><code class="docutils literal notranslate"><span class="pre">One</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.One.evaluate"><code class="docutils literal notranslate"><span class="pre">One.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.One.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">One.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR"><code class="docutils literal notranslate"><span class="pre">RRR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.create"><code class="docutils literal notranslate"><span class="pre">RRR.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RRR.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.online_predict"><code class="docutils literal notranslate"><span class="pre">RRR.online_predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.online_update"><code class="docutils literal notranslate"><span class="pre">RRR.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.params"><code class="docutils literal notranslate"><span class="pre">RRR.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.predict_params"><code class="docutils literal notranslate"><span class="pre">RRR.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.score"><code class="docutils literal notranslate"><span class="pre">RRR.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.RRR.update_model_params"><code class="docutils literal notranslate"><span class="pre">RRR.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingMean"><code class="docutils literal notranslate"><span class="pre">SlidingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingSum"><code class="docutils literal notranslate"><span class="pre">SlidingSum</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingSum.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.SlidingSum.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.Source.get_attr"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#id18"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ToExog"><code class="docutils literal notranslate"><span class="pre">ToExog</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ToExog.evaluate"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.ToExog.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS"><code class="docutils literal notranslate"><span class="pre">WLS</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.create"><code class="docutils literal notranslate"><span class="pre">WLS.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">WLS.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.params"><code class="docutils literal notranslate"><span class="pre">WLS.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.predict"><code class="docutils literal notranslate"><span class="pre">WLS.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.predict_params"><code class="docutils literal notranslate"><span class="pre">WLS.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="py_online_forecast.html#py_online_forecast.WLS.update"><code class="docutils literal notranslate"><span class="pre">WLS.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="PyOnlineForecast documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.html" class="btn btn-neutral float-right" title="py_online_forecast package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
