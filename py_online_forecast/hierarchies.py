@@ -16,9 +16,6 @@ def minT(S, Y: np.ndarray, Y_hat: np.ndarray, l_shrink = 0):
     res = (S @ P @ Y_hat.T).T
     return P, res, W
 
-#if os.path.exists(c.data_folder) and 'hierarchical_data.csv' in os.listdir(c.data_folder):
-#    sample_hierarchical_data = c.read_forecast_csv(c.data_folder + '/hierarchical_data.csv')
-
 def construct_temporal_hierarchy(shape: list[tuple[int, int]]) -> np.ndarray:
     level_matrices = [np.kron(np.eye(q), np.ones(k)) for k, q in shape]    
     return np.vstack(level_matrices)
@@ -264,8 +261,8 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
     
 
 class SRRRPredictor(p.RRRPredictor):
-    def __init__(self, S_top, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov, center_cov = False):
-        super().__init__(n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov, center_cov = center_cov)
+    def __init__(self, S_top, n, m, burn_in, init_K, track_memory, combine_variance, full_cov, center_cov = False):
+        super().__init__(n, m, burn_in, init_K, track_memory, combine_variance, full_cov, center_cov = center_cov)
         self.S_top = S_top
         npm = n+m
         self.sigma_bot_hat_d = np.zeros(m)
@@ -275,7 +272,7 @@ class SRRRPredictor(p.RRRPredictor):
         self.diag_mask = np.eye(npm, dtype=bool)
 
     def update_prior(self, x_i, y_i, mem, l_shrink):
-        # Compute optimal Q and theta_tilde based on current error estimates
+        # Compute optimal Q and theta0 based on current error estimates
         err_top = self.S_top @ y_i - x_i
 
         if l_shrink == "auto": # Estimate shrinkage parameter using full covariance matrix
@@ -315,9 +312,9 @@ class SRRRPredictor(p.RRRPredictor):
 
         Q = 1/(1 - mem) * (l_shrink/(1-l_shrink))*b0 # Check that this is correct. Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
 
-        theta_tilde = np.linalg.solve(b0, b1)
+        theta0 = np.linalg.solve(b0, b1)
 
-        return Q, theta_tilde
+        return Q, theta0
  
 class SRRR(p.RRR):
 
@@ -325,16 +322,16 @@ class SRRR(p.RRR):
         super().__init__(X, Y, horizon, **kwargs)
         self.S_top = S_top
 
-    def create(self, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov, center_cov):
-        return SRRRPredictor(self.S_top, n, m, burn_in, tilde_k_init_val, track_memory, combine_variance, full_cov, center_cov=center_cov)
+    def create(self, n, m, burn_in, init_K, track_memory, combine_variance, full_cov, center_cov):
+        return SRRRPredictor(self.S_top, n, m, burn_in, init_K, track_memory, combine_variance, full_cov, center_cov=center_cov)
 
     def online_update(self, state: SRRRPredictor, x_i, y_i, x_train_i, mem=0.99, l_shrink = "auto", **kwargs):
 
-        # Compute optimal Q and theta_tilde based on current error estimates
-        Q, theta_tilde = state.update_prior(x_i, y_i, mem, l_shrink) # x_i or x_train_i?
+        # Compute optimal Q and theta0 based on current error estimates
+        Q, theta0 = state.update_prior(x_i, y_i, mem, l_shrink) # x_i or x_train_i?
 
-        # Call parent online_update with computed Q and theta_tilde
-        result = state.online_update(x_i, y_i, x_train_i, Q, theta_tilde, mem=mem, **kwargs)
+        # Call parent online_update with computed Q and theta0
+        result = state.online_update(x_i, y_i, x_train_i, Q, theta0, mem=mem, **kwargs)
 
         # Return result and updated state
         return result, state

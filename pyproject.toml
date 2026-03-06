@@ -23,3 +23,25 @@ py_online_forecast = ["requirements.txt"]
 [tool.setuptools.dynamic]
 version = {attr = "py_online_forecast.__version__"}
 dependencies = {file = ["py_online_forecast/requirements.txt"]}
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "D"]
+ignore = [
+  "D203",  # conflicts with D211
+  "D213",  # conflicts with D212
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+"**/test_*.py" = ["D"]

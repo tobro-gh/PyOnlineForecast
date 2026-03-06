@@ -1,14 +1,10 @@
 from __future__ import annotations
-from unittest import result
 import pandas as pd
 import numpy as np
-#from .core import Transformation, DEFAULT_SOURCE, DEFAULT_INDEX, MEMORY
-#from .features import ForgettingMean, ForgettingVariance, Combine
 from typing import Literal
 import re
 import functools
-
-from pyparsing import Combine
+from .features import *
 from .core import *
 from .prediction import *
 from .hierarchies import *
@@ -783,8 +779,8 @@ def _(source: ToArray):
 
 @ForecastFormat.register_resolver(RRR)
 def _(source: RRR):
-    def formatter(transform, state, memory = None):
-        value = state[transform]
+    def formatter(value_source, state, memory = None):
+        value = state[value_source]
         Y = state[source.Y]
         formatted_value, cols = format_forecast(value, Y, horizon = source.horizon, cols = memory)
         return formatted_value, cols
@@ -792,8 +788,8 @@ def _(source: RRR):
 
 @ForecastFormat.register_resolver(WLS)
 def _(source: WLS):
-    def formatter(transform, state, memory = None):
-        value = state[transform]
+    def formatter(value_source, state, memory = None):
+        value = state[value_source]
         Y = state[source.Y]
         formatted_value, cols = format_forecast(value, Y, horizon = source.X_train.amount, cols = memory)
         return formatted_value, cols
@@ -802,8 +798,8 @@ def _(source: WLS):
 @ForecastFormat.register_resolver(ARX)
 def _(source: ARX):
     # TODO: fix
-    def formatter(transform, state, memory = None):
-        value = state[transform]
+    def formatter(value_source, state, memory = None):
+        value = state[value_source]
         Y = state[source.Y]
         formatted_value, cols = format_forecast(value, Y, horizon = source.horizon, cols = memory)
         return formatted_value, cols
@@ -811,8 +807,8 @@ def _(source: ARX):
 
 @ForecastFormat.register_resolver(RidgeReconciliation)
 def _(source: RidgeReconciliation):
-    def formatter(transform, state, memory = None):
-        value = state[transform]
+    def formatter(value_source, state, memory = None):
+        value = state[value_source]
         Y = state[source.Y_hat]
 
         result = {}
@@ -850,7 +846,7 @@ def _(source: ForgettingMean):
 def _(source: ForgettingVariance):
     mean_formatter = ForecastFormat.get_formatter(source.apply_kwargs["data"])
     if source.covariance:
-        def formatter(transform, state, memory = None):
+        def formatter(value_source, state, memory = None):
             formatted_mean = mean_formatter(source.apply_kwargs["data"], state, None)
 
             if memory is None:
@@ -861,7 +857,7 @@ def _(source: ForgettingVariance):
                 memory = make_fc_columns(names, horizons, outer_prod = True)
                             
             # Format using memory columns and index as mean formatter
-            formatted_cov = to_pandas(state[transform], index = formatted_mean.index, columns = memory)
+            formatted_cov = to_pandas(state[value_source], index = formatted_mean.index, columns = memory)
 
             return formatted_cov, memory
         return formatter

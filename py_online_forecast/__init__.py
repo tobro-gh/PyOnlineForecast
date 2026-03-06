@@ -1,51 +1,33 @@
 
 __version__ = "0.1.0"
 
-from .core import (
-    Source,
-    MEMORY,
-    DEFAULT_SOURCE,
-    X_INIT,
-    Y_INIT,
-    Z_INIT
-) 
-
+from .core import DEFAULT_SOURCE, MEMORY, Source
 from .features import (
-    DesignMatrix,
     Combine,
-    One,
+    DesignMatrix,
+    ForgettingMean,
+    ForgettingVariance,
+    FourierSeries,
     Lag,
     LowPass,
-    FourierSeries,
-    SlidingSum,
+    One,
     SlidingMean,
-    ForgettingMean,
-    ForgettingVariance
+    SlidingSum,
 )
-
-from .prediction import (
-    BackShift,
-    WLS,
-    RRR,
-    ARX
-)
-
 from .forecast_tools import (
+    Concat,
+    ForecastEnsemble,
     ForecastMatrix,
     ForecastModel,
-    ForecastEnsemble,
     ToExog,
-    Concat
 )
-  
+from .prediction import ARX, RRR, WLS, BackShift
+
 __all__ = [
     "__version__",
     "Source",
     "MEMORY",
     "DEFAULT_SOURCE",
-    "X_INIT",
-    "Y_INIT",
-    "Z_INIT",
     "DesignMatrix",
     "Combine",
     "One",

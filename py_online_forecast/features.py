@@ -1,18 +1,40 @@
-from .core import *
+"""Selection of feature transformations.
+
+This module provides a selection of feature transformations based on the core module
+Transformation class. The transformations are focused on use with online regression
+models.
+"""
+import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
+
+from .core import DEFAULT_SOURCE, MEMORY, CircularBuffer, Dim, Transformation
+
 
 ### Transformations
 class ToArray(Transformation):
+    """Transformation that converts input data to a numpy array."""
 
     def __init__(self, data):
         super().__init__(data = data)
 
     def evaluate(self, data):
+        """Convert input data to a numpy array."""
         if isinstance(data, np.ndarray):
             return data
         return np.asarray(data)
 
 class Combine(Transformation):
+    """Transformation that combines multiple input sources into a dictionary.
+    
+    Parameters
+    ----------
+    sources : list of Source
+        The input sources to combine into a dictionary.
+    names : list, optional
+        The names to use for the combined features in the output dictionary. If not 
+        provided, the names of the input sources will be used.
+    """
+
     def __init__(self, *sources, names = None):
         super().__init__(*sources)
         self.sources = sources
@@ -24,29 +46,71 @@ class Combine(Transformation):
         self.names = names
 
     def evaluate(self, *data):
+        """Combine input data into a dictionary."""
         return {name: v for name, v in zip(self.names, data)}
 
 class DesignMatrix(Transformation):
+    """Transformation that combines multiple input sources into a 2D design matrix.
+
+    Parameters
+    ----------
+    sources : list of Source
+        Input sources with array like values to combine into a design matrix.
+    """
 
     def __init__(self, *data):
         data = [ToArray(d) for d in data]
         super().__init__(*data)
     
     def evaluate(self, *data):
-        # Reshape arrays from (t, d1, d2, ...) to (t, d1*d2*...) and stack horizontally
+        """Reshape input data and stack horizontally.
+        
+        Parameters
+        ----------
+        data : list of ndarray
+            The input data to combine into a design matrix. Each element should have
+            shape (n_obs, d_i) where n_obs is the number of observations and d_i is the
+            number of features for the i-th data input. Higher dimensional arrays will
+            be reshaped to 2D arrays, keeping the first dimension.
+
+        Returns
+        -------
+        result : ndarray
+            The combined design matrix with shape (n_obs, sum(D_1, ...)) where 
+            D_i = d_i_1 * d_i_2 * ... is the number of features in the i-th input array.
+        """
         data = [d.reshape(d.shape[0], -1) for d in data]
         return np.hstack(data)
 
 class One(Transformation):
-    
+    """Return a column of ones.
+
+    Parameters
+    ----------
+    ref : Source, optional
+        The source to use as reference for the length of the output column.
+    """
+
     def __init__(self, ref = DEFAULT_SOURCE):
         t = Dim(ref, axis = 0)
         super().__init__(t)
 
     def evaluate(self, t):
+        """Return a column of ones of length t."""
         return np.ones(t)
 
 class SlidingSum(Transformation):
+    """Compute sliding window sum using numpy's sliding_window_view function.
+
+    Parameters
+    ----------
+    data : Source
+        The input data to compute the sliding sum over.
+    window_size : int
+        The size of the sliding window to compute the sum over.
+    *args, **kwargs
+        Additional arguments to pass to numpy's sliding_window_view function
+    """
 
     def __init__(self, data = DEFAULT_SOURCE, window_size = 1, *args, **kwargs):
         self.window_size = window_size
@@ -56,6 +120,20 @@ class SlidingSum(Transformation):
         self._kwargs = kwargs
 
     def evaluate(self, data, old_data = None):
+        """Evaluate the sliding window sum.
+        
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...)
+            The input data to compute the sliding sum over.
+        old_data : ndarray
+            Previous values of the input data to complete the sliding view.
+
+        Returns
+        -------
+        result : ndarray
+            The sliding window sum of the input data.
+        """
         if old_data is None:
             n_vars = data.shape[1]
             old_data = np.full((self.window_size - 1, n_vars), np.nan)
@@ -71,6 +149,17 @@ class SlidingSum(Transformation):
         return result, old_data
 
 class SlidingMean(Transformation):
+    """Compute sliding window mean using numpy's sliding_window_view function.
+
+    Parameters
+    ----------
+    data : Source
+        The input data to compute the sliding mean over.
+    window_size : int
+        The size of the sliding window to compute the mean over.
+    *args, **kwargs
+        Additional arguments to pass to numpy's sliding_window_view function
+    """
 
     def __init__(self, data = None, window_size = None, *args, **kwargs):
         self._args = args
@@ -80,6 +169,21 @@ class SlidingMean(Transformation):
         super().__init__(data = data, old_data = MEMORY)
 
     def evaluate(self, data, old_data = None):
+        """Evaluate the sliding window mean.
+        
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...)
+            The input data to compute the sliding mean over.
+        old_data : ndarray
+            Previous values of the input data to complete the sliding view.
+
+        Returns
+        -------
+        result : ndarray
+            The sliding window mean of the input data.
+
+        """
         if old_data is None:
             n_vars = data.shape[1]
             old_data = np.full((self.window_size - 1, n_vars), np.nan)
@@ -95,9 +199,33 @@ class SlidingMean(Transformation):
         return result, old_data
 
 def forgetting_mean(forgetting, data, state, track_memory = False):
+    """Compute the running mean with exponential forgetting.
+    
+    Parameters
+    ----------
+    forgetting : float
+        The forgetting factor for the exponential forgetting.
+    data : ndarray of shape (n_obs, ...)
+        The input data to compute the running mean over.
+    state : tuple
+        The previous state of the computation, i.e. a tuple of the most recent mean
+        estimate and the effective memory.
+    track_memory : bool
+        Whether to track the effective or assume saturated memory. If  True, the memory
+        is updated as memory = forgetting * memory + 1 at each step. Otherwise, the
+        memory is assumed to be saturated, i.e. 1/(1 - forgetting).
+
+    Returns
+    -------
+    result : ndarray of shape (n_obs, ...)
+        The running mean of the input data.
+    new_state : tuple
+        The new state of the running mean and memory.
+    """
     if not isinstance(data, np.ndarray):
         data = np.asarray(data)
 
+    # Remove observations with nans
     collapse = tuple(i for i in range(1, data.ndim))
     mask = ~np.isnan(data).any(axis = collapse)
     clean_data = data[mask]
@@ -144,6 +272,20 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
     return result_full, (new_est, memory)
 
 class ForgettingMean(Transformation):
+    """Compute the running mean with exponential forgetting.
+    
+    This is simply a wrapper around the `forgetting_mean` function, which manages the
+    state and forgetting parameter. See the `forgetting_mean` function for details.
+
+    Parameters
+    ----------
+    forgetting : float
+        The forgetting factor for the exponential forgetting.
+    data : Source
+        The input data to compute the running mean over.
+    track_memory : bool
+        Whether to track the effective or assume saturated memory.
+    """
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True):
         super().__init__(data, state = MEMORY)
@@ -152,9 +294,38 @@ class ForgettingMean(Transformation):
         self.data = data
 
     def evaluate(self, data, state = None):
+        """Evaluate the running mean using `forgetting_mean`.
+        
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...)
+            The input data to compute the running mean over.
+
+        """
         return forgetting_mean(self.forgetting, data, state, self.track_memory)
 
 class ForgettingVariance(Transformation):
+    """Compute the running variance with exponential forgetting.
+    
+    This transformation computes a running variance estimate with exponential forgetting
+    by applying the `forgetting_mean` function to the optionally centered squared data.
+    The transformation can compute either the marginal variance or the full covariance
+    matrix. 
+
+    Parameters
+    ----------
+    forgetting : float
+        The forgetting factor for the exponential forgetting.
+    data : Source
+        The input data to compute the running variance over. The value of the source
+        should be array-like with shape (t, d) where t is the time dimension.
+    track_memory : bool
+        Whether to track the effective or assume saturated memory.
+    center : bool
+        Whether to center the data before computing the variance.
+    covariance : bool
+        Whether to compute the covariance matrix instead of the variance.
+    """
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True, center = True, covariance = False):
         if center:
@@ -171,6 +342,28 @@ class ForgettingVariance(Transformation):
         self.covariance = covariance
 
     def evaluate(self, data, mean = None, state = None, forgetting = None):
+        """Evaluate the running variance or covariance.
+        
+        Parameters
+        data : ndarray of shape (n_obs, d)
+            The input data to compute the running variance over.
+        mean : ndarray of shape (n_obs, d)
+            The running mean estimate to center the data. If None, the data is not
+            centered.
+        state : tuple
+            The previous state of the computation, i.e. a tuple of the most recent
+            variance estimate and the effective memory.
+        forgetting : float
+            The forgetting factor for the exponential forgetting. If None, method uses
+            the forgetting factor specified at initialization.
+        
+        Returns
+        -------
+        result : ndarray of shape (n_obs, d) or (n_obs, d, d)
+            The running variance or covariance of the input data.
+        new_state : tuple
+            The new state of the running variance and memory.
+        """
         if self.covariance:
             return self._eval_covariance(data, mean, state, forgetting)
         else:
@@ -206,12 +399,41 @@ class ForgettingVariance(Transformation):
         return var, state
     
 class LowPass(Transformation):
+    """Low-pass filter using exponential forgetting.
+    
+    This transformation applied a low-pass filter with exponential forgetting and NaN
+    handling to the input data.
+
+    Parameters
+    ----------
+    data : Source
+        The input data to apply the low-pass filter to.
+    alpha : float
+        The forgetting factor for the exponential forgetting. Higher values of alpha
+        correspond to more smoothing.        
+    """
+
     def __init__(self, data, alpha = 0):
         data = ToArray(data)
         super().__init__(data=data, prev_value = MEMORY)
         self.alpha = alpha
 
     def evaluate(self, data: np.ndarray, prev_value=None):
+        """Evaluate the low-pass filter on the input data.
+        
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...)
+            The input data to apply the low-pass filter to.
+        prev_value : ndarray of shape (...,)
+            The previous value of the low-pass filter to resume the computation. If
+            None, it is initialized as NaN.
+
+        Returns
+        -------
+        result : ndarray
+            The low-pass filtered data.
+        """
         alpha = self.alpha
         n, m = data.shape
 
@@ -231,13 +453,38 @@ class LowPass(Transformation):
 
 
 class FourierSeries(Transformation):
+    """Fourier series features.
+    
+    The transformation computes the basis functions of a Fourier series expansion up to
+    a specified number of harmonics.
+
+    Parameters
+    ----------
+    data : Source
+        The input data to compute the Fourier features from.
+    nharmonics : int
+        The number of terms in the Fourier series expansion.
+    """
 
     def __init__(self, data, nharmonics = 1):
         self.nharmonics = nharmonics
         data = ToArray(data)
         super().__init__(data = data)
 
-    def evaluate(self, data: np.ndarray):            
+    def evaluate(self, data: np.ndarray):
+        """Evaluate the Fourier series features.
+
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...)
+            The input data to compute the Fourier features from. The data is reshaped to
+            (n_obs, d), by collapsing all dimensions except the first one.
+
+        Returns
+        -------
+        result : ndarray of shape (n_obs, 2*nharmonics*d)
+            The Fourier series features of the input data.
+       """ 
         results = []
         if data.ndim != 2:
             data = data.reshape(data.shape[0], -1)
@@ -249,6 +496,26 @@ class FourierSeries(Transformation):
         return result
 
 class Lag(Transformation):
+    """Lag features along the observations dimension.
+    
+    This transformation lags arrays and dictionaries of arrays along the first
+    dimension.
+
+    Parameters
+    ----------
+    data : Source
+        The input data to compute the lag features from.
+    amount : int
+        The number of steps to lag the data.
+    default_value : scalar, optional
+        The value to use for the lagged values when there is not enough history. If
+        None, the default value is NaN.
+    offsets : int or list of int, optional
+        A set of offsets to lag from. If specified, evaluation of the transformation
+        will return a dictionary of lagged values per offset. The lag amount for the
+        i-th offset is given by amount - offsets[i]. If None, the transformation will
+        simply lag by the specified amount and return a single array of lagged values.
+    """
 
     def __init__(self, data, amount = 1, default_value = None, offsets: int | list = None):
         self.amount = amount
@@ -264,11 +531,33 @@ class Lag(Transformation):
 
 
     def evaluate(self, data, prev_values = None):
+        """Lag the data along the first dimension.
+
+        Parameters
+        ----------
+        data : ndarray of shape (n_obs, ...) or dict of such arrays
+            The input data to lag.
+        prev_values : ndarray of shape (n_obs, ...) or dict of such arrays, optional
+            The previous values to use for the lag.
+
+        Returns
+        -------
+        result : ndarray of shape (n_obs, ...) or dict
+            The lagged data. If the input was a dict, the lagged value is also a dict
+            where each value has been lagged. If offsets were specified at 
+            initialization, the result is a dict of lagged values per offset. If both
+            the input was a dict, and offsets were specified, the output is a dict of
+            dicts, where the first level corresponds to offsets, and the second level
+            corresponds to the keys of the input dict.
+        prev_values : ndarray of shape (n_obs, ...)
+            The updated previous values.
+
+        """
         # Evaluate lag across horizons
 
         # No specified offset
         if self.offsets is None:
-            return self.evaluate_offset(data, prev_values, None)
+            return self._evaluate_offset(data, prev_values, None)
 
         # A set of offsets
         else:
@@ -280,29 +569,29 @@ class Lag(Transformation):
 
             # Evaluate per offset
             for h in self.offsets:
-                result[h], prev_values[h] = self.evaluate_offset(data, prev_values[h], h)
+                result[h], prev_values[h] = self._evaluate_offset(data, prev_values[h], h)
 
             return result, prev_values
 
-    def evaluate_offset(self, data, prev_values = None, offset = None):
+    def _evaluate_offset(self, data, prev_values = None, offset = None):
         if isinstance(data, np.ndarray):
-            return self.evaluate_array(data, prev_values, offset)
+            return self._evaluate_array(data, prev_values, offset)
         elif isinstance(data, dict):
-            return self.evaluate_dict(data, prev_values, offset)
+            return self._evaluate_dict(data, prev_values, offset)
         else:
             raise ValueError(f"Cannot apply Lag to data of type {type(data)}.")
 
-    def evaluate_dict(self, data, prev_values = None, offset = None):
+    def _evaluate_dict(self, data, prev_values = None, offset = None):
         if prev_values is None:
             prev_values = {k: None for k in data}
 
         result = {}
         for k, v in data.items():
-            result[k], prev_values[k] = self.evaluate_offset(v, prev_values[k], offset)
+            result[k], prev_values[k] = self._evaluate_offset(v, prev_values[k], offset)
 
         return result, prev_values
 
-    def evaluate_array(self, data, prev_values = None, offset = None):
+    def _evaluate_array(self, data, prev_values = None, offset = None):
 
         shift = self.amount
         if offset is not None:
