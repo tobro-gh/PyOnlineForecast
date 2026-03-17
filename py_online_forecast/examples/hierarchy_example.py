@@ -23,7 +23,7 @@ B = [1, 0] # [Y_{H,t-1}, Y_{H,t-0}]
 #config = c.RRR.configure()
 #config = SRRR.configure(S_top = S_top, predictor_params = {"l_shrink": "auto"})
 #temporal_reconciler = TemporalReconciler(S_top, B, config, horizon = 2, variance_name = "cov", skip_duplicates=True)
-temporal_reconciler = TemporalRidgeReconciliation(S_top, B, horizon = 2, full_cov = True, skip_duplicates=True, opt_shrink = False, full_hierarchy_cov=False)
+temporal_reconciler = TemporalRidgeReconciliation(S_top, B, full_cov = True, skip_duplicates=True, opt_shrink = False, full_hierarchy_cov=False)
 
 # The parameters are as follows:
 # S_top: The summation matrix for the top level(s) of the hierarchy

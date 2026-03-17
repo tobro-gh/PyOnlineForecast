@@ -87,11 +87,19 @@ class Source:
         return _PowTransformation(other, self)
 
     def __getitem__(self, key):
-        """Return self[key] as a GetItemTransformation."""
-        return GetItemTransformation(self, key)
+        """Return self[key] as a GetItem."""
+        return GetItem(self, key)
+
+    def __matmul__(self, other):
+        """Return self @ other as a _MatmulTransformation."""
+        return _MatmulTransformation(self, other)
+    
+    def __rmatmul__(self, other):
+        """Return other @ self as a _MatmulTransformation."""
+        return _MatmulTransformation(other, self)
 
     def get_attr(self, name):
-        """Access an attribute of the source as a GetAttrTransformation.
+        """Access an attribute of the source as a GetAttr.
         
         Parameters
         ----------
@@ -100,10 +108,10 @@ class Source:
         
         Returns
         -------
-        GetAttrTransformation
+        GetAttr
             Transformation accessing self.name.
         """
-        return GetAttrTransformation(self, name)
+        return GetAttr(self, name)
 
 class KeywordSource(Source):
     """Singleton keyword placeholder for special data sources.
@@ -142,8 +150,12 @@ def make_keyword(name: str) -> Source:
 
 # Create module-level keywords
 MEMORY = make_keyword("MEMORY")
+"""Special source for memory parameters of transformations."""
 DEFAULT_SOURCE = make_keyword("DEFAULT_SOURCE")
+"""Default source for data.
+`parse_data` will map unnamed data to this source for use in transformations."""
 STATE = make_keyword("STATE")
+"""Source for intermediate data when applying transformations."""
 
 class Transformation(Source):
     """Base class for data transformations.
@@ -209,8 +221,8 @@ class Transformation(Source):
         # Use inspect to bind *apply_args and **apply_kwargs
         sig = inspect.signature(self.evaluate)
         bound_args = sig.bind(*apply_args, **apply_kwargs)
-        self.apply_kwargs = bound_args.arguments
-        self.apply_args = apply_args
+        self.apply_kwargs = bound_args.kwargs
+        self.apply_args = bound_args.args
 
         # Check that args and kwargs refer to valid inputs
         for val in list(apply_kwargs.values()) + list(apply_args):
@@ -225,6 +237,9 @@ class Transformation(Source):
         # Determine all sources
         self.sources = list(self.apply_kwargs.values()) + list(self.apply_args)
         self.dependencies = [v for v in self.sources if isinstance(v, Transformation)]
+
+        # Check if MEMORY is used
+        self._use_memory = MEMORY in self.sources
 
         # Fetch evaluate signature
         self._eval_sig = inspect.signature(self.evaluate)
@@ -450,7 +465,7 @@ class Transformation(Source):
         # Evaluate
         eval_out = self.evaluate(*evaluate_args, **evaluate_kwargs)
 
-        if isinstance(eval_out, tuple):
+        if self._use_memory and isinstance(eval_out, tuple):
             result, memory = eval_out
         else:
             result = eval_out
@@ -533,41 +548,53 @@ class Transformation(Source):
                     result.add(sub_dep)
         return list(result)
 
-    def get_graph(self, use_names=True) -> dict:
-        """Return a graph-like dict with node class names and parameters."""
-        # Get all unique nodes
-        nodes = self.get_all_dependencies() + [self]
 
+    def get_graph(self) -> dict:
+        """Return a dict with nodes and edges rooted at this transformation."""
         result = {}
-        counts = {}
-        names = {}
-        for node in nodes:
-            # Get name; either from _name or using class name + count
-            if use_names:
-                name = node._name
-                if name is None and node not in names:
-                    class_name = node.__class__.__name__
-                    count = counts.get(class_name, 0) + 1
-                    counts[class_name] = count
-                    name = f"{class_name}_{count}"
-                    names[node] = name
-            else:
-                names[node] = node
 
-            result[names[node]] = {
+        result[self] = set(self.sources)
+
+        for dep in self.dependencies:
+            if isinstance(dep, Transformation):
+                result = result | dep.get_graph()
+        
+        return result
+
+    def get_summary(self, names = None):
+        """Return a summary of the transformation graph and parameters."""
+        graph = self.get_graph()
+
+        # Make unique names for each node
+        names = names or {}
+        counts = {}
+        missing = set()
+        sources = set(graph.keys()) | set().union(*graph.values())
+        for node in sources:
+            if node not in names:
+                if node._name is not None:
+                    names[node] = node._name
+                else:
+                    counts[node.__class__] = counts.get(node.__class__, 0) + 1
+                    missing.add(node)
+
+        used_names = {}        
+        for node in missing:
+            if counts[node.__class__] > 1:
+                used_names[node.__class__] = used_names.get(node.__class__, 0) + 1
+                names[node] = f"{node.__class__.__name__}_{used_names[node.__class__]}"
+            else:
+                names[node] = node.__class__.__name__
+
+        summary = {}
+        for node, deps in graph.items():
+            summary[names[node]] = {
                 "class": node.__class__.__name__,
                 "params": node._init_params,
+                "sources": [names[dep] for dep in deps],
             }
 
-        if use_names:
-            # Replace params Sources with their names
-            for node_name, node_info in result.items():
-                for key, val in node_info["params"].items():
-                    if isinstance(val, Source):
-                        if val in names:
-                            result[node_name]["params"][key] = names[val]
-
-        return result
+        return summary
 
     def reset_state(self):
         """Clear cached recursion state stored on this transformation."""
@@ -612,11 +639,11 @@ class Dim(Transformation):
         """Return the value of the data shape at the specified axis."""
         return data.shape[self.axis]
 
-class GetItemTransformation(Transformation):
+class GetItem(Transformation):
     """Transformation that returns ``data[key]`` from an input source."""
     
     def __init__(self, data: Source, key):
-        """Initialize GetItemTransformation with input data and key."""
+        """Initialize GetItem with input data and key."""
         super().__init__(data=data)
         self.key = key
 
@@ -625,11 +652,11 @@ class GetItemTransformation(Transformation):
         return data[self.key]
 
 
-class GetAttrTransformation(Transformation):
+class GetAttr(Transformation):
     """Transformation that returns ``data.attr`` from an input source."""
 
     def __init__(self, data: Source, attr):
-        """Initialize GetAttrTransformation with input data and attribute."""
+        """Initialize GetAttr with input data and attribute."""
         super().__init__(data=data)
         self.attr = attr
 
@@ -691,7 +718,6 @@ def transform_wrapper(func):
 
     return wrapper
 
-
 class _PrimitiveTransformation(Transformation):
     """Base class for primitive transformations supporting operator overloading."""
 
@@ -736,6 +762,11 @@ class _PowTransformation(_PrimitiveTransformation):
 
     def evaluate(self, a, b):
         return a**b
+
+class _MatmulTransformation(_PrimitiveTransformation):
+
+    def evaluate(self, a, b):
+        return a @ b
 
 
 class Param(Transformation):

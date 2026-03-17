@@ -1,0 +1,558 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast.hierarchies module &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast.datasets module" href="py_online_forecast.datasets.html" />
+    <link rel="prev" title="py_online_forecast.forecast_tools module" href="py_online_forecast.forecast_tools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">py_online_forecast</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.core.html">core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.features.html">features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">hierarchies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.minT"><code class="docutils literal notranslate"><span class="pre">minT()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.construct_temporal_hierarchy"><code class="docutils literal notranslate"><span class="pre">construct_temporal_hierarchy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.hierarchy_shape"><code class="docutils literal notranslate"><span class="pre">hierarchy_shape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.form_glm"><code class="docutils literal notranslate"><span class="pre">form_glm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressor"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressor.__init__"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressor.evaluate"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressor.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressor.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressand"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressand.__init__"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressand.evaluate"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.HierarchyRegressand.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">HierarchyRegressand.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.__init__"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.evaluate"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.X"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.X</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.Y"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.Y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.predictor"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.update"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.fit"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.P"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.P</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.__init__"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.update"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.fit"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRRPredictor"><code class="docutils literal notranslate"><span class="pre">SRRRPredictor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRRPredictor.__init__"><code class="docutils literal notranslate"><span class="pre">SRRRPredictor.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRRPredictor.update_prior"><code class="docutils literal notranslate"><span class="pre">SRRRPredictor.update_prior()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR"><code class="docutils literal notranslate"><span class="pre">SRRR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.__init__"><code class="docutils literal notranslate"><span class="pre">SRRR.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.create"><code class="docutils literal notranslate"><span class="pre">SRRR.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.online_update"><code class="docutils literal notranslate"><span class="pre">SRRR.online_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SRRR.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.params"><code class="docutils literal notranslate"><span class="pre">SRRR.params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.predict_params"><code class="docutils literal notranslate"><span class="pre">SRRR.predict_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRR.update_model_params"><code class="docutils literal notranslate"><span class="pre">SRRR.update_model_params</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.find_nodes"><code class="docutils literal notranslate"><span class="pre">find_nodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.__init__"><code class="docutils literal notranslate"><span class="pre">Node.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.shift"><code class="docutils literal notranslate"><span class="pre">Node.shift()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.is_parent"><code class="docutils literal notranslate"><span class="pre">Node.is_parent()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.get_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.get_top_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_top_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.build_B"><code class="docutils literal notranslate"><span class="pre">Node.build_B()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.get_leaf_nodes"><code class="docutils literal notranslate"><span class="pre">Node.get_leaf_nodes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.build_S_top"><code class="docutils literal notranslate"><span class="pre">Node.build_S_top()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.build_A_lat"><code class="docutils literal notranslate"><span class="pre">Node.build_A_lat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.Node.print_hierarchy"><code class="docutils literal notranslate"><span class="pre">Node.print_hierarchy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.LaggedNode"><code class="docutils literal notranslate"><span class="pre">LaggedNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.LaggedNode.__init__"><code class="docutils literal notranslate"><span class="pre">LaggedNode.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.hierarchies.LaggedNode.shift"><code class="docutils literal notranslate"><span class="pre">LaggedNode.shift()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.hierarchies.make_hierarchy"><code class="docutils literal notranslate"><span class="pre">make_hierarchy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">py_online_forecast</a></li>
+      <li class="breadcrumb-item active">py_online_forecast.hierarchies module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/py_online_forecast.hierarchies.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py_online_forecast.hierarchies">
+<span id="py-online-forecast-hierarchies-module"></span><h1>py_online_forecast.hierarchies module<a class="headerlink" href="#module-py_online_forecast.hierarchies" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.minT">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">minT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.minT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.construct_temporal_hierarchy">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">construct_temporal_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#py_online_forecast.hierarchies.construct_temporal_hierarchy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.hierarchy_shape">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">hierarchy_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.hierarchy_shape" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of tuples giving a hierarchy shape [(k_n, q_n), …, (k_i, q_i), …, (k_0, q_0)], where k_i is the number of
+base forecasts required for level i, and q_i is the number of entries of level i in the hierarchy.
+Here i &gt;= 0 and i = 0 is the bottom level so that k_i &gt; k_j for i &lt; j.</p>
+<p>h: tuple of integers. If as_groups is False, h represents k_i. if as_groups
+is True, h represents the sequence of groupings, i.e. h_i = k_{n-(i+1)}/k_{n-i} where k_n = 1.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.form_glm">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">form_glm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.form_glm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">HierarchyRegressor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_hat_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Returns X = Y_hat_top - Y_hat_bot &#64; S_top.T</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_hat_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressor.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressor.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_hat_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressor.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Compute the transformation output.</p>
+<p>Subclasses should override this method with a custom signature
+matching the input sources specified in <cite>__init__</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>Any</em>) – Transformation output or a tuple of (result, memory).</p></li>
+<li><p><strong>memory</strong> (<em>Any, optional</em>) – Cached state for subsequent calls (if returning tuple).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – This method must be overridden by subclasses.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method signature can be freely defined by subclasses.
+Parameters will be matched to input sources by name.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressor.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Y_hat_top',</span> <span class="pre">'Y_hat_bot']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressor.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressand">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">HierarchyRegressand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressand" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Returns Y = Y_bot - Y_hat_bot, predictions lagged by horizon</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressand.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressand.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat_bot_old</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressand.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Compute the transformation output.</p>
+<p>Subclasses should override this method with a custom signature
+matching the input sources specified in <cite>__init__</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>Any</em>) – Transformation output or a tuple of (result, memory).</p></li>
+<li><p><strong>memory</strong> (<em>Any, optional</em>) – Cached state for subsequent calls (if returning tuple).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – This method must be overridden by subclasses.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method signature can be freely defined by subclasses.
+Parameters will be matched to input sources by name.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.HierarchyRegressand.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Y_bot',</span> <span class="pre">'Y_hat_bot',</span> <span class="pre">'Y_hat_bot_old']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.HierarchyRegressand.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">RidgeReconciliation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_hierarchy_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_hierarchy_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_hat_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Compute the transformation output.</p>
+<p>Subclasses should override this method with a custom signature
+matching the input sources specified in <cite>__init__</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>Any</em>) – Transformation output or a tuple of (result, memory).</p></li>
+<li><p><strong>memory</strong> (<em>Any, optional</em>) – Cached state for subsequent calls (if returning tuple).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – This method must be overridden by subclasses.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method signature can be freely defined by subclasses.
+Parameters will be matched to input sources by name.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.X">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">X</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.X" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.Y">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Y</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.Y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.predictor">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">predictor</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.predictor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.fit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.P">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">P</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.P" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.RidgeReconciliation.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Y_hat_bot',</span> <span class="pre">'pred']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.RidgeReconciliation.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.TemporalRidgeReconciliation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">TemporalRidgeReconciliation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z_bot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_hierarchy_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.hierarchies.RidgeReconciliation" title="py_online_forecast.hierarchies.RidgeReconciliation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.TemporalRidgeReconciliation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z_bot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_hierarchy_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.TemporalRidgeReconciliation.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">model_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.TemporalRidgeReconciliation.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Y_bot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">model_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.fit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.TemporalRidgeReconciliation.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Y_hat_bot',</span> <span class="pre">'pred']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.TemporalRidgeReconciliation.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRRPredictor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">SRRRPredictor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRRPredictor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.prediction.html#py_online_forecast.prediction.RRRPredictor" title="py_online_forecast.prediction.RRRPredictor"><code class="xref py py-class docutils literal notranslate"><span class="pre">RRRPredictor</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRRPredictor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRRPredictor.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRRPredictor.update_prior">
+<span class="sig-name descname"><span class="pre">update_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_shrink</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRRPredictor.update_prior" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">SRRR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.prediction.html#py_online_forecast.prediction.RRR" title="py_online_forecast.prediction.RRR"><code class="xref py py-class docutils literal notranslate"><span class="pre">RRR</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_top</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combine_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center_cov</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.create" title="Link to this definition"></a></dt>
+<dd><p>Create amd return <cite>RRRPredictor</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.online_update">
+<span class="sig-name descname"><span class="pre">online_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.hierarchies.SRRRPredictor" title="py_online_forecast.hierarchies.SRRRPredictor"><span class="pre">SRRRPredictor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_train_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_shrink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.online_update" title="Link to this definition"></a></dt>
+<dd><p>Delegate single-step update to <cite>RRRPredictor.online_update</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<a class="reference internal" href="py_online_forecast.prediction.html#py_online_forecast.prediction.RRRPredictor" title="py_online_forecast.prediction.RRRPredictor"><em>RRRPredictor</em></a>) – The recerusive ridge predictor to use and update</p></li>
+<li><p><strong>online_update.</strong> (<em>Otherwise same as RRRPredictor</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>dict</em>) – Prediction dictionary produced by <cite>RRRPredictor</cite>.</p></li>
+<li><p><strong>state</strong> (<em>RRRPredictor</em>) – Updated predictor instance.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['X',</span> <span class="pre">'Y',</span> <span class="pre">'update_predictor',</span> <span class="pre">'state',</span> <span class="pre">'Z',</span> <span class="pre">'params']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.params">
+<span class="sig-name descname"><span class="pre">params</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['state',</span> <span class="pre">'x_i',</span> <span class="pre">'V',</span> <span class="pre">'return_var_theta',</span> <span class="pre">'state',</span> <span class="pre">'x_i',</span> <span class="pre">'y_i',</span> <span class="pre">'x_train_i',</span> <span class="pre">'mem',</span> <span class="pre">'l_shrink']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.predict_params">
+<span class="sig-name descname"><span class="pre">predict_params</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['state',</span> <span class="pre">'x_i',</span> <span class="pre">'V',</span> <span class="pre">'return_var_theta']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.predict_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.SRRR.update_model_params">
+<span class="sig-name descname"><span class="pre">update_model_params</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['state',</span> <span class="pre">'x_i',</span> <span class="pre">'y_i',</span> <span class="pre">'x_train_i',</span> <span class="pre">'mem',</span> <span class="pre">'l_shrink']</span></span><a class="headerlink" href="#py_online_forecast.hierarchies.SRRR.update_model_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.find_nodes">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">find_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.find_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.hierarchies.Node" title="py_online_forecast.hierarchies.Node"><span class="pre">Node</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.hierarchies.Node" title="py_online_forecast.hierarchies.Node"><span class="pre">Node</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.shift">
+<span class="sig-name descname"><span class="pre">shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.shift" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.is_parent">
+<span class="sig-name descname"><span class="pre">is_parent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.is_parent" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.get_nodes">
+<span class="sig-name descname"><span class="pre">get_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.get_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.get_top_nodes">
+<span class="sig-name descname"><span class="pre">get_top_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.get_top_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.build_B">
+<span class="sig-name descname"><span class="pre">build_B</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.build_B" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.get_leaf_nodes">
+<span class="sig-name descname"><span class="pre">get_leaf_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.get_leaf_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.build_S_top">
+<span class="sig-name descname"><span class="pre">build_S_top</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.build_S_top" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.build_A_lat">
+<span class="sig-name descname"><span class="pre">build_A_lat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.build_A_lat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.Node.print_hierarchy">
+<span class="sig-name descname"><span class="pre">print_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.Node.print_hierarchy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.LaggedNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">LaggedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.hierarchies.Node" title="py_online_forecast.hierarchies.Node"><span class="pre">Node</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.LaggedNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.hierarchies.Node" title="py_online_forecast.hierarchies.Node"><code class="xref py py-class docutils literal notranslate"><span class="pre">Node</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.LaggedNode.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.hierarchies.Node" title="py_online_forecast.hierarchies.Node"><span class="pre">Node</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.LaggedNode.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.LaggedNode.shift">
+<span class="sig-name descname"><span class="pre">shift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.LaggedNode.shift" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.hierarchies.make_hierarchy">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.hierarchies.</span></span><span class="sig-name descname"><span class="pre">make_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.hierarchies.make_hierarchy" title="Link to this definition"></a></dt>
+<dd><p>edges: dict of {parent: [child1, child2, …]} or {parent: [(child1, lag1), (child2, lag2), …]} where lag is a non-negative integer representing the lag of the child node.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="py_online_forecast.forecast_tools.html" class="btn btn-neutral float-left" title="py_online_forecast.forecast_tools module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.datasets.html" class="btn btn-neutral float-right" title="py_online_forecast.datasets module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

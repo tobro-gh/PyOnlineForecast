@@ -69,14 +69,14 @@ class DesignMatrix(Transformation):
         ----------
         data : list of ndarray
             The input data to combine into a design matrix. Each element should have
-            shape (n_obs, d_i) where n_obs is the number of observations and d_i is the
-            number of features for the i-th data input. Higher dimensional arrays will
-            be reshaped to 2D arrays, keeping the first dimension.
+            shape (n_samples, d_i) where n_samples is the number of observations and d_i
+            is the number of features for the i-th data input. Higher dimensional arrays
+            will be reshaped to 2D arrays, keeping the first dimension.
 
         Returns
         -------
         result : ndarray
-            The combined design matrix with shape (n_obs, sum(D_1, ...)) where 
+            The combined design matrix with shape (n_samples, sum(D_1, ...)) where 
             D_i = d_i_1 * d_i_2 * ... is the number of features in the i-th input array.
         """
         data = [d.reshape(d.shape[0], -1) for d in data]
@@ -124,7 +124,7 @@ class SlidingSum(Transformation):
         
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...)
+        data : ndarray of shape (n_samples, ...)
             The input data to compute the sliding sum over.
         old_data : ndarray
             Previous values of the input data to complete the sliding view.
@@ -173,7 +173,7 @@ class SlidingMean(Transformation):
         
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...)
+        data : ndarray of shape (n_samples, ...)
             The input data to compute the sliding mean over.
         old_data : ndarray
             Previous values of the input data to complete the sliding view.
@@ -205,7 +205,7 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
     ----------
     forgetting : float
         The forgetting factor for the exponential forgetting.
-    data : ndarray of shape (n_obs, ...)
+    data : ndarray of shape (n_samples, ...)
         The input data to compute the running mean over.
     state : tuple
         The previous state of the computation, i.e. a tuple of the most recent mean
@@ -217,7 +217,7 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
 
     Returns
     -------
-    result : ndarray of shape (n_obs, ...)
+    result : ndarray of shape (n_samples, ...)
         The running mean of the input data.
     new_state : tuple
         The new state of the running mean and memory.
@@ -298,7 +298,7 @@ class ForgettingMean(Transformation):
         
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...)
+        data : ndarray of shape (n_samples, ...)
             The input data to compute the running mean over.
 
         """
@@ -346,9 +346,9 @@ class ForgettingVariance(Transformation):
         
         Parameters
         ----------
-        data : ndarray of shape (n_obs, d)
+        data : ndarray of shape (n_samples, d)
             The input data to compute the running variance over.
-        mean : ndarray of shape (n_obs, d)
+        mean : ndarray of shape (n_samples, d)
             The running mean estimate to center the data. If None, the data is not
             centered.
         state : tuple
@@ -360,7 +360,7 @@ class ForgettingVariance(Transformation):
         
         Returns
         -------
-        result : ndarray of shape (n_obs, d) or (n_obs, d, d)
+        result : ndarray of shape (n_samples, d) or (n_samples, d, d)
             The running variance or covariance of the input data.
         new_state : tuple
             The new state of the running variance and memory.
@@ -424,7 +424,7 @@ class LowPass(Transformation):
         
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...)
+        data : ndarray of shape (n_samples, ...)
             The input data to apply the low-pass filter to.
         prev_value : ndarray of shape (...,)
             The previous value of the low-pass filter to resume the computation. If
@@ -477,13 +477,13 @@ class FourierSeries(Transformation):
 
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...)
+        data : ndarray of shape (n_samples, ...)
             The input data to compute the Fourier features from. The data is reshaped to
-            (n_obs, d), by collapsing all dimensions except the first one.
+            (n_samples, d), by collapsing all dimensions except the first one.
 
         Returns
         -------
-        result : ndarray of shape (n_obs, 2*nharmonics*d)
+        result : ndarray of shape (n_samples, 2*nharmonics*d)
             The Fourier series features of the input data.
        """ 
         results = []
@@ -536,21 +536,21 @@ class Lag(Transformation):
 
         Parameters
         ----------
-        data : ndarray of shape (n_obs, ...) or dict of such arrays
+        data : ndarray of shape (n_samples, ...) or dict of such arrays
             The input data to lag.
-        prev_values : ndarray of shape (n_obs, ...) or dict of such arrays, optional
+        prev_values : ndarray of shape (n_samples, ...) or dict of such arrays, optional
             The previous values to use for the lag.
 
         Returns
         -------
-        result : ndarray of shape (n_obs, ...) or dict
+        result : ndarray of shape (n_samples, ...) or dict
             The lagged data. If the input was a dict, the lagged value is also a dict
             where each value has been lagged. If offsets were specified at 
             initialization, the result is a dict of lagged values per offset. If both
             the input was a dict, and offsets were specified, the output is a dict of
             dicts, where the first level corresponds to offsets, and the second level
             corresponds to the keys of the input dict.
-        prev_values : ndarray of shape (n_obs, ...)
+        prev_values : ndarray of shape (n_samples, ...)
             The updated previous values.
 
         """

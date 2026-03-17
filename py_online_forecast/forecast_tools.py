@@ -767,15 +767,15 @@ class ForecastFormat(Format):
 # Register some common transformations
 @ForecastFormat.register_resolver(Lag)
 def _(source: Lag):
-    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 @ForecastFormat.register_resolver(LowPass)
 def _(source: LowPass):
-    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 @ForecastFormat.register_resolver(ToArray)
 def _(source: ToArray):
-    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 @ForecastFormat.register_resolver(RRR)
 def _(source: RRR):
@@ -832,11 +832,11 @@ def _(source: RidgeReconciliation):
 
 @ForecastFormat.register_resolver(SlidingSum)
 def _(source: SlidingSum):
-    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 @ForecastFormat.register_resolver(SlidingMean)
 def _(source: SlidingMean):
-    return ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 @ForecastFormat.register_resolver(ForgettingMean)
 def _(source: ForgettingMean):

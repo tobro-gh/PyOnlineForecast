@@ -3,8 +3,10 @@ from .core import *
 from .forecast_tools import *
 import numpy as np
 import pandas as pd
-#import os
 import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+
+
 np.random.seed(42)
 
 date_range = pd.date_range(start='2130-01-01', end='2133-12-31 23:00:00', freq='h')
@@ -82,15 +84,15 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.show()
 # %% Simulate hierarchical data
-#%%
-import numpy as np
-from statsmodels.tsa.arima.model import ARIMA
-import matplotlib.pyplot as plt
-import pandas as pd
-import py_online_forecast.core as c
 
-#%% Simulate AR(2) process in line with Møller et al., 2024,
 
+#%% Simulate AR(2) process for the bottom level of the hierarchy.
+# Model is based on the study in,
+# Møller, J.K., Nystrup, P., and Madsen, H. (2024).
+# "Likelihood-based inference in temporal hierarchies."
+# International Journal of Forecasting, 40, 515–531.
+
+# Parameters
 phi_1 = 0.75
 phi_2 = 0.2
 sigma = 1
@@ -101,6 +103,7 @@ n_test = 1000
 np.random.seed(1)
 
 def sim(n_samples):
+    """Simulate the AR(2) process."""
     w = np.random.normal(0, sigma, n_samples + 2)
     Y_H = np.zeros(n_samples + 3)
     for i in range(n_samples + 1):
@@ -166,8 +169,6 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-# %%
-#fc_data.to_csv("../py_online_forecast/data/hierarchical_data.csv", index = False)
 sample_hierarchical_data = fc_data
 
 # %%

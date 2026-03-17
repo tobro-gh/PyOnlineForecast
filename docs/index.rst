@@ -6,14 +6,25 @@
 PyOnlineForecast documentation
 ==============================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+PyOnlineForecast provides tools for online forecasting with hierarchical structure support,
+feature engineering utilities, and prediction workflows.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: Getting Started
 
-   api/modules
+   introduction
+   quickstart
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   examples/forecast_example
+   examples/hierarchy_example
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api/index

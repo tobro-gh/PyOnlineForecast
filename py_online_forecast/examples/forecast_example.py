@@ -84,7 +84,7 @@ from py_online_forecast.forecast_tools import ForecastFormat
 pred.set_format(ForecastFormat)
 
 # The wrapped prediction acts similar to the original, but formats outputs appropriately
-result = pred(data, track_state=True)
+result = pred(data, track_state=False)
 
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
