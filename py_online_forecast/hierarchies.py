@@ -1,15 +1,15 @@
 """Transformations and tools for hierarchical forecast reconciliation.
 
 This module provides transformations and tools for working with hierarchical forecast
-reconciliation. The main class is `RidgeReconciliation`, which uses the `RRR` (or
-optionally `SRRR`) prediction to model the bottom level forecast errors and then
+reconciliation. The main class is ``RidgeReconciliation``, which uses the ``RRR`` (or
+optionally ``SRRR``) prediction to model the bottom level forecast errors and then
 constructs reconciled forecasts at all levels of the hierarchy.
 
-For working with temporal hierarchies, the `TemporalRidgeReconciliation` class is a thin
-wrapper around `RidgeReconciliation` that uses a `BackShift` transformation to construct
+For working with temporal hierarchies, the ``TemporalRidgeReconciliation`` class is a thin
+wrapper around ``RidgeReconciliation`` that uses a ``BackShift`` transformation to construct
 a bottom level variable for a temporal hierarchy.
 
-The module also includes some tools for construct hierarchies using a `Node` class.
+The module also includes some tools for construct hierarchies using a ``Node`` class.
 """
 
 import numpy as np
@@ -23,7 +23,7 @@ class RidgeReconciliation(c.Transformation):
 
     Reconciles forecasts across a hierarchy by predicting bottom-level base forecast
     errors using a linear model in the top-level coherency errors. The transformation
-    uses :class:`~prediction.RRR` or optionally :class:`SRRR` to perform online
+    uses :class:`~prediction.RRR`` or optionally :class:``SRRR` to perform online
     estimation and prediction at the bottom level and constructs reconciled forecasts by
     shifting and scaling the base forecasts error predictions.
 
@@ -52,7 +52,7 @@ class RidgeReconciliation(c.Transformation):
         compute the prior for the ridge regression. Default is ``False``.
     **kwargs
         Additional keyword arguments passed to the underlying
-        :class:`~prediction.RRR` or :class:`SRRR` predictor (e.g. ``mem``,
+        :class:`~prediction.RRR`` or :class:``SRRR` predictor (e.g. ``mem``,
         ``burn_in``, ``init_K``, ``full_cov``). Note in particular when ``full_cov`` is
         False, only bottom level variances are used to estimate the full hierarchy
         covariance. Use ``full_cov=True`` for more accurate estimation.
@@ -60,7 +60,7 @@ class RidgeReconciliation(c.Transformation):
     Attributes
     ----------
     S : np.ndarray, shape (n, m)
-        Full summing matrix :math:`S = [S_{\\mathrm{top}}^T, I_m]^T`.
+        Summation matrix.
     prediction : RRR or SRRR
         The underlying online prediction transformation.
     Y_bot : Source
@@ -79,7 +79,7 @@ class RidgeReconciliation(c.Transformation):
         \\qquad E \\sim \\mathcal{MN}(0, I, \\Sigma_r)
 
     Estimation and prediction is posed as a special case of the ridge regression problem
-    solved by the :class:`~prediction.RRR` predictor, with design matrix :math:`X` given
+    solved by the :class:`~prediction.RRR`` predictor, with design matrix :math:``X` given
     by the incoherence at the top level and the target :math:`Y` given by the
     bottom-level base forecast errors. Reconciled forecasts are then constructed by
     shifting and scaling the predictions. Reconciled mean forecasts are computed as
@@ -282,7 +282,7 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
     r"""Wrapper for temporal hierarchies using backshift.
 
     This class is a thin wrapper around :class:`RidgeReconciliation` that uses a
-    `BackShift` transformation to construct a bottom level variable for a temporal
+    ``BackShift`` transformation to construct a bottom level variable for a temporal
     hierarchy.
 
     Parameters
@@ -477,8 +477,8 @@ class SRRRPredictor(p.RRRPredictor):
                 / np.where(self.diag_mask, 0, sigma_sq).sum()
             )
 
-            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[: self._n, : self._n]))
-            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self._n :, self._n :]))
+            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[: self.n, : self.n]))
+            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n :, self.n :]))
 
         else:  # Estimate covariance diagonal
 
@@ -504,6 +504,19 @@ class SRRRPredictor(p.RRRPredictor):
 
 
 class SRRR(p.RRR):
+    r"""Online recursive ridge regression with hierarcahical shrinkage priors.
+    
+    This wrapper around :class:`~prediction.RRR`` uses the :class:``SRRRPredictor` to 
+    perform online recursive ridge regression with priors for hierarchical forecast
+    reconciliation.
+
+    Parameters
+    ----------
+    S_top : np.ndarray, shape (n_top, n_bot)
+        Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
+        matrix, satisfying :math:`Y_{\\mathrm{top}}=S_\\mathrm{top} Y_{\\mathrm{bot}}`.
+    For other parameters, see :class:`RRR`` and :class:``SRRRPredictor`.
+    """
 
     def __init__(self, X, Y, horizon, S_top, **kwargs):
         super().__init__(X, Y, horizon, **kwargs)
@@ -543,18 +556,18 @@ class SRRR(p.RRR):
         l_shrink="auto",
         **kwargs,
     ):
-        """Delegate single-step update to `SRRRPredictor.online_update`.
+        """Delegate single-step update to ``SRRRPredictor.online_update``.
         
         Parameters
         ----------
         state : SRRRPredictor
             Current state of the predictor.
-        Otherwise same as `RRR.online_update`.
+        Otherwise same as ``RRR.online_update``.
 
         Returns
         -------
         result : dict
-            Prediction dictionary produced by `SRRRPredictor.online_update`.
+            Prediction dictionary produced by ``SRRRPredictor.online_update``.
         state : SRRRPredictor
             Updated predictor instance.
         """

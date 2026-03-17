@@ -266,7 +266,7 @@
 </div>
 <p>The result is a <code class="docutils literal notranslate"><span class="pre">dict</span></code> with “mean” and “cov” as keys and pandas dataframes as values,</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -274,7 +274,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -342,7 +342,7 @@
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;cov&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
@@ -350,7 +350,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -443,7 +443,7 @@
 </div>
 <p>We can also perform the updates incrementally to emulate an online setting,</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First, reset the state of the reconciler (i.e. clear data and paramter estimates)</span>
@@ -455,7 +455,7 @@
 <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Y_bot</span><span class="p">)):</span>
     <span class="n">Y_bot_t</span> <span class="o">=</span> <span class="n">Y_bot</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">t</span><span class="p">]]</span>
     <span class="n">Y_hat_t</span> <span class="o">=</span> <span class="n">Y_hat</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">t</span><span class="p">]]</span>
-    <span class="n">rec_t</span> <span class="o">=</span> <span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">Y_bot</span> <span class="o">=</span> <span class="n">Y_bot_t</span><span class="p">,</span> <span class="n">Y_hat</span> <span class="o">=</span> <span class="n">Y_hat_t</span><span class="p">)</span>
+    <span class="n">rec_t</span> <span class="o">=</span> <span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">Y_bot_t</span><span class="p">,</span> <span class="n">Y_hat_t</span><span class="p">)</span>
     <span class="n">mean</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rec_t</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
     <span class="n">cov</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rec_t</span><span class="p">[</span><span class="s2">&quot;cov&quot;</span><span class="p">])</span>
 
@@ -465,7 +465,7 @@
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -473,7 +473,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -541,7 +541,7 @@
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
@@ -549,7 +549,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -642,7 +642,7 @@
 </div>
 <p>Behind the scenes <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> is a lightweight wrapper around <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code>, that normalizes inputs to conform to a general hierarchy. To illustrate the use of the latter class, we can do the normalization manually,</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create bottom level of hierarchy using the BackShift class</span>
@@ -652,7 +652,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -668,18 +668,18 @@ array([[        nan,         nan],
 </div>
 <p>Then construct and fit the reconciliation model</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reconciler</span> <span class="o">=</span> <span class="n">RidgeReconciliation</span><span class="p">(</span>
     <span class="n">S_top</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">opt_shrink</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">reconciler</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="n">ForecastFormat</span><span class="p">)</span>
-<span class="n">res</span> <span class="o">=</span> <span class="n">reconciler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Y_bot</span> <span class="o">=</span> <span class="n">Y_bot_full</span><span class="p">,</span> <span class="n">Y_hat</span> <span class="o">=</span> <span class="n">Y_hat</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">reconciler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Y_bot_full</span><span class="p">,</span> <span class="n">Y_hat</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -687,7 +687,7 @@ array([[        nan,         nan],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -756,7 +756,7 @@ array([[        nan,         nan],
 </div>
 <p>Note, either of the reconciliation classes can use <code class="docutils literal notranslate"><span class="pre">Source</span></code> instances as inputs. In fact <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> is more or less implemented as,</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Construct sources for inputs</span>
@@ -781,7 +781,7 @@ array([[        nan,         nan],
 </div>
 <p>We can plot the forecasts,</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Y_hat_rec</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
@@ -816,7 +816,7 @@ array([[        nan,         nan],
 </div>
 <p>And a histogram of the residuals,</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#%% Get residuals</span>
@@ -852,14 +852,6 @@ array([[        nan,         nan],
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/examples_hierarchy_example_34_0.png" src="../_images/examples_hierarchy_example_34_0.png" />
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
 </div>
 </div>
 </section>

@@ -14,7 +14,7 @@ from py_online_forecast.datasets import sample_data
 from py_online_forecast.forecast_tools import Subset
 
 # %%
-data = sample_data.fc.subset(horizons=(0, 1, 2, 4), end_index=200)
+data = sample_data.fc.subset(horizons=(0, 1, 2, 4)).iloc[:200]
 
 # The sample data is a pandas dataframe, which uses a special "fc" accessor.
 # Note: for the basic model setup, this format is not strictly required.

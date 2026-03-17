@@ -42,7 +42,7 @@ from py_online_forecast.forecast_tools import ForecastFormat
 temporal_reconciler.set_format(ForecastFormat)
 # If we dont specify a formatter, the reconciler won't keep track of the sources of the data and the output will just be a plain numpy array
 #%% To fit the model, we use rec_fit.
-res = temporal_reconciler.fit(Y_bot = Y_bot, Y_hat = Y_hat)
+res = temporal_reconciler.fit(Y_bot, Y_hat)
 
 #%% If instead we require incremental updates (in a "real" online setting), we can use rec_update
 
@@ -55,7 +55,7 @@ result_cov  = []
 for t in range(len(Y_bot)):
     Y_bot_t = Y_bot.iloc[[t]]
     Y_hat_t = Y_hat.iloc[[t]]
-    rec_t = temporal_reconciler.update(Y_bot = Y_bot_t, Y_hat = Y_hat_t)
+    rec_t = temporal_reconciler.update(Y_bot_t, Y_hat_t)
     result.append(rec_t["mean"])
     result_cov.append(rec_t["cov"])
 

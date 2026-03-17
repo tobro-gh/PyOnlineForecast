@@ -204,7 +204,7 @@ transformations. The main components of the module are,</p>
 <li><p>Transformation: a base class for data transformations.</p></li>
 </ul>
 <p>Sources and transformations can be composed to build a computational graph which is
-lazily evaluating using the <cite>apply</cite> or <cite>__call__</cite> methods.</p>
+lazily evaluating using the <code class="docutils literal notranslate"><span class="pre">apply</span></code> or <code class="docutils literal notranslate"><span class="pre">__call__</span></code> methods.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py_online_forecast.core.Source">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Source" title="Link to this definition"></a></dt>
@@ -292,7 +292,7 @@ creating new instances.</p>
 <dt class="sig sig-object py" id="py_online_forecast.core.DEFAULT_SOURCE">
 <span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_SOURCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DEFAULT_SOURCE</span></span><a class="headerlink" href="#py_online_forecast.core.DEFAULT_SOURCE" title="Link to this definition"></a></dt>
 <dd><p>Default source for data.
-<cite>parse_data</cite> will map unnamed data to this source for use in transformations.</p>
+<code class="docutils literal notranslate"><span class="pre">parse_data</span></code> will map unnamed data to this source for use in transformations.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -306,32 +306,32 @@ creating new instances.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Transformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">apply_args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">apply_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><code class="xref py py-class docutils literal notranslate"><span class="pre">Source</span></code></a></p>
 <p>Base class for data transformations.</p>
-<p>Transforms combine sources and data via an <cite>evaluate</cite> method. Subclasses specify
-input sources as arguments to <cite>__init__</cite>, which are matched to <cite>evaluate</cite> method
-parameters when called via <cite>apply</cite>. Matching is done by name for keyword sources and
-by position for positional sources by inspecting the <cite>evaluate</cite> method signature.</p>
-<p>Subclasses should override the <cite>evaluate</cite> method to implement the transformation
+<p>Transforms combine sources and data via an <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method. Subclasses specify
+input sources as arguments to <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, which are matched to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method
+parameters when called via <code class="docutils literal notranslate"><span class="pre">apply</span></code>. Matching is done by name for keyword sources and
+by position for positional sources by inspecting the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method signature.</p>
+<p>Subclasses should override the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method to implement the transformation
 logic and extend the ‘__init__’ method to initialise fixed parameters and specify
-external Source inputs for use with the <cite>apply</cite> method. When the <cite>apply</cite> method is
-called, sources specified in <cite>__init__</cite> will be matched to values, either as direct
-inputs if specified in the input data of <cite>apply</cite>, or by recursively calling the
-<cite>apply</cite> method on the sources that are transforms. Once dependencies are resolved,
-the <cite>evaluate</cite> method is called with the resolved arguments to compute the output.</p>
+external Source inputs for use with the <code class="docutils literal notranslate"><span class="pre">apply</span></code> method. When the <code class="docutils literal notranslate"><span class="pre">apply</span></code> method is
+called, sources specified in <code class="docutils literal notranslate"><span class="pre">__init__</span></code> will be matched to values, either as direct
+inputs if specified in the input data of <code class="docutils literal notranslate"><span class="pre">apply</span></code>, or by recursively calling the
+<code class="docutils literal notranslate"><span class="pre">apply</span></code> method on the sources that are transforms. Once dependencies are resolved,
+the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method is called with the resolved arguments to compute the output.</p>
 <p>The special keyword source MEMORY can be used to access outputs
-from previous evaluations of the transformation, see also the <cite>evaluate</cite> method.
+from previous evaluations of the transformation, see also the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method.
 The STATE source can be used to access all intermediate results computed by the
-<cite>apply</cite> method.</p>
+<code class="docutils literal notranslate"><span class="pre">apply</span></code> method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>*apply_args</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Positional sources passed to <cite>evaluate</cite> in order.</p></li>
-<li><p><strong>**apply_kwargs</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Keyword sources mapped to <cite>evaluate</cite> method parameters.
-Keys must match parameter names in the <cite>evaluate</cite> signature.</p></li>
+<li><p><strong>*apply_args</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Positional sources passed to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> in order.</p></li>
+<li><p><strong>**apply_kwargs</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Keyword sources mapped to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method parameters.
+Keys must match parameter names in the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> signature.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>KeyError</strong> – If a keyword argument name does not match an <cite>evaluate</cite> parameter.</p></li>
+<li><p><strong>KeyError</strong> – If a keyword argument name does not match an <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> parameter.</p></li>
 <li><p><strong>ValueError</strong> – If any input is not a Source instance.</p></li>
 </ul>
 </dd>
@@ -403,7 +403,7 @@ transformation.</p>
 <dt class="sig sig-object py" id="py_online_forecast.core.Transformation.set_format">
 <span class="sig-name descname"><span class="pre">set_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><span class="pre">Format</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.set_format" title="Link to this definition"></a></dt>
 <dd><p>Set a format for the transformation.</p>
-<p>This is the same as calling <cite>set_formatter</cite> with formatter instantiated on self.</p>
+<p>This is the same as calling <code class="docutils literal notranslate"><span class="pre">set_formatter</span></code> with formatter instantiated on self.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -417,7 +417,7 @@ transformation.</p>
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recursion_pars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_recursion_pars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formatter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><span class="pre">Format</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd><p>Evaluate the transformation with given data.</p>
 <p>Matches input sources to data, evaluates dependencies recursively, then calls
-<cite>evaluate</cite> with resolved arguments.</p>
+<code class="docutils literal notranslate"><span class="pre">evaluate</span></code> with resolved arguments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -437,7 +437,7 @@ a flat dict mapping transformations to their memory states</p></li>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>result</strong> (<em>Any</em>) – The transformation output.</p></li>
-<li><p><strong>recursion_pars</strong> (<em>dict</em>) – (Only if <cite>return_recursion_pars=True</cite>)</p></li>
+<li><p><strong>recursion_pars</strong> (<em>dict</em>) – (Only if <code class="docutils literal notranslate"><span class="pre">return_recursion_pars=True</span></code>)</p></li>
 </ul>
 </p>
 </dd>
@@ -455,7 +455,7 @@ a flat dict mapping transformations to their memory states</p></li>
 <span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span></span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd><p>Compute the transformation output.</p>
 <p>Subclasses should override this method with a custom signature
-matching the input sources specified in <cite>__init__</cite>.</p>
+matching the input sources specified in <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">

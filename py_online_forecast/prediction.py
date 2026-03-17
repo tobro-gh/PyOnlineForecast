@@ -3,7 +3,7 @@
 The module is built around transformations for making predictions for discrete horizon
 forecasting problems. The Prediction transformation provides an extensible base class
 for handling data updates for forecasting models. The class implies that subclasses
-should implement an `update` and  `predict` method, which are used to train the model
+should implement an ``update`` and  ``predict`` method, which are used to train the model
 and make predictions without altering the model state.
 
 Prediction is subclassed by another base class, OnlinePrediction, which requires the use
@@ -68,19 +68,19 @@ class Prediction(Transformation):
         Additional exogenous features (not lagged) for use in prediction. If None,
         exogenous features are not used. Default is None.
     score_mode : bool, default False
-        If True, the `score` method is called during evaluation to compute metrics.
+        If True, the ``score`` method is called during evaluation to compute metrics.
     default_params : dict, optional
-        Default parameters to pass to `update` and `predict` methods. These can be
-        overridden by providing parameters in the `apply` method. Default is None.
+        Default parameters to pass to ``update`` and ``predict`` methods. These can be
+        overridden by providing parameters in the ``apply`` method. Default is None.
     *args, **kwargs
-        Additional arguments passed to the `create` method for initialization. Note,
+        Additional arguments passed to the ``create`` method for initialization. Note,
         Sources will be resolved and their values passed in place of the Source objects.
 
     Attributes
     ----------
     predictor : object or None
-        The fitted predictor state/parameters. Populated when `apply` is called with
-        `track_state` enabled.
+        The fitted predictor state/parameters. Populated when ``apply`` is called with
+        ``track_state`` enabled.
 
     Methods
     -------
@@ -107,18 +107,18 @@ class Prediction(Transformation):
 
         \hat{Y}_{t+h} = g(\text{state}_t, Z_t)
 
-    where :math:`\text{state}_t` contains the learned model parameters and :math:`Z_t`
+    where :math:`\text{state}_t`` contains the learned model parameters and :math:``Z_t`
     are optional exogenous features.
     """
 
     def __init_subclass__(cls):
-        """Set parameters for the predictor by inspecting `update` and `predict`."""
+        """Set parameters for the predictor by inspecting ``update`` and ``predict``."""
         super().__init_subclass__()
         cls.set_params()
 
     @classmethod
     def set_params(cls):
-        """Set the parameters that are accepted by the `update` and `predict` methods.
+        """Set the parameters that are accepted by the ``update`` and ``predict`` methods.
 
         Detected parameters are used to validate default parameters provided at
         initialization. May be overridden by subclasses if different behavior is desired.
@@ -222,26 +222,26 @@ class Prediction(Transformation):
     def create(self, *args, **kwargs):
         """Initialize and return predictor state.
 
-        This method is called during `evaluate` if the `state` is None. Subclasses may
+        This method is called during ``evaluate`` if the ``state`` is None. Subclasses may
         use the provided arguments to set up the predictor state based on data
         dimensions or other parameters.
 
         Parameters
         ----------
         *args
-            Positional arguments resolved from the `args` provided to `__init__`.
+            Positional arguments resolved from the ``args`` provided to ``__init__``.
         **kwargs
-            Keyword arguments resolved from the `kwargs` provided to `__init__`.
+            Keyword arguments resolved from the ``kwargs`` provided to ``__init__``.
 
         Returns
         -------
         state : object
-            The initialized predictor state to be passed to `update` and `predict`
+            The initialized predictor state to be passed to ``update`` and ``predict``
             methods. This can be any object; subclasses define the state representation.
 
         Notes
         -----
-        Arguments are automatically resolved by `_create` so that Source objects are
+        Arguments are automatically resolved by ``_create`` so that Source objects are
         evaluated to their values before being passed here.
         """
         pass
@@ -267,7 +267,7 @@ class Prediction(Transformation):
         Z : object
             Current exogenous input features, to be used for prediction and evaluation.
         **params : object
-            Additional parameters specified via `default_params` or `apply` method.
+            Additional parameters specified via ``default_params`` or ``apply`` method.
 
         Returns
         -------
@@ -298,7 +298,7 @@ class Prediction(Transformation):
         Z : object
             Current exogenous features.
         **params : Any
-            Additional parameters specified via `default_params` or `apply` method.
+            Additional parameters specified via ``default_params`` or ``apply`` method.
 
         Returns
         -------
@@ -315,7 +315,7 @@ class Prediction(Transformation):
     def score(self, state, X, Y, prediction, Z=None, **params):
         """Compute evaluation metric on predictions.
 
-        This method is optional and only called when `score_mode` is enabled. Subclasses
+        This method is optional and only called when ``score_mode`` is enabled. Subclasses
         may override to compute custom metrics on predictions.
 
         Parameters
@@ -327,7 +327,7 @@ class Prediction(Transformation):
         Y : object
             Current target data.
         prediction : object
-            Prediction output from `update` or `predict`.
+            Prediction output from ``update`` or ``predict``.
         Z : object, optional
             Exogenous features if prpvoded
         **params : Any
@@ -341,15 +341,15 @@ class Prediction(Transformation):
         Raises
         ------
         NotImplementedError
-            If not implemented by a subclass and `score_mode` is enabled.
+            If not implemented by a subclass and ``score_mode`` is enabled.
         """
         raise NotImplementedError("Score method not implemented for this predictor.")
 
     def evaluate(self, X, Y, update_predictor=True, state=None, Z=None, **params):
         """Evaluate the transformation with training or prediction mode.
 
-        Initializes state if needed, then calls either `update` or `predict` depending
-        on the `update_predictor` keyword. Optionally computes scores.
+        Initializes state if needed, then calls either ``update`` or ``predict`` depending
+        on the ``update_predictor`` keyword. Optionally computes scores.
 
         Parameters
         ----------
@@ -358,7 +358,7 @@ class Prediction(Transformation):
         Y : object
             Target data.
         update_predictor : bool, default True
-            If True, calls `update` to train and predict. If False, calls `predict` to
+            If True, calls ``update`` to train and predict. If False, calls ``predict`` to
             make predictions without training.
         state : tuple or None, optional
             Previous predictor and lag buffer state from a prior evaluation. If None,
@@ -366,12 +366,12 @@ class Prediction(Transformation):
         Z : object, optional
             Exogenous features.
         **params : Any
-            Additional parameters for `update` or `predict` methods.
+            Additional parameters for ``update`` or ``predict`` methods.
 
         Returns
         -------
         result : object
-            Prediction output, optionally with scores if `score_mode` is enabled.
+            Prediction output, optionally with scores if ``score_mode`` is enabled.
         state : tuple
             Updated (predictor_state, X_lag_state) for the next evaluation.
         """
@@ -449,13 +449,13 @@ def _stack_results(forecasts: list[dict] | list[np.ndarray]) -> dict | np.ndarra
 class OnlinePrediction(Prediction):
     """Base class for row-by-row online prediction transformations.
 
-    Extends `Prediction` to support incremental (row-by-row) updates for online
-    forecasting. The `update` and `predict` methods iterate over data rows,
-    calling `online_update` and `online_predict` for each observation.
+    Extends ``Prediction`` to support incremental (row-by-row) updates for online
+    forecasting. The ``update`` and ``predict`` methods iterate over data rows,
+    calling ``online_update`` and ``online_predict`` for each observation.
 
     Parameters
     ----------
-    Same as `Prediction`.
+    Same as ``Prediction``.
 
     Methods
     -------
@@ -467,7 +467,7 @@ class OnlinePrediction(Prediction):
     Notes
     -----
     To enable online updates, the class will treat X, Y and Z as ndarrays. Rows are
-    looped over in the `update` and `predict` methods and NaN values are ignored for
+    looped over in the ``update`` and ``predict`` methods and NaN values are ignored for
     training. Content of the arrays is not assumed to be numeric and may in principle
     be used for any type of data.
 
@@ -482,7 +482,7 @@ class OnlinePrediction(Prediction):
 
     @classmethod
     def set_params(cls):
-        """Detect parameters from `online_update` and `online_predict` signatures.
+        """Detect parameters from ``online_update`` and ``online_predict`` signatures.
 
         Introspects both methods to build combined parameter lists for validation.
         Separates update-specific from predict-specific parameters.
@@ -547,8 +547,8 @@ class OnlinePrediction(Prediction):
     ):
         """Update predictor with batch data by processing rows incrementally.
 
-        Iterates over each row, calling `online_update` when data is valid (no NaN
-        values) and `online_predict` otherwise. Distributes parameters to appropriate
+        Iterates over each row, calling ``online_update`` when data is valid (no NaN
+        values) and ``online_predict`` otherwise. Distributes parameters to appropriate
         methods.
 
         Parameters
@@ -569,7 +569,7 @@ class OnlinePrediction(Prediction):
         Returns
         -------
         forecasts : dict or ndarray
-            Stacked predictions from all rows. If `online_update` returns dicts,
+            Stacked predictions from all rows. If ``online_update`` returns dicts,
             result is a dict of arrays; otherwise a single array.
         state : object
             Updated predictor state after processing all rows.
@@ -577,7 +577,7 @@ class OnlinePrediction(Prediction):
         Notes
         -----
         Rows with NaN values in Y or X_train are skipped for updates but still get
-        predictions via `online_predict`.
+        predictions via ``online_predict``.
         """
         X, Y, X_train, Z = self._convert_arrays(X, Y, X_train, Z)
 
@@ -621,7 +621,7 @@ class OnlinePrediction(Prediction):
     def predict(self, state, X: np.ndarray, Z=None, **params):
         """Make predictions for batch data by processing rows incrementally.
 
-        Iterates over each row, calling `online_predict` for each without updating
+        Iterates over each row, calling ``online_predict`` for each without updating
         the predictor state.
 
         Parameters
@@ -633,7 +633,7 @@ class OnlinePrediction(Prediction):
         Z : ndarray of shape (n_samples, ...), optional
             Exogenous features.
         **params : object
-            Additional parameters for `online_predict`.
+            Additional parameters for ``online_predict``.
 
         Returns
         -------
@@ -895,8 +895,8 @@ class RRRPredictor:
         \theta_t = (K_t + Q)^{-1} (L_t + Q \theta_0)
 
     where :math:`K_t = \lambda K_{t-1} + x_{train,t} x_{train,t}^T` and
-    :math:`L_t = \lambda L_{t-1} + x_{train,t} y_t^T`, with :math:`\lambda` being
-    the forgetting factor (`mem`).
+    :math:`L_t = \lambda L_{t-1} + x_{train,t} y_t^T``, with :math:``\lambda` being
+    the forgetting factor (``mem``).
 
     Mean point predictions are computed as:
 
@@ -918,7 +918,7 @@ class RRRPredictor:
     :math:`\hat{y}_{t-h}` is the h-step-ahead forecast made at time t-h.
 
     The parameters posterior under the ridge model is matrix normal with mean 
-    :math:`\theta_t` and covariance :math:`V \otimes \psi`.
+    :math:`\theta_t`` and covariance :math:``V \otimes \psi`.
     """
 
     def __init__(
@@ -1135,7 +1135,7 @@ class RRRPredictor:
 class RRR(OnlinePrediction):
     """Online recursive ridge regression transformation.
 
-    Thin wrapper around `RRRPredictor` that enables its use as a Prediction.
+    Thin wrapper around ``RRRPredictor`` that enables its use as a Prediction.
 
     See Also
     --------
@@ -1144,8 +1144,8 @@ class RRR(OnlinePrediction):
 
     Parameters
     ----------
-    Same as `RRRPredictor`, plus transformation wiring inputs (`X`, `Y`) and
-    optional `scorefun` for `score`.
+    Same as ``RRRPredictor``, plus transformation wiring inputs (``X``, ``Y``) and
+    optional ``scorefun`` for ``score``.
     """
     
     # TODO: consider including batch functionality into this class
@@ -1195,7 +1195,7 @@ class RRR(OnlinePrediction):
         center_cov,
         **default_params,
     ):
-        """Create amd return `RRRPredictor`."""
+        """Create amd return ``RRRPredictor``."""
         return RRRPredictor(
             n,
             m,
@@ -1221,18 +1221,18 @@ class RRR(OnlinePrediction):
         mem=0.99,
         return_var_theta=False,
     ):
-        """Delegate single-step update to `RRRPredictor.online_update`.
+        """Delegate single-step update to ``RRRPredictor.online_update``.
 
         Parameters
         ----------
         state : RRRPredictor
             The recerusive ridge predictor to use and update
-        Otherwise same as `RRRPredictor` `online_update`.
+        Otherwise same as ``RRRPredictor`` ``online_update``.
 
         Returns
         -------
         result : dict
-            Prediction dictionary produced by `RRRPredictor`.
+            Prediction dictionary produced by ``RRRPredictor``.
         state : RRRPredictor
             Updated predictor instance.
         """
@@ -1249,25 +1249,25 @@ class RRR(OnlinePrediction):
         )
         return result, state
     def online_predict(self, state: RRRPredictor, x_i, V=None, return_var_theta=False):
-        """Delegate single-step prediction to `RRRPredictor.online_predict`.
+        """Delegate single-step prediction to ``RRRPredictor.online_predict``.
 
         Parameters
         ----------
         state : RRRPredictor
             The recerusive ridge predictor to use for prediction.
-        Otherwise same as `RRRPredictor` `online_predict`.
+        Otherwise same as ``RRRPredictor`` ``online_predict``.
 
         Returns
         -------
-        Same as `RRRPredictor.online_predict`.
+        Same as ``RRRPredictor.online_predict``.
         """
         return state.online_predict(x_i, V=V, return_var_theta=return_var_theta)
 
     def score(self, state: RRRPredictor, X, Y, prediction, **params):
         """Compute forecast score using lagged predictions from predictor memory.
 
-        Uses `evaluate_score` on aligned historical predictions stored in
-        `state.Y_hat`, then adds the scalar score to `prediction["score"]`.
+        Uses ``evaluate_score`` on aligned historical predictions stored in
+        ``state.Y_hat``, then adds the scalar score to ``prediction["score"]``.
         """
         n = len(Y)
 
@@ -1428,8 +1428,8 @@ class BackShift(Transformation):
 class ARX(OnlinePrediction):
     r"""Autoregressive model with exogenous input using recursive ridge regression.
 
-    Combines `BackShift` to construct AR lags of the endogenous variable and
-    stacks with exogenous features for forecasting via `RRRPredictor`.
+    Combines ``BackShift`` to construct AR lags of the endogenous variable and
+    stacks with exogenous features for forecasting via ``RRRPredictor``.
 
     The model learns a one-step-ahead predictor and rolls forward to produce
     h-step-ahead forecasts for horizon h.
@@ -1445,7 +1445,7 @@ class ARX(OnlinePrediction):
     p : int
         Autoregressive order (number of lags).
     burn_in, init_K, track_memory, combine_variance, full_cov, scorefun, default_params
-        Forwarded to `RRRPredictor`. See `RRR` for details.
+        Forwarded to ``RRRPredictor``. See ``RRR`` for details.
 
     Attributes
     ----------
@@ -1541,7 +1541,7 @@ class ARX(OnlinePrediction):
     ):
         """Update model and compute h-step-ahead predictions via forward recursion.
 
-        Delegates one-step update to `RRRPredictor`, then iterates forward h steps
+        Delegates one-step update to ``RRRPredictor``, then iterates forward h steps
         using AR coefficients and updated endogenous history to forecast h horizons.
         """
         state.online_update(

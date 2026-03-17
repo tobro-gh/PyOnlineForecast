@@ -6,8 +6,7 @@
 PyOnlineForecast documentation
 ==============================
 
-PyOnlineForecast provides tools for online forecasting with hierarchical structure support,
-feature engineering utilities, and prediction workflows.
+PyOnlineForecast provides tools for online forecasting and hierarchical forecast reconciliation.
 
 .. toctree::
    :maxdepth: 1

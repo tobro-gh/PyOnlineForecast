@@ -274,8 +274,8 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
 class ForgettingMean(Transformation):
     """Compute the running mean with exponential forgetting.
     
-    This is simply a wrapper around the `forgetting_mean` function, which manages the
-    state and forgetting parameter. See the `forgetting_mean` function for details.
+    This is simply a wrapper around the ``forgetting_mean`` function, which manages the
+    state and forgetting parameter. See the ``forgetting_mean`` function for details.
 
     Parameters
     ----------
@@ -294,7 +294,7 @@ class ForgettingMean(Transformation):
         self.data = data
 
     def evaluate(self, data, state = None):
-        """Evaluate the running mean using `forgetting_mean`.
+        """Evaluate the running mean using ``forgetting_mean``.
         
         Parameters
         ----------
@@ -308,7 +308,7 @@ class ForgettingVariance(Transformation):
     """Compute the running variance with exponential forgetting.
     
     This transformation computes a running variance estimate with exponential forgetting
-    by applying the `forgetting_mean` function to the optionally centered squared data.
+    by applying the ``forgetting_mean`` function to the optionally centered squared data.
     The transformation can compute either the marginal variance or the full covariance
     matrix. 
 

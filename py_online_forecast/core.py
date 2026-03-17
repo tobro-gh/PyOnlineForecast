@@ -7,7 +7,7 @@ transformations. The main components of the module are,
 - Transformation: a base class for data transformations.
 
 Sources and transformations can be composed to build a computational graph which is
-lazily evaluating using the `apply` or `__call__` methods.
+lazily evaluating using the ``apply`` or ``__call__`` methods.
 
 """
 
@@ -153,43 +153,43 @@ MEMORY = make_keyword("MEMORY")
 """Special source for memory parameters of transformations."""
 DEFAULT_SOURCE = make_keyword("DEFAULT_SOURCE")
 """Default source for data.
-`parse_data` will map unnamed data to this source for use in transformations."""
+``parse_data`` will map unnamed data to this source for use in transformations."""
 STATE = make_keyword("STATE")
 """Source for intermediate data when applying transformations."""
 
 class Transformation(Source):
     """Base class for data transformations.
     
-    Transforms combine sources and data via an `evaluate` method. Subclasses specify 
-    input sources as arguments to `__init__`, which are matched to `evaluate` method
-    parameters when called via `apply`. Matching is done by name for keyword sources and
-    by position for positional sources by inspecting the `evaluate` method signature.
+    Transforms combine sources and data via an ``evaluate`` method. Subclasses specify 
+    input sources as arguments to ``__init__``, which are matched to ``evaluate`` method
+    parameters when called via ``apply``. Matching is done by name for keyword sources and
+    by position for positional sources by inspecting the ``evaluate`` method signature.
     
-    Subclasses should override the `evaluate` method to implement the transformation
+    Subclasses should override the ``evaluate`` method to implement the transformation
     logic and extend the '__init__' method to initialise fixed parameters and specify
-    external Source inputs for use with the `apply` method. When the `apply` method is
-    called, sources specified in `__init__` will be matched to values, either as direct
-    inputs if specified in the input data of `apply`, or by recursively calling the
-    `apply` method on the sources that are transforms. Once dependencies are resolved,
-    the `evaluate` method is called with the resolved arguments to compute the output.
+    external Source inputs for use with the ``apply`` method. When the ``apply`` method is
+    called, sources specified in ``__init__`` will be matched to values, either as direct
+    inputs if specified in the input data of ``apply``, or by recursively calling the
+    ``apply`` method on the sources that are transforms. Once dependencies are resolved,
+    the ``evaluate`` method is called with the resolved arguments to compute the output.
     
     The special keyword source MEMORY can be used to access outputs
-    from previous evaluations of the transformation, see also the `evaluate` method.
+    from previous evaluations of the transformation, see also the ``evaluate`` method.
     The STATE source can be used to access all intermediate results computed by the
-    `apply` method.
+    ``apply`` method.
         
     Parameters
     ----------
     *apply_args : Source
-        Positional sources passed to `evaluate` in order.
+        Positional sources passed to ``evaluate`` in order.
     **apply_kwargs : Source
-        Keyword sources mapped to `evaluate` method parameters.
-        Keys must match parameter names in the `evaluate` signature.
+        Keyword sources mapped to ``evaluate`` method parameters.
+        Keys must match parameter names in the ``evaluate`` signature.
     
     Raises
     ------
     KeyError
-        If a keyword argument name does not match an `evaluate` parameter.
+        If a keyword argument name does not match an ``evaluate`` parameter.
     ValueError
         If any input is not a Source instance.
 
@@ -261,7 +261,7 @@ class Transformation(Source):
 
     def __init_subclass__(cls):
         """
-        Process `evaluate` signature and modify `__init__` to capture sources.
+        Process ``evaluate`` signature and modify ``__init__`` to capture sources.
 
         Process the evaluate method signature and modify the __init__ method to capture
         parameters for tracking the computational graph.
@@ -316,7 +316,7 @@ class Transformation(Source):
     def set_format(self, data_format: type[Format]):
         """Set a format for the transformation.
 
-        This is the same as calling `set_formatter` with formatter instantiated on self.
+        This is the same as calling ``set_formatter`` with formatter instantiated on self.
         """
         self.formatter = data_format(self)
 
@@ -342,7 +342,7 @@ class Transformation(Source):
         """Evaluate the transformation with given data.
         
         Matches input sources to data, evaluates dependencies recursively, then calls
-        `evaluate` with resolved arguments.
+        ``evaluate`` with resolved arguments.
         
         Parameters
         ----------
@@ -373,7 +373,7 @@ class Transformation(Source):
         result : Any
             The transformation output.
         recursion_pars : dict
-            (Only if `return_recursion_pars=True`)
+            (Only if ``return_recursion_pars=True``)
         """
         # NOTE: copy_data is used to avoid modifying input data (unless requested). When applied recursively, copy_data should be False, as we do want to update the data with intermediate results.
         data = parse_data(data, ref=ref, copy=copy_data)
@@ -503,7 +503,7 @@ class Transformation(Source):
         """Compute the transformation output.
     
         Subclasses should override this method with a custom signature
-        matching the input sources specified in `__init__`.
+        matching the input sources specified in ``__init__``.
         
         Returns
         -------
