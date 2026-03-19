@@ -7,7 +7,11 @@ import re
 from typing import Literal
 
 import numpy as np
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError:
+    raise ImportError("Error importing pandas. Please make sure it is installed.")
 
 from .core import DEFAULT_SOURCE, MEMORY, Format, Transformation, register_format_like
 from .features import (

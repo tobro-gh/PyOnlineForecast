@@ -72,9 +72,37 @@ __all__ = [
     "WLS",
     "RRR",
     "ARX",
+    # optional exports (provided lazily via __getattr__)
     "ForecastMatrix",
     "ForecastModel",
     "ForecastEnsemble",
     "ToExog",
     "Concat",
 ]
+
+_OPTIONAL_FORECAST_TOOLS = {
+    "ForecastMatrix",
+    "ForecastModel",
+    "ForecastEnsemble",
+    "ToExog",
+    "Concat",
+}
+
+def __getattr__(name: str):
+    if name in _OPTIONAL_FORECAST_TOOLS:
+        from .forecast_tools import (
+            Concat,
+            ForecastEnsemble,
+            ForecastMatrix,
+            ForecastModel,
+            ToExog,
+        )
+
+        return {
+            "ForecastMatrix": ForecastMatrix,
+            "ForecastModel": ForecastModel,
+            "ForecastEnsemble": ForecastEnsemble,
+            "ToExog": ToExog,
+            "Concat": Concat,
+        }[name]
+    raise AttributeError(f"module {__name__} has no attribute {name}")

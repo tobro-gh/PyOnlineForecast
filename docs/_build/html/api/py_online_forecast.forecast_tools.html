@@ -1,0 +1,1021 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast.forecast_tools module &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast.hierarchies module" href="py_online_forecast.hierarchies.html" />
+    <link rel="prev" title="py_online_forecast.prediction module" href="py_online_forecast.prediction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">py_online_forecast</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.core.html">core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.features.html">features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">forecast_tools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Aggregator"><code class="docutils literal notranslate"><span class="pre">Aggregator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Aggregator.evaluate"><code class="docutils literal notranslate"><span class="pre">Aggregator.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Aggregator.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Aggregator.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Align"><code class="docutils literal notranslate"><span class="pre">Align</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Align.evaluate"><code class="docutils literal notranslate"><span class="pre">Align.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Align.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Align.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Concat"><code class="docutils literal notranslate"><span class="pre">Concat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Concat.evaluate"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Concat.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Concat.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.DataCleaner"><code class="docutils literal notranslate"><span class="pre">DataCleaner</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.DataCleaner.evaluate"><code class="docutils literal notranslate"><span class="pre">DataCleaner.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.DataCleaner.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">DataCleaner.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Disruption"><code class="docutils literal notranslate"><span class="pre">Disruption</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Disruption.evaluate"><code class="docutils literal notranslate"><span class="pre">Disruption.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Disruption.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Disruption.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.FillMissing"><code class="docutils literal notranslate"><span class="pre">FillMissing</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.FillMissing.evaluate"><code class="docutils literal notranslate"><span class="pre">FillMissing.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.FillMissing.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">FillMissing.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.fit"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastEnsemble.update"><code class="docutils literal notranslate"><span class="pre">ForecastEnsemble.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastFormat"><code class="docutils literal notranslate"><span class="pre">ForecastFormat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastFormat.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastFormat.registry"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.registry</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastFormat.resolver_registry"><code class="docutils literal notranslate"><span class="pre">ForecastFormat.resolver_registry</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.assert_format"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.assert_format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.convert"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.convert()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.horizons"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.horizons</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.lag"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.lag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.names"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.subset"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.subset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastMatrix.variables"><code class="docutils literal notranslate"><span class="pre">ForecastMatrix.variables</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel"><code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.evaluate"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForecastModel.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.fit"><code class="docutils literal notranslate"><span class="pre">ForecastModel.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.predictor"><code class="docutils literal notranslate"><span class="pre">ForecastModel.predictor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.set_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.set_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.unset_score_mode"><code class="docutils literal notranslate"><span class="pre">ForecastModel.unset_score_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ForecastModel.update"><code class="docutils literal notranslate"><span class="pre">ForecastModel.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Horizons"><code class="docutils literal notranslate"><span class="pre">Horizons</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Horizons.evaluate"><code class="docutils literal notranslate"><span class="pre">Horizons.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Horizons.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Horizons.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Index"><code class="docutils literal notranslate"><span class="pre">Index</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Index.evaluate"><code class="docutils literal notranslate"><span class="pre">Index.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Index.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Index.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Reindexer"><code class="docutils literal notranslate"><span class="pre">Reindexer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Reindexer.evaluate"><code class="docutils literal notranslate"><span class="pre">Reindexer.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Reindexer.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Reindexer.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.RenameColumns"><code class="docutils literal notranslate"><span class="pre">RenameColumns</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.RenameColumns.evaluate"><code class="docutils literal notranslate"><span class="pre">RenameColumns.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.RenameColumns.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">RenameColumns.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Scaler"><code class="docutils literal notranslate"><span class="pre">Scaler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Scaler.evaluate"><code class="docutils literal notranslate"><span class="pre">Scaler.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Scaler.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Scaler.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.Subset"><code class="docutils literal notranslate"><span class="pre">Subset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Subset.evaluate"><code class="docutils literal notranslate"><span class="pre">Subset.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.Subset.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Subset.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfDay"><code class="docutils literal notranslate"><span class="pre">TimeOfDay</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfDay.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfDay.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfDay.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfDay.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfWeek"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfWeek.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfWeek.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfWeek.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfYear"><code class="docutils literal notranslate"><span class="pre">TimeOfYear</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfYear.evaluate"><code class="docutils literal notranslate"><span class="pre">TimeOfYear.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfYear.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">TimeOfYear.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToExog"><code class="docutils literal notranslate"><span class="pre">ToExog</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToExog.evaluate"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToExog.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToExog.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToPandas"><code class="docutils literal notranslate"><span class="pre">ToPandas</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToPandas.evaluate"><code class="docutils literal notranslate"><span class="pre">ToPandas.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.forecast_tools.ToPandas.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToPandas.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.assert_fc_columns"><code class="docutils literal notranslate"><span class="pre">assert_fc_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.assert_fc_index"><code class="docutils literal notranslate"><span class="pre">assert_fc_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.fc_columns_from_product"><code class="docutils literal notranslate"><span class="pre">fc_columns_from_product()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.fc_columns_from_tuples"><code class="docutils literal notranslate"><span class="pre">fc_columns_from_tuples()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.format_forecast"><code class="docutils literal notranslate"><span class="pre">format_forecast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.forecast_tools.subset_columns"><code class="docutils literal notranslate"><span class="pre">subset_columns()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">py_online_forecast</a></li>
+      <li class="breadcrumb-item active">py_online_forecast.forecast_tools module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/py_online_forecast.forecast_tools.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py_online_forecast.forecast_tools">
+<span id="py-online-forecast-forecast-tools-module"></span><h1>py_online_forecast.forecast_tools module<a class="headerlink" href="#module-py_online_forecast.forecast_tools" title="Link to this heading"></a></h1>
+<p>Utilities for working with forecast data and creating forecast models.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Aggregator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Aggregator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'sum'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'mean'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Aggregator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Aggregate data by resampling to specified frequency and applying sum or mean.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq</strong> (<em>str</em>) – Pandas frequency string to resample data.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em>, </em><em>optional</em>) – Source providing data to aggregate. Output should be a pandas DataFrame.</p></li>
+<li><p><strong>agg_type</strong> (<em>str</em><em>, </em><em>default &quot;mean&quot;</em>) – Type of aggregation to apply. Must be either “sum” or “mean”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Aggregator.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Aggregator.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return aggregated data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Aggregator.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Aggregator.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Align">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_index</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Align" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Align dataframes to expected index and concatenate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expected_index</strong> (<em>pd.Index</em>) – Index to align dataframes to.</p></li>
+<li><p><strong>*data</strong> (<em>list</em><em> of </em><em>pd.DataFrame</em>) – DataFrames to align and concatenate.</p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – Method to use for filling missing values when aligning, passed to pandas
+reindex method. Default is <code class="docutils literal notranslate"><span class="pre">None</span></code>, which means missing values will be filled
+with NaN.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Align.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expected_index</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Align.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return aligned dataframe.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Align.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['expected_index',</span> <span class="pre">'data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Align.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Concat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Concat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Concat" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Concatenate dataframes along specified axis.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Concat.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Concat.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return concatenated dataframe.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Concat.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Concat.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.DataCleaner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">DataCleaner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forgetting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.DataCleaner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Clean data by removing outliers and filling missing values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>forgetting</strong> (<em>float</em>) – Forgetting factor for estimating mean and variance of the data, see
+<code class="docutils literal notranslate"><span class="pre">ForgettingMean</span></code> and <code class="docutils literal notranslate"><span class="pre">ForgettingVariance</span></code>.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em>, </em><em>optional</em>) – Source providing data to clean. Output should be a pandas DataFrame. If <code class="docutils literal notranslate"><span class="pre">None</span></code>
+(default) use <code class="docutils literal notranslate"><span class="pre">DEFAULT_SOURCE</span></code>.</p></li>
+<li><p><strong>z_thresh</strong> (<em>float</em><em>, </em><em>optional</em>) – Z-score threshold for identifying outliers. Default is 3.</p></li>
+<li><p><strong>forward_fill</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to forward fill missing values after removing outliers. Default is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>track_memory</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to track memory of mean and variance estimates for outlier detection.
+See <code class="docutils literal notranslate"><span class="pre">ForgettingMean</span></code> and <code class="docutils literal notranslate"><span class="pre">ForgettingVariance</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>freq</strong> (<em>str</em><em>, </em><em>optional</em>) – If specified, reindex data to this frequency before cleaning, using
+<code class="docutils literal notranslate"><span class="pre">Reindexer</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.DataCleaner.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.DataCleaner.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return cleaned data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pd.DataFrame</em>) – Data to clean.</p></li>
+<li><p><strong>variance</strong> (<em>np.ndarray</em>) – Variance estimates for the data.</p></li>
+<li><p><strong>mean</strong> (<em>np.ndarray</em>) – Mean estimates for the data.</p></li>
+<li><p><strong>last_state</strong> (<em>pd.Series</em><em>, </em><em>optional</em>) – Last row of the cleaned data from the previous steps.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.DataCleaner.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'variance',</span> <span class="pre">'mean',</span> <span class="pre">'last_state']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.DataCleaner.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Disruption">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Disruption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dayofweek</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Disruption" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Model hourly disruptions at specific times by generating indicator features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing a datetime index to evaluate disruptions on.</p></li>
+<li><p><strong>hour</strong> (<em>int</em>) – Hour of the day when the disruption occurs (0-23).</p></li>
+<li><p><strong>dayofweek</strong> (<em>int</em><em>, </em><em>optional</em>) – Day of the week when the disruption occurs (0=Monday, 6=Sunday). If <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+disruption occurs on all days.</p></li>
+<li><p><strong>duration</strong> (<em>int</em><em>, </em><em>optional</em>) – Duration of the disruption in hours. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, disruption is assumed to last
+for one hour.</p></li>
+<li><p><strong>horizons</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Forecast horizons to generate disruption features for. Outputs are shifted
+to match the specified horizons, so that the feature activates on the time for
+which the forecast is made.</p></li>
+<li><p><strong>as_dict</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return a dictionary mapping horizons to disruption features instead
+of concatenating into a single DataFrame. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Disruption.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Disruption.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return disruption features for specified index.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Disruption.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['index']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Disruption.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.FillMissing">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">FillMissing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.FillMissing" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Fill missing values in data with specified value.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.FillMissing.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.FillMissing.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return data with missing values filled.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.FillMissing.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.FillMissing.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ForecastEnsemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_horizons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'auto'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Ensemble of forecast models for multiple horizons.</p>
+<p>The ensemble consists of a separate <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> for each specified horizon,
+which are called in parallel and their outputs are combined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>list</em><em> of </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em> or </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source or list of sources providing input features for the forecast model.
+Sources that output dataframes in the forecast matrix format
+(see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>) will be automatically subset to the specified input
+horizons.</p></li>
+<li><p><strong>Y</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing target variable for the forecast model. Output should be a
+pandas DataFrame in the forecast matrix format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>).</p></li>
+<li><p><strong>horizons</strong> (<em>tuple</em><em> of </em><em>int</em>) – Forecast horizons to predict. A separate forecast model will be created for each
+horizon.</p></li>
+<li><p><strong>input_horizons</strong> (<em>dict</em><em> of </em><em>{int: tuple</em><em> of </em><em>int}</em><em> or </em><em>&quot;auto&quot;</em><em>, </em><em>optional</em>) – Forecast horizons to include as input features for each forecast model. If a
+dict, should map each horizon to a tuple of int specifying the horizons to
+include for that model. If <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>, will use (0, h) for each horizon h.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to each forecast model, see
+<code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">predictions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return dict of combined predictions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['predictions']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the ensemble by resetting state and calling update.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.set_score_mode">
+<span class="sig-name descname"><span class="pre">set_score_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.set_score_mode" title="Link to this definition"></a></dt>
+<dd><p>Set score mode for all models in the ensemble.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.unset_score_mode">
+<span class="sig-name descname"><span class="pre">unset_score_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.unset_score_mode" title="Link to this definition"></a></dt>
+<dd><p>Unset score mode for all models in the ensemble.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastEnsemble.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastEnsemble.update" title="Link to this definition"></a></dt>
+<dd><p>Return model outputs from applying model transformations for all models.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastFormat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ForecastFormat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastFormat" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><code class="xref py py-class docutils literal notranslate"><span class="pre">Format</span></code></a></p>
+<p>Format for handling data stored in dataframes obeying the forecast matrix format.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastFormat.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['source',</span> <span class="pre">'state',</span> <span class="pre">'memory']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastFormat.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastFormat.registry">
+<span class="sig-name descname"><span class="pre">registry</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastFormat.registry" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastFormat.resolver_registry">
+<span class="sig-name descname"><span class="pre">resolver_registry</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{&lt;class</span> <span class="pre">'py_online_forecast.features.ForgettingMean'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.ForgettingVariance'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.Lag'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.LowPass'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.SlidingMean'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.SlidingSum'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.features.ToArray'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.hierarchies.RidgeReconciliation'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.prediction.ARX'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.prediction.RRR'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'py_online_forecast.prediction.WLS'&gt;:</span> <span class="pre">&lt;function</span> <span class="pre">_&gt;}</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastFormat.resolver_registry" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ForecastMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Acessor with utilities for working with forecast data.</p>
+<p>The accessor provides methods for checking, subsetting and manipulating data obeying
+a &quot;forecast matrix&quot; structure. Any such data should be stored as a pandas
+DataFrame with a two level MultiIndex for columns, where the first level contains
+variable names and the second level contains integer forecast horizons. Dataframes
+can be converted to this format using the <code class="docutils literal notranslate"><span class="pre">convert</span></code> method.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.assert_format">
+<span class="sig-name descname"><span class="pre">assert_format</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.assert_format" title="Link to this definition"></a></dt>
+<dd><p>Assert that the data is in forecast matrix format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.convert">
+<span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.convert" title="Link to this definition"></a></dt>
+<dd><p>Return a copy of the data converted to forecast matrix format.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.horizons">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">horizons</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.horizons" title="Link to this definition"></a></dt>
+<dd><p>Return list of unique horizons in the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.lag">
+<span class="sig-name descname"><span class="pre">lag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.lag" title="Link to this definition"></a></dt>
+<dd><p>Return a copy of the data with columns shifted accoring to horizons.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.names">
+<span class="sig-name descname"><span class="pre">names</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['Variable',</span> <span class="pre">'Horizon']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.subset">
+<span class="sig-name descname"><span class="pre">subset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.subset" title="Link to this definition"></a></dt>
+<dd><p>Return a subset of the data matching specified variables and horizons.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastMatrix.variables">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variables</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastMatrix.variables" title="Link to this definition"></a></dt>
+<dd><p>Return list of unique variable names in the data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ForecastModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_horizons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'auto'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolve_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Linear forecast model using ridge regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>list</em><em> of </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em> or </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source or list of sources providing input features for the forecast model.
+Sources that output dataframes in the forecast matrix format
+(see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>) will be automatically subset to the specified input
+horizons.</p></li>
+<li><p><strong>Y</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing target variable for the forecast model. Output should be a
+pandas DataFrame in the forecast matrix format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>).</p></li>
+<li><p><strong>horizon</strong> (<em>int</em>) – Forecast horizon to predict.</p></li>
+<li><p><strong>input_horizons</strong> (<em>tuple</em><em> of </em><em>int</em><em> or </em><em>&quot;auto&quot;</em><em>, </em><em>optional</em>) – Forecast horizons to include as input features for the forecast model. If a
+tuple of int, should specify the horizons to include. If <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>, will
+use (0, horizon).</p></li>
+<li><p><strong>resolve_format</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to apply formatting transformations to the input features before
+subsetting. If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), will apply <code class="docutils literal notranslate"><span class="pre">ForecastFormat</span></code> to each input.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to the ridge regression model, see
+<code class="docutils literal notranslate"><span class="pre">prediction.RRR</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the prediction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['prediction']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the model by resetting state and calling update.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.predictor">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">predictor</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.predictor" title="Link to this definition"></a></dt>
+<dd><p>Return the current <code class="docutils literal notranslate"><span class="pre">RRR</span></code> predictor object if any.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.set_score_mode">
+<span class="sig-name descname"><span class="pre">set_score_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.set_score_mode" title="Link to this definition"></a></dt>
+<dd><p>Set score mode for the prediction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.unset_score_mode">
+<span class="sig-name descname"><span class="pre">unset_score_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.unset_score_mode" title="Link to this definition"></a></dt>
+<dd><p>Unset score mode for the prediction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ForecastModel.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_predictor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ForecastModel.update" title="Link to this definition"></a></dt>
+<dd><p>Return model outputs from applying model transformations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em>) – Dictionary containing data to call transformations on.</p></li>
+<li><p><strong>update_predictor</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to update model parameters using the provided data. If <code class="docutils literal notranslate"><span class="pre">True</span></code>
+(default), will update the predictor.</p></li>
+<li><p><strong>**params</strong> – Additional parameters to pass to transformations.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Horizons">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Horizons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Horizons" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Extract forecast horizons from columns of a DataFrame or keys of a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing data to extract horizons from. Output should be a pandas
+DataFrame in the forecast matrix format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>) or a dictionary
+with integer keys representing horizons.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Horizons.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Horizons.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the forecast horizons.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Horizons.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Horizons.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Index">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Index" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Return the index of the data as a feature.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Index.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Index.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the index of the data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Index.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Index.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Reindexer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Reindexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Reindexer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Reindex data to specified frequency, filling missing values with NaN.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq</strong> (<em>str</em>) – Pandas frequency string to reindex data, e.g. “h” for hourly.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em>, </em><em>optional</em>) – Source providing data to reindex. Output should be a pandas DataFrame with a
+DatetimeIndex. If <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) use <code class="docutils literal notranslate"><span class="pre">DEFAULT_SOURCE</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Reindexer.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Reindexer.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return reindexed data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Reindexer.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Reindexer.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.RenameColumns">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">RenameColumns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.RenameColumns" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Rename columns of a DataFrame.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.RenameColumns.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.RenameColumns.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return data with renamed columns.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.RenameColumns.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.RenameColumns.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Scaler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Scaler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_scales</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Scaler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Multiply specified variables by given floats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing data to scale. Output should be a pandas DataFrame or Series.</p></li>
+<li><p><strong>var_scales</strong> (<em>dict</em>) – Dictionary mapping variable names to floats. Variables in the data but not in
+the dictionary will not be scaled.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Scaler.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Scaler.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return scaled data and state containing indexer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pd.DataFrame</em><em> or </em><em>pd.Series</em>) – Data to scale.</p></li>
+<li><p><strong>state</strong> (<em>tuple</em><em>, </em><em>optional</em>) – If provided, should be a tuple of (indexer, scales) where indexer is a
+boolean or integer indexer for the columns to scale, and scales is an array
+of the corresponding scale factors.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Scaler.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'state']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Scaler.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Subset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">Subset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Subset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Subset data by variable names and horizons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing data to subset. Output should be a pandas DataFrame conforming
+to the forecast matrix format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>).</p></li>
+<li><p><strong>*variables</strong> (<em>object</em>) – Variable names to include in the subset.</p></li>
+<li><p><strong>horizons</strong> (<em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Forecast horizons to include in the subset. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, all horizons are
+included.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Subset.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.Subset.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return subset of data matching specified variables and horizons.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.Subset.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'indices']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.Subset.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfDay">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">TimeOfDay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfDay" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Time of day feature, expressed as the fraction of the day passed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing a datetime index to evaluate time of day on.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfDay.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfDay.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the fraction of day passed for each timestamp in the index.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfDay.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['t']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfDay.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfWeek">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">TimeOfWeek</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfWeek" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.forecast_tools.TimeOfDay" title="py_online_forecast.forecast_tools.TimeOfDay"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimeOfDay</span></code></a></p>
+<p>Time of week feature, expressed as the fraction of the week passed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing a datetime index to evaluate time of week on.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfWeek.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfWeek.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the fraction of week passed for each timestamp in the index.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfWeek.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['t']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfWeek.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfYear">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">TimeOfYear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfYear" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Time of year feature, expressed as the fraction of the year passed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing a datetime index to evaluate time of year on.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfYear.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfYear.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the fraction of year passed for each timestamp in the index.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.TimeOfYear.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['t']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.TimeOfYear.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToExog">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ToExog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">horizon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToExog" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Convert data to exogenous format for use with ARX predictor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>horizon</strong> (<em>int</em>) – Number of forecast horizons to include in the exogenous variables. All horizons
+from 1 to this value will be extracted from the data.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em>, </em><em>optional</em>) – Source providing data to convert. Output should be a pandas DataFrame in the
+forecast matrix format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>) or a 3D numpy array of shape
+(t, n_horizon, n_var).  If <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) use <code class="docutils literal notranslate"><span class="pre">DEFAULT_SOURCE</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToExog.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToExog.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return data converted to exogenous format for ARX predictor.</p>
+<p>If the input data is a DataFrame in forecast matrix format, it will be reshaped
+to a 3D array. If the input data is already a 3D array, it will be checked for
+correct shape and returned as is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Data to convert. Should be either a pandas DataFrame in the forecast matrix
+format (see <code class="docutils literal notranslate"><span class="pre">ForecastMatrix</span></code>) or a 3D numpy array of shape
+(t, n_horizon, n_var).</p></li>
+<li><p><strong>indices</strong> (<em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – If provided, should be a list of column indices to extract from the
+DataFrame. Will be inferred from the DataFrame columns if not provided.
+Ignored if data is a numpy array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data converted to exogenous format for ARX predictor, as a 3D array of time
+steps, horizons and variables. The result is a 3D array of shape
+(t, n_horizon, n_var), where t is the number of time steps, n_horizon is the
+number of forecast horizons, and n_var is the number of variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToExog.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'indices']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToExog.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToPandas">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">ToPandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToPandas" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Convert data to pandas DataFrame with specified columns and index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Source providing data to convert. Output should be a numpy array or similar.</p></li>
+<li><p><strong>columns</strong> (<em>list</em><em> of </em><em>str</em><em> or </em><em>pd.Index</em>) – Column names for the resulting DataFrame.</p></li>
+<li><p><strong>index</strong> (<em>pd.Index</em><em>, </em><em>optional</em>) – Index for the resulting DataFrame. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a default integer index will be
+used.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToPandas.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToPandas.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return data converted to pandas DataFrame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.ToPandas.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'index']</span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.ToPandas.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.assert_fc_columns">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">assert_fc_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MultiIndex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.assert_fc_columns" title="Link to this definition"></a></dt>
+<dd><p>Assert that columns are in forecast matrix format.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.assert_fc_index">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">assert_fc_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.assert_fc_index" title="Link to this definition"></a></dt>
+<dd><p>Assert that index is in forecast matrix format.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.fc_columns_from_product">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">fc_columns_from_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_by_horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MultiIndex</span></span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.fc_columns_from_product" title="Link to this definition"></a></dt>
+<dd><p>Return forecast matrix columns from product of variables and horizons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> (<em>list</em><em> of </em><em>str</em>) – Variable names to include in columns.</p></li>
+<li><p><strong>horizons</strong> (<em>list</em><em> of </em><em>int</em>) – Forecast horizons to include in columns.</p></li>
+<li><p><strong>group_by_horizon</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, group columns by horizon instead of variable, i.e. order columns as
+(var1, h1), (var2, h1), …, (var1, h2), (var2, h2), … If <code class="docutils literal notranslate"><span class="pre">False</span></code>, order
+columns as (var1, h1), (var1, h2), …, (var2, h1), (var2, h2), …</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Forecast matrix columns with specified variables and horizons.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.MultiIndex</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.fc_columns_from_tuples">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">fc_columns_from_tuples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MultiIndex</span></span></span><a class="headerlink" href="#py_online_forecast.forecast_tools.fc_columns_from_tuples" title="Link to this definition"></a></dt>
+<dd><p>Return forecast matrix columns from list of (variable, horizon) tuples.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.format_forecast">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">format_forecast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.format_forecast" title="Link to this definition"></a></dt>
+<dd><p>Format forecast output from WLS and RRR to match target variable Y.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.forecast_tools.subset_columns">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.forecast_tools.</span></span><span class="sig-name descname"><span class="pre">subset_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.forecast_tools.subset_columns" title="Link to this definition"></a></dt>
+<dd><p>Return index or columns matching variables and horizons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> (<em>pd.Index</em>) – Columns to subset, typically the columns of a forecast matrix DataFrame.</p></li>
+<li><p><strong>*variables</strong> (<em>str</em>) – Variable names to subset. If empty, all variables are included.</p></li>
+<li><p><strong>horizons</strong> (<em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – Forecast horizons to subset. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, all horizons are included.</p></li>
+<li><p><strong>return_index</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return a boolean indexer instead of the subset of columns.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Subset of columns matching the specified variables and horizons, or a boolean
+indexer if <code class="docutils literal notranslate"><span class="pre">return_index</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Index or np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="py_online_forecast.prediction.html" class="btn btn-neutral float-left" title="py_online_forecast.prediction module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.hierarchies.html" class="btn btn-neutral float-right" title="py_online_forecast.hierarchies module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

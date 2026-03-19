@@ -1,0 +1,925 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast.core module &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast.features module" href="py_online_forecast.features.html" />
+    <link rel="prev" title="py_online_forecast" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">py_online_forecast</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">core</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Apply"><code class="docutils literal notranslate"><span class="pre">Apply</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Apply.evaluate"><code class="docutils literal notranslate"><span class="pre">Apply.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Apply.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Apply.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer"><code class="docutils literal notranslate"><span class="pre">CircularBuffer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.offset"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.size"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.m"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.default_value"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.default_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.data"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.index"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.append"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.get"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.get()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.get_slice"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.get_slice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.reset"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.set_data"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.set_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.CircularBuffer.update"><code class="docutils literal notranslate"><span class="pre">CircularBuffer.update()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.DEFAULT_SOURCE"><code class="docutils literal notranslate"><span class="pre">DEFAULT_SOURCE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Dim"><code class="docutils literal notranslate"><span class="pre">Dim</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Dim.evaluate"><code class="docutils literal notranslate"><span class="pre">Dim.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Dim.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Dim.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Format"><code class="docutils literal notranslate"><span class="pre">Format</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.get_formatter"><code class="docutils literal notranslate"><span class="pre">Format.get_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.register"><code class="docutils literal notranslate"><span class="pre">Format.register()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.register_resolver"><code class="docutils literal notranslate"><span class="pre">Format.register_resolver()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.check_formatter"><code class="docutils literal notranslate"><span class="pre">Format.check_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.evaluate"><code class="docutils literal notranslate"><span class="pre">Format.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Format.evaluate_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.find_formatter"><code class="docutils literal notranslate"><span class="pre">Format.find_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Format.find_resolver"><code class="docutils literal notranslate"><span class="pre">Format.find_resolver()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Format.get_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Format.register()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Format.register_resolver()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.GetAttr"><code class="docutils literal notranslate"><span class="pre">GetAttr</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.GetAttr.evaluate"><code class="docutils literal notranslate"><span class="pre">GetAttr.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.GetAttr.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">GetAttr.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.GetItem"><code class="docutils literal notranslate"><span class="pre">GetItem</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.GetItem.evaluate"><code class="docutils literal notranslate"><span class="pre">GetItem.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.GetItem.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">GetItem.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.KeywordSource"><code class="docutils literal notranslate"><span class="pre">KeywordSource</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.KeywordSource.list_keywords"><code class="docutils literal notranslate"><span class="pre">KeywordSource.list_keywords()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">KeywordSource.list_keywords()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.MEMORY"><code class="docutils literal notranslate"><span class="pre">MEMORY</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Param"><code class="docutils literal notranslate"><span class="pre">Param</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Param.evaluate"><code class="docutils literal notranslate"><span class="pre">Param.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Param.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Param.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.STATE"><code class="docutils literal notranslate"><span class="pre">STATE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Source.get_attr"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Source.get_attr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.Transformation"><code class="docutils literal notranslate"><span class="pre">Transformation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.sources"><code class="docutils literal notranslate"><span class="pre">Transformation.sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.formatter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.recursion_pars"><code class="docutils literal notranslate"><span class="pre">Transformation.recursion_pars</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.evaluate"><code class="docutils literal notranslate"><span class="pre">Transformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.apply"><code class="docutils literal notranslate"><span class="pre">Transformation.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.ancestors"><code class="docutils literal notranslate"><span class="pre">Transformation.ancestors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Transformation.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.clear_formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.clear_formatter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">Transformation.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.get_all_dependencies"><code class="docutils literal notranslate"><span class="pre">Transformation.get_all_dependencies()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.get_graph"><code class="docutils literal notranslate"><span class="pre">Transformation.get_graph()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.get_summary"><code class="docutils literal notranslate"><span class="pre">Transformation.get_summary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.print_dependency_tree"><code class="docutils literal notranslate"><span class="pre">Transformation.print_dependency_tree()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.reset_state"><code class="docutils literal notranslate"><span class="pre">Transformation.reset_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.set_format"><code class="docutils literal notranslate"><span class="pre">Transformation.set_format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.core.Transformation.set_formatter"><code class="docutils literal notranslate"><span class="pre">Transformation.set_formatter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.format_like"><code class="docutils literal notranslate"><span class="pre">format_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.make_keyword"><code class="docutils literal notranslate"><span class="pre">make_keyword()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.parse_data"><code class="docutils literal notranslate"><span class="pre">parse_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.register_format_like"><code class="docutils literal notranslate"><span class="pre">register_format_like()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.core.transform_wrapper"><code class="docutils literal notranslate"><span class="pre">transform_wrapper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.features.html">features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">py_online_forecast</a></li>
+      <li class="breadcrumb-item active">py_online_forecast.core module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/py_online_forecast.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py_online_forecast.core">
+<span id="py-online-forecast-core-module"></span><h1>py_online_forecast.core module<a class="headerlink" href="#module-py_online_forecast.core" title="Link to this heading"></a></h1>
+<p>Core functionality for sources and transformations.</p>
+<p>The module provides the basic objects to define data pipelines using sources and
+transformations. The main components of the module are,</p>
+<ul class="simple">
+<li><p>Source: a placeholder for data sources</p></li>
+<li><p>Transformation: a base class for data transformations.</p></li>
+</ul>
+<p>Sources and transformations can be composed to build a computational graph which is
+lazily evaluating using the <code class="docutils literal notranslate"><span class="pre">apply</span></code> or <code class="docutils literal notranslate"><span class="pre">__call__</span></code> methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Apply">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Apply" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that applies a callable to source inputs.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Apply.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Apply.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Apply the callable to fixed inputs and Source values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Apply.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['sources']</span></span><a class="headerlink" href="#py_online_forecast.core.Apply.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">CircularBuffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Circular buffer for storage and retrieval of fixed-length 2D arrays.</p>
+<p>This class implements a circular buffer data structure that stores and retrieves the
+most recent rows of data without requiring expensive array shifting operations. It
+maintains a fixed size and uses modular arithmetic to wrap around when the buffer is
+full.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<em>int</em>) – The maximum number of rows the buffer can store.</p></li>
+<li><p><strong>m</strong> (<em>int</em>) – The number of columns in each row (width of the 2D array).</p></li>
+<li><p><strong>default_value</strong> (<em>float</em><em>, </em><em>optional</em>) – The default value used to fill the buffer and for padding operations. Default is
+np.nan.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.offset">
+<span class="sig-name descname"><span class="pre">offset</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.offset" title="Link to this definition"></a></dt>
+<dd><p>Current write position in the circular buffer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.size">
+<span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.size" title="Link to this definition"></a></dt>
+<dd><p>Maximum number of rows the buffer can store.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.m">
+<span class="sig-name descname"><span class="pre">m</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.m" title="Link to this definition"></a></dt>
+<dd><p>Number of columns in each row.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.default_value">
+<span class="sig-name descname"><span class="pre">default_value</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.default_value" title="Link to this definition"></a></dt>
+<dd><p>Default fill value for the buffer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.data" title="Link to this definition"></a></dt>
+<dd><p>The underlying 2D array storing the buffer data (shape: (size, m)).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.index">
+<span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.index" title="Link to this definition"></a></dt>
+<dd><p>Lazily computed index array for accessing the buffer in the correct order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The buffer uses a fixed-size 2D numpy array with shape (size, m).</p></li>
+<li><p>Access patterns use an index array that is lazily computed and cached.</p></li>
+<li><p>TODO: Consider generalizing to n-dimensional arrays.</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.append" title="Link to this definition"></a></dt>
+<dd><p>Append new rows of data to the buffer, pushing out old data as needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.get" title="Link to this definition"></a></dt>
+<dd><p>Return the n oldest rows of the buffer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.get_slice">
+<span class="sig-name descname"><span class="pre">get_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.get_slice" title="Link to this definition"></a></dt>
+<dd><p>Return a slice of the buffer from start to end, where end is exclusive.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id0">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Lazily compute array for accessing the buffer in the correct order.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.reset" title="Link to this definition"></a></dt>
+<dd><p>Reset the buffer data and index.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.set_data">
+<span class="sig-name descname"><span class="pre">set_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'numpy.float64'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.set_data" title="Link to this definition"></a></dt>
+<dd><p>Reset the data using provided dtype and default value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.CircularBuffer.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.CircularBuffer.update" title="Link to this definition"></a></dt>
+<dd><p>Append new data to the buffer and return the pushed-out data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="py_online_forecast.core.DEFAULT_SOURCE">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_SOURCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DEFAULT_SOURCE</span></span><a class="headerlink" href="#py_online_forecast.core.DEFAULT_SOURCE" title="Link to this definition"></a></dt>
+<dd><p>Default source for data.
+<code class="docutils literal notranslate"><span class="pre">parse_data</span></code> will map unnamed data to this source for use in transformations.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Dim">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Dim" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that returns the size of a selected axis of the input.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Dim.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Dim.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the value of the data shape at the specified axis.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Dim.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.core.Dim.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Base class for formatting transformation outputs.</p>
+<p>Formats are transformations that modify values according to a set of rules specified
+using formatting functions and resolvers. Each subclass of Format maintains a
+registry of such rules and uses multiple dispatch to find the appropriate formatting
+function.</p>
+<p>Subclasses can register formatting functions or resolvers. Formatting functions
+directly specify how the output of a given source type should be formatted for that
+given Format subclass. Resolvers enable more control, by instating an intermediate
+function that generates a formatting function based on the specific source instance,
+allowing instance specific formatting rules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input source (instance) to format.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.get_formatter">
+<span class="sig-name descname"><span class="pre">get_formatter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.get_formatter" title="Link to this definition"></a></dt>
+<dd><p>Get a formatter for given source instance using either registered formatting
+functions or resolvers.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.register">
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.register" title="Link to this definition"></a></dt>
+<dd><p>Decorator to register a formatting function for a given source type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.register_resolver">
+<span class="sig-name descname"><span class="pre">register_resolver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.register_resolver" title="Link to this definition"></a></dt>
+<dd><p>Decorator to register a resolver function for a given source type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.check_formatter">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">check_formatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formatter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.check_formatter" title="Link to this definition"></a></dt>
+<dd><p>Check that formatting function has correct signature.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Apply resolved formatting function to source.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['source',</span> <span class="pre">'state',</span> <span class="pre">'memory']</span></span><a class="headerlink" href="#py_online_forecast.core.Format.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.find_formatter">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">find_formatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.find_formatter" title="Link to this definition"></a></dt>
+<dd><p>Use multiple dispatch to find a registered formatter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Format.find_resolver">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">find_resolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Format.find_resolver" title="Link to this definition"></a></dt>
+<dd><p>Use multiple dispatch to find a registered resolver.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_formatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Find or resolve a formatter function for given source.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Return decorator for registering function as formatter for source_type.</p>
+<p>The decorated function should take exactly three arguments,
+(value_source, state, memory), where value_source is the source instance of the
+value to convert, state is a dict of known values of transforms and memory is
+the format instance memory parameter, see Transformation for details on the two
+latter arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_type</strong> (<em>type</em>) – The source type for which the formatting function should be registered.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>decorator</strong> – A decorator that registers a formatting function for the given source type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">register_resolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Return decorator for registering function as resolver for source_type.</p>
+<p>The decorated function should take one argument, the source instance to resolve,
+and return a formatter function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_type</strong> (<em>type</em>) – The source type for which the resolver should be registered.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>decorator</strong> – A decorator that registers a resolver for the given source type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetAttr">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">GetAttr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.GetAttr" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that returns <code class="docutils literal notranslate"><span class="pre">data.attr</span></code> from an input source.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetAttr.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.GetAttr.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the attribute from data corresponding to the attribute name.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetAttr.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.core.GetAttr.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetItem">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">GetItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.GetItem" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that returns <code class="docutils literal notranslate"><span class="pre">data[key]</span></code> from an input source.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetItem.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.GetItem.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the item from data corresponding to the key.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.GetItem.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.core.GetItem.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.KeywordSource">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">KeywordSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.KeywordSource" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><code class="xref py py-class docutils literal notranslate"><span class="pre">Source</span></code></a></p>
+<p>Singleton keyword placeholder for special data sources.</p>
+<p>KeywordSource instances are cached in a registry and support pickle serialization.
+Use module-level keywords like MEMORY, DEFAULT_SOURCE, and STATE instead of
+creating new instances.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.KeywordSource.list_keywords">
+<span class="sig-name descname"><span class="pre">list_keywords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.KeywordSource.list_keywords" title="Link to this definition"></a></dt>
+<dd><p>Return all registered keyword names.</p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#py_online_forecast.core.make_keyword" title="py_online_forecast.core.make_keyword"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_keyword</span></code></a></dt><dd><p>Factory function to access or create keywords.</p>
+</dd>
+</dl>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">list_keywords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Return a list of all registered keyword names.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="py_online_forecast.core.MEMORY">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">MEMORY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">MEMORY</span></span><a class="headerlink" href="#py_online_forecast.core.MEMORY" title="Link to this definition"></a></dt>
+<dd><p>Special source for memory parameters of transformations.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Param">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Param" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that wraps a fixed parameter value as a Source.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Param.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Param.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return the parameter value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Param.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#py_online_forecast.core.Param.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="py_online_forecast.core.STATE">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">STATE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">STATE</span></span><a class="headerlink" href="#py_online_forecast.core.STATE" title="Link to this definition"></a></dt>
+<dd><p>Source for intermediate data when applying transformations.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Source">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Source" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for composable placeholders for data sources.</p>
+<p>Supports operator overloading (+, -, <em>, /, *</em>) and attribute/item access to enable
+data transformations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name identifier for the source.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Source.get_attr">
+<span class="sig-name descname"><span class="pre">get_attr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Source.get_attr" title="Link to this definition"></a></dt>
+<dd><p>Access an attribute of the source.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">get_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Access an attribute of the source as a GetAttr.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Attribute name to access.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transformation accessing self.name.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#py_online_forecast.core.GetAttr" title="py_online_forecast.core.GetAttr">GetAttr</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">Transformation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">apply_args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">apply_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><code class="xref py py-class docutils literal notranslate"><span class="pre">Source</span></code></a></p>
+<p>Base class for data transformations.</p>
+<p>Transforms combine sources and data via an <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method. Subclasses specify
+input sources as arguments to <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, which are matched to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method
+parameters when called via <code class="docutils literal notranslate"><span class="pre">apply</span></code>. Matching is done by name for keyword sources
+and by position for positional sources by inspecting the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method
+signature.</p>
+<p>Subclasses should override the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method to implement the transformation
+logic and extend the ‘__init__’ method to initialise fixed parameters and specify
+external Source inputs for use with the <code class="docutils literal notranslate"><span class="pre">apply</span></code> method. When the <code class="docutils literal notranslate"><span class="pre">apply</span></code> method
+is called, sources specified in <code class="docutils literal notranslate"><span class="pre">__init__</span></code> will be matched to values, either as
+direct inputs if specified in the input data of <code class="docutils literal notranslate"><span class="pre">apply</span></code>, or by recursively calling
+the <code class="docutils literal notranslate"><span class="pre">apply</span></code> method on the sources that are transforms. Once dependencies are
+resolved, the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method is called with the resolved arguments to compute
+the output.</p>
+<p>The special keyword source MEMORY can be used to access outputs from previous
+evaluations of the transformation, see also the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method. The STATE
+source can be used to access all intermediate results computed by the <code class="docutils literal notranslate"><span class="pre">apply</span></code>
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*apply_args</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Positional sources passed to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> in order.</p></li>
+<li><p><strong>**apply_kwargs</strong> (<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Keyword sources mapped to <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> method parameters.
+Keys must match parameter names in the <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> signature.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If a keyword argument name does not match an <code class="docutils literal notranslate"><span class="pre">evaluate</span></code> parameter.</p></li>
+<li><p><strong>ValueError</strong> – If any input is not a Source instance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.sources" title="Link to this definition"></a></dt>
+<dd><p>List of input sources for the transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source">Source</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.formatter">
+<span class="sig-name descname"><span class="pre">formatter</span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.formatter" title="Link to this definition"></a></dt>
+<dd><p>Optional formatter to apply to the output of the transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format">Format</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.recursion_pars">
+<span class="sig-name descname"><span class="pre">recursion_pars</span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.recursion_pars" title="Link to this definition"></a></dt>
+<dd><p>Cached state of transformation and nested transformations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Compute the transformation output given input data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.apply" title="Link to this definition"></a></dt>
+<dd><p>Match sources to data and evaluate the transformation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.ancestors">
+<span class="sig-name descname"><span class="pre">ancestors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.ancestors" title="Link to this definition"></a></dt>
+<dd><p>Get ancestor nodes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recursion_pars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_recursion_pars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formatter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><span class="pre">Format</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the transformation with given data.</p>
+<p>Matches input sources to data, evaluates dependencies recursively, then calls
+<code class="docutils literal notranslate"><span class="pre">evaluate</span></code> with resolved arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Data mapping sources to values.</p></li>
+<li><p><strong>memory</strong> (<em>Any</em><em>, </em><em>optional</em>) – Cached state of the current transformation for use in evaluation.</p></li>
+<li><p><strong>recursion_pars</strong> (<em>dict</em><em>, </em><em>optional</em>) – Memory states of nested transformations for recursive evaluation, stored in
+a flat dict mapping transformations to their memory states</p></li>
+<li><p><strong>return_recursion_pars</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, return (result, recursion_pars) tuple.</p></li>
+<li><p><strong>ref</strong> (<em>object</em><em>, </em><em>optional</em>) – Reference object for data parsing.</p></li>
+<li><p><strong>copy_data</strong> (<em>bool</em><em>, </em><em>default True</em>) – If True, copy input data to avoid modification.</p></li>
+<li><p><strong>track_state</strong> (<em>bool</em><em>, </em><em>default False</em>) – If True, store recursion state for future calls.</p></li>
+<li><p><strong>formatter</strong> (<a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><em>Format</em></a><em>, </em><em>optional</em>) – Formatter to apply to results.</p></li>
+<li><p><strong>keywords</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of keyword names to values.</p></li>
+<li><p><strong>**params</strong> (<em>Any</em>) – Additional parameters for free parameters or nested transforms.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>Any</em>) – The transformation output.</p></li>
+<li><p><strong>recursion_pars</strong> (<em>dict</em>) – (Only if <code class="docutils literal notranslate"><span class="pre">return_recursion_pars=True</span></code>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.clear_formatter">
+<span class="sig-name descname"><span class="pre">clear_formatter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.clear_formatter" title="Link to this definition"></a></dt>
+<dd><p>Clear the formatter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span></span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Compute the transformation output.</p>
+<p>Subclasses should override this method with a custom signature
+matching the input sources specified in <code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>Any</em>) – Transformation output or a tuple of (result, memory).</p></li>
+<li><p><strong>memory</strong> (<em>Any, optional</em>) – Cached state for subsequent calls (if returning tuple).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – This method must be overridden by subclasses.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method signature can be freely defined by subclasses.
+Parameters will be matched to input sources by name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.get_all_dependencies">
+<span class="sig-name descname"><span class="pre">get_all_dependencies</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><span class="pre">Transformation</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.get_all_dependencies" title="Link to this definition"></a></dt>
+<dd><p>Return all recursive transformation dependencies as a deduplicated list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.get_graph">
+<span class="sig-name descname"><span class="pre">get_graph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#py_online_forecast.core.Transformation.get_graph" title="Link to this definition"></a></dt>
+<dd><p>Return a dict with nodes and edges rooted at this transformation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.get_summary">
+<span class="sig-name descname"><span class="pre">get_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.get_summary" title="Link to this definition"></a></dt>
+<dd><p>Return a summary of the transformation graph and parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.print_dependency_tree">
+<span class="sig-name descname"><span class="pre">print_dependency_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.print_dependency_tree" title="Link to this definition"></a></dt>
+<dd><p>Print the transformation dependency tree to stdout.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.reset_state" title="Link to this definition"></a></dt>
+<dd><p>Clear cached recursion state stored on this transformation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.set_format">
+<span class="sig-name descname"><span class="pre">set_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><span class="pre">Format</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.set_format" title="Link to this definition"></a></dt>
+<dd><p>Set a format for the transformation.</p>
+<p>This is the same as calling <code class="docutils literal notranslate"><span class="pre">set_formatter</span></code> with formatter instantiated on
+self.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.core.Transformation.set_formatter">
+<span class="sig-name descname"><span class="pre">set_formatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">formatter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#py_online_forecast.core.Format" title="py_online_forecast.core.Format"><span class="pre">Format</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.Transformation.set_formatter" title="Link to this definition"></a></dt>
+<dd><p>Set the formatter for the transformation.</p>
+<p>Set a formatter transformation which will be applied to the output of the
+transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>(</strong><strong>Format</strong><strong>)</strong> (<a class="reference internal" href="#py_online_forecast.core.Transformation.formatter" title="py_online_forecast.core.Transformation.formatter"><em>formatter</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.core.format_like">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">format_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.format_like" title="Link to this definition"></a></dt>
+<dd><p>Format val like ref_val using registered formatting functions.</p>
+<p>The function uses multiple dispatch to find a registered formatting function to
+convert val to the type of ref_val.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>val</strong> (<em>Any</em>) – The value to format.</p></li>
+<li><p><strong>ref_val</strong> (<em>Any</em>) – The reference value to format like.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>formatted_val</strong> – The formatted value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.core.make_keyword">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">make_keyword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><span class="pre">Source</span></a></span></span><a class="headerlink" href="#py_online_forecast.core.make_keyword" title="Link to this definition"></a></dt>
+<dd><p>Create or retrieve a singleton KeywordSource with the given name.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.core.parse_data">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">parse_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.parse_data" title="Link to this definition"></a></dt>
+<dd><p>Normalize input into a source-value dict and ensure DEFAULT_SOURCE is present.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.core.register_format_like">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">register_format_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.register_format_like" title="Link to this definition"></a></dt>
+<dd><p>Return decorator to register a formatting function for use with ‘format_like’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>type</em>) – The source type to format.</p></li>
+<li><p><strong>target</strong> (<em>type</em>) – The target type to format like.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>decorator</strong> – A decorator that registers a formatting function for use with ‘format_like’. The
+registered function will be used to convert values of the source type to the
+target type when ‘format_like’ is called with value as the source type and
+reference value as the target type. The formatting function must have the
+signature ‘format_func(value, reference_value)’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.core.transform_wrapper">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.core.</span></span><span class="sig-name descname"><span class="pre">transform_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.core.transform_wrapper" title="Link to this definition"></a></dt>
+<dd><p>Return a wrapper that makes Apply transformations.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="py_online_forecast" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.features.html" class="btn btn-neutral float-right" title="py_online_forecast.features module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

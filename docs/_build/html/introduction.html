@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="PyOnlineForecast documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#forecast-model">Forecast model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#online-updates">Online updates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sources-and-transformations">Sources and transformations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hierarchical-reconciliation">Hierarchical reconciliation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extensibility">Extensibility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">py_online_forecast</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/introduction.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h1>
+<p>The purpose of the <code class="docutils literal notranslate"><span class="pre">PyOnlineForecast</span></code> package is to provide a flexible framework for online forecasting and hierarchical reconciliation. The package splits forecasting into a design phase and an evaluation phase. In the design phase, the user should</p>
+<ol class="arabic simple">
+<li><p>Identify incoming data sources and define <code class="docutils literal notranslate"><span class="pre">Source</span></code> objects as placeholders for these.</p></li>
+<li><p>Decide on appropriate data transformations and define <code class="docutils literal notranslate"><span class="pre">Transformation</span></code> sources by composing input sources or other transformations.</p></li>
+<li><p>Configure a <code class="docutils literal notranslate"><span class="pre">Prediction</span></code> transformation to define estimation and prediction behaviour.</p></li>
+</ol>
+<p>In the evaluation phase, the model may be applied in an online or offline setting. In either case, input data are mapped to their placeholder sources and transformations and predictions are computed.</p>
+<section id="forecast-model">
+<h2>Forecast model<a class="headerlink" href="#forecast-model" title="Link to this heading"></a></h2>
+<p>The package assumes a generic data generating process</p>
+<div class="math notranslate nohighlight">
+\[
+y_t = f_{\theta_t}(x_t, \epsilon_t).
+\]</div>
+<p>Here time indices <span class="math notranslate nohighlight">\(t\)</span> are assumed discrete and regularly spaced, and the forecast horizon <span class="math notranslate nohighlight">\(k\)</span> corresponds to a fixed number of steps. The data generating process <span class="math notranslate nohighlight">\(f\)</span> depends on (time varying) parameters <span class="math notranslate nohighlight">\(\theta_t\)</span> and maps input features <span class="math notranslate nohighlight">\(x_t\)</span> and noise <span class="math notranslate nohighlight">\(\epsilon_t\)</span> to outputs <span class="math notranslate nohighlight">\(y_t\)</span>. Predictions are made using a model <span class="math notranslate nohighlight">\(\phi\)</span> and estimated parameters <span class="math notranslate nohighlight">\(\hat{\theta}\)</span>,</p>
+<div class="math notranslate nohighlight">
+\[
+\hat{y}_{t+k|t} = \phi_{\hat{\theta}_t}(x_t)
+\]</div>
+</section>
+<section id="online-updates">
+<h2>Online updates<a class="headerlink" href="#online-updates" title="Link to this heading"></a></h2>
+<p>In an online forecasting setting, model parameters should be updated frequently and in sequence. To do this, we will use a pair of functions, <span class="math notranslate nohighlight">\(T\)</span> for transforming raw data and <span class="math notranslate nohighlight">\(U\)</span> for updating our prediction model. Letting <span class="math notranslate nohighlight">\(D_t\)</span> be the data at time <span class="math notranslate nohighlight">\(t\)</span> and <span class="math notranslate nohighlight">\(M_{t-1}\)</span> be a memory state of the model from time <span class="math notranslate nohighlight">\(t-1\)</span>, the updating procedure is</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{aligned}
+(x_t, y_t, M_t) &amp;= T(D_t, M_{t-1}) \\
+\hat{\theta}_t &amp;= U(\hat{\theta}_{t-1}, x_{t-k}, y_t, \hat{y}_{t|t-k})
+\end{aligned}
+\end{split}\]</div>
+<p>The data transformation first maps raw data and the memory state to input features, a target variable and an updated memory state. The update function then maps old parameters, transformed features, target variable and old forecasts to updated parameters. After updating parameters, the prediction function <span class="math notranslate nohighlight">\(\phi_{\hat{\theta}_t}\)</span> is applied to obtain forecasts and the process is repeated once new data arrives.</p>
+</section>
+<section id="sources-and-transformations">
+<h2>Sources and transformations<a class="headerlink" href="#sources-and-transformations" title="Link to this heading"></a></h2>
+<p>The separation of model design and evaluation is inspired by various modern software in which a computational graph is defined and lazily evaluated once data becomes available. This separation is enabled by the central <code class="docutils literal notranslate"><span class="pre">Source</span></code> and <code class="docutils literal notranslate"><span class="pre">Transformation</span></code> classes.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.core.Source</span></code></a></p></td>
+<td><p>Base class for composable placeholders for data sources.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.core.Transformation</span></code></a></p></td>
+<td><p>Base class for data transformations.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Each instance of a <code class="docutils literal notranslate"><span class="pre">Source</span></code> represents a node in a computational graph, connected by transformations instantiated with other sources as inputs. Transformations are special sources that define a computational procedure which may be applied to input data. When data becomes available, a given transformation node can be evaluated by passing a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of inputs specifying the available data as pairs of <code class="docutils literal notranslate"><span class="pre">Source</span></code> instances and their corresponding data. All dependencies are recursively evaluated, keeping a record of already evaluated transformations, and the final output is returned. In the design phase, transformations may be arbitrarily nested to form complete data processing pipelines. The evaluation of transformations is designed to depend on</p>
+<ol class="arabic simple">
+<li><p>the input data sources,</p></li>
+<li><p>parameters defined at instantiation, and</p></li>
+<li><p>a memory state that is passed along with the input data.</p></li>
+</ol>
+<p>The output of the evaluation is the transformed data and an updated state. As a design principle to ensure predictability, evaluation of a transformation should be a pure function with respect to the input data, parameters and state.</p>
+</section>
+<section id="prediction">
+<h2>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h2>
+<p>To make forecasts a model needs to be trained and then evaluated on input features. To standardize the dataflow to prediction algorithms the transformation subclass <code class="docutils literal notranslate"><span class="pre">Prediction</span></code> is used. It is a generic base class, that may be extended by individual prediction classes such as <code class="docutils literal notranslate"><span class="pre">RRR</span></code>.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/py_online_forecast.prediction.html#py_online_forecast.prediction.Prediction" title="py_online_forecast.prediction.Prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.prediction.Prediction</span></code></a></p></td>
+<td><p>Base class for discrete horizon forecasting transformations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/py_online_forecast.prediction.html#py_online_forecast.prediction.RRR" title="py_online_forecast.prediction.RRR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.prediction.RRR</span></code></a></p></td>
+<td><p>Online recursive ridge regression transformation.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">RRR</span></code> class provides a simple and robust prediction algorithm, and is also used the <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> of the <code class="docutils literal notranslate"><span class="pre">foreacst_tools</span></code> module.</p>
+</section>
+<section id="hierarchical-reconciliation">
+<h2>Hierarchical reconciliation<a class="headerlink" href="#hierarchical-reconciliation" title="Link to this heading"></a></h2>
+<p>The PyOnlineForecast package also supports online forecast reconciliation for structural and temporal hierarchies using the <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> and <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> classes.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="api/py_online_forecast.hierarchies.html#py_online_forecast.hierarchies.RidgeReconciliation" title="py_online_forecast.hierarchies.RidgeReconciliation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.hierarchies.RidgeReconciliation</span></code></a></p></td>
+<td><p>Hierarchical forecast reconciliation using ridge regression.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="api/py_online_forecast.hierarchies.html#py_online_forecast.hierarchies.TemporalRidgeReconciliation" title="py_online_forecast.hierarchies.TemporalRidgeReconciliation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_online_forecast.hierarchies.TemporalRidgeReconciliation</span></code></a></p></td>
+<td><p>Wrapper for temporal hierarchies using backshift.</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> is a transformation that uses <code class="docutils literal notranslate"><span class="pre">RRR</span></code> to perform hierarchical forecast reconciliation by posing a regularized linear model in the bottom level base forecast errors. It is extended by <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> to construct temporal hierarchies using the <code class="docutils literal notranslate"><span class="pre">BackShift</span></code> transformation from the <code class="docutils literal notranslate"><span class="pre">prediction</span></code> module.</p>
+</section>
+<section id="extensibility">
+<h2>Extensibility<a class="headerlink" href="#extensibility" title="Link to this heading"></a></h2>
+<p>The PyOnlineForecast package is designed to be extensible. Subclassing the <code class="docutils literal notranslate"><span class="pre">Transformation</span></code> class enables custom features to be incorporated into the online data pipeline. Subclasses of the <code class="docutils literal notranslate"><span class="pre">Prediction</span></code> classes may be used to define custom prediction algorithms.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="PyOnlineForecast documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

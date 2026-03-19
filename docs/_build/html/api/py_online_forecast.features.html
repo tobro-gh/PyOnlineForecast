@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast.features module &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast.prediction module" href="py_online_forecast.prediction.html" />
+    <link rel="prev" title="py_online_forecast.core module" href="py_online_forecast.core.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">py_online_forecast</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.core.html">core</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.Combine"><code class="docutils literal notranslate"><span class="pre">Combine</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.Combine.evaluate"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.Combine.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Combine.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.DesignMatrix"><code class="docutils literal notranslate"><span class="pre">DesignMatrix</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.DesignMatrix.evaluate"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.DesignMatrix.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">DesignMatrix.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.ForgettingMean"><code class="docutils literal notranslate"><span class="pre">ForgettingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ForgettingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ForgettingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.ForgettingVariance"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ForgettingVariance.evaluate"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ForgettingVariance.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ForgettingVariance.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.FourierSeries"><code class="docutils literal notranslate"><span class="pre">FourierSeries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.FourierSeries.evaluate"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.FourierSeries.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">FourierSeries.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.Lag"><code class="docutils literal notranslate"><span class="pre">Lag</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.Lag.evaluate"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.Lag.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">Lag.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.LowPass"><code class="docutils literal notranslate"><span class="pre">LowPass</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.LowPass.evaluate"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.LowPass.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">LowPass.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.One"><code class="docutils literal notranslate"><span class="pre">One</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.One.evaluate"><code class="docutils literal notranslate"><span class="pre">One.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.One.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">One.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.SlidingMean"><code class="docutils literal notranslate"><span class="pre">SlidingMean</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.SlidingMean.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.SlidingMean.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingMean.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.SlidingSum"><code class="docutils literal notranslate"><span class="pre">SlidingSum</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.SlidingSum.evaluate"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.SlidingSum.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">SlidingSum.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.ToArray"><code class="docutils literal notranslate"><span class="pre">ToArray</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ToArray.evaluate"><code class="docutils literal notranslate"><span class="pre">ToArray.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#py_online_forecast.features.ToArray.evaluate_kwargs"><code class="docutils literal notranslate"><span class="pre">ToArray.evaluate_kwargs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.features.forgetting_mean"><code class="docutils literal notranslate"><span class="pre">forgetting_mean()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">py_online_forecast</a></li>
+      <li class="breadcrumb-item active">py_online_forecast.features module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/py_online_forecast.features.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py_online_forecast.features">
+<span id="py-online-forecast-features-module"></span><h1>py_online_forecast.features module<a class="headerlink" href="#module-py_online_forecast.features" title="Link to this heading"></a></h1>
+<p>Selection of feature transformations.</p>
+<p>This module provides a selection of feature transformations based on the core module
+Transformation class. The transformations are focused on use with online regression
+models.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.Combine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">Combine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.Combine" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that combines multiple input sources into a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sources</strong> (<em>list</em><em> of </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input sources to combine into a dictionary.</p></li>
+<li><p><strong>names</strong> (<em>list</em><em>, </em><em>optional</em>) – The names to use for the combined features in the output dictionary. If not
+provided, the names of the input sources will be used.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.Combine.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.Combine.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Combine input data into a dictionary.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.Combine.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.features.Combine.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.DesignMatrix">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">DesignMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.DesignMatrix" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that combines multiple input sources into a 2D design matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sources</strong> (<em>list</em><em> of </em><a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – Input sources with array like values to combine into a design matrix.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.DesignMatrix.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.DesignMatrix.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Reshape input data and stack horizontally.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>list</em><em> of </em><em>ndarray</em>) – The input data to combine into a design matrix. Each element should have
+shape (n_samples, d_i) where n_samples is the number of observations and d_i
+is the number of features for the i-th data input. Higher dimensional arrays
+will be reshaped to 2D arrays, keeping the first dimension.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – The combined design matrix with shape (n_samples, sum(D_1, …)) where
+D_i = d_i_1 * d_i_2 * … is the number of features in the i-th input array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.DesignMatrix.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.features.DesignMatrix.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingMean">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">ForgettingMean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forgetting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ForgettingMean" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Compute the running mean with exponential forgetting.</p>
+<p>This is simply a wrapper around the <code class="docutils literal notranslate"><span class="pre">forgetting_mean</span></code> function, which manages the
+state and forgetting parameter. See the <code class="docutils literal notranslate"><span class="pre">forgetting_mean</span></code> function for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>forgetting</strong> (<em>float</em>) – The forgetting factor for the exponential forgetting.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the running mean over.</p></li>
+<li><p><strong>track_memory</strong> (<em>bool</em>) – Whether to track the effective or assume saturated memory.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingMean.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ForgettingMean.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the running mean using <code class="docutils literal notranslate"><span class="pre">forgetting_mean</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to compute the running mean over.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingMean.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'state']</span></span><a class="headerlink" href="#py_online_forecast.features.ForgettingMean.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingVariance">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">ForgettingVariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forgetting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ForgettingVariance" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Compute the running variance with exponential forgetting.</p>
+<p>This transformation computes a running variance estimate with exponential forgetting
+by applying the <code class="docutils literal notranslate"><span class="pre">forgetting_mean</span></code> function to the optionally centered squared data.
+The transformation can compute either the marginal variance or the full covariance
+matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>forgetting</strong> (<em>float</em>) – The forgetting factor for the exponential forgetting.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the running variance over. The value of the source
+should be array-like with shape (t, d) where t is the time dimension.</p></li>
+<li><p><strong>track_memory</strong> (<em>bool</em>) – Whether to track the effective or assume saturated memory.</p></li>
+<li><p><strong>center</strong> (<em>bool</em>) – Whether to center the data before computing the variance.</p></li>
+<li><p><strong>covariance</strong> (<em>bool</em>) – Whether to compute the covariance matrix instead of the variance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingVariance.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forgetting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ForgettingVariance.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the running variance or covariance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>d</em><em>)</em>) – The input data to compute the running variance over.</p></li>
+<li><p><strong>mean</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>d</em><em>)</em>) – The running mean estimate to center the data. If None, the data is not
+centered.</p></li>
+<li><p><strong>state</strong> (<em>tuple</em>) – The previous state of the computation, i.e. a tuple of the most recent
+variance estimate and the effective memory.</p></li>
+<li><p><strong>forgetting</strong> (<em>float</em>) – The forgetting factor for the exponential forgetting. If None, method uses
+the forgetting factor specified at initialization.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>ndarray of shape (n_samples, d) or (n_samples, d, d)</em>) – The running variance or covariance of the input data.</p></li>
+<li><p><strong>new_state</strong> (<em>tuple</em>) – The new state of the running variance and memory.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.ForgettingVariance.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'mean',</span> <span class="pre">'state',</span> <span class="pre">'forgetting']</span></span><a class="headerlink" href="#py_online_forecast.features.ForgettingVariance.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.FourierSeries">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">FourierSeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nharmonics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.FourierSeries" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Fourier series features.</p>
+<p>The transformation computes the basis functions of a Fourier series expansion up to
+a specified number of harmonics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the Fourier features from.</p></li>
+<li><p><strong>nharmonics</strong> (<em>int</em>) – The number of terms in the Fourier series expansion.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.FourierSeries.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.FourierSeries.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the Fourier series features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to compute the Fourier features from. The data is reshaped to
+(n_samples, d), by collapsing all dimensions except the first one.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – The Fourier series features of the input data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_samples, 2*nharmonics*d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.FourierSeries.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.features.FourierSeries.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.Lag">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">Lag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.Lag" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Lag features along the observations dimension.</p>
+<p>This transformation lags arrays and dictionaries of arrays along the first
+dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the lag features from.</p></li>
+<li><p><strong>amount</strong> (<em>int</em>) – The number of steps to lag the data.</p></li>
+<li><p><strong>default_value</strong> (<em>scalar</em><em>, </em><em>optional</em>) – The value to use for the lagged values when there is not enough history. If
+None, the default value is NaN.</p></li>
+<li><p><strong>offsets</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em><em>, </em><em>optional</em>) – A set of offsets to lag from. If specified, evaluation of the transformation
+will return a dictionary of lagged values per offset. The lag amount for the
+i-th offset is given by amount - offsets[i]. If None, the transformation will
+simply lag by the specified amount and return a single array of lagged values.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.Lag.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prev_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.Lag.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Lag the data along the first dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>) or </em><em>dict</em><em> of </em><em>such arrays</em>) – The input data to lag.</p></li>
+<li><p><strong>prev_values</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>) or </em><em>dict</em><em> of </em><em>such arrays</em><em>, </em><em>optional</em>) – The previous values to use for the lag.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>ndarray of shape (n_samples, …) or dict</em>) – The lagged data. If the input was a dict, the lagged value is also a dict
+where each value has been lagged. If offsets were specified at
+initialization, the result is a dict of lagged values per offset. If both
+the input was a dict, and offsets were specified, the output is a dict of
+dicts, where the first level corresponds to offsets, and the second level
+corresponds to the keys of the input dict.</p></li>
+<li><p><strong>prev_values</strong> (<em>ndarray of shape (n_samples, …)</em>) – The updated previous values.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.Lag.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'prev_values']</span></span><a class="headerlink" href="#py_online_forecast.features.Lag.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.LowPass">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">LowPass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.LowPass" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Low-pass filter using exponential forgetting.</p>
+<p>This transformation applied a low-pass filter with exponential forgetting and NaN
+handling to the input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to apply the low-pass filter to.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – The forgetting factor for the exponential forgetting. Higher values of alpha
+correspond to more smoothing.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.LowPass.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prev_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.LowPass.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the low-pass filter on the input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to apply the low-pass filter to.</p></li>
+<li><p><strong>prev_value</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>...</em><em>,</em><em>)</em>) – The previous value of the low-pass filter to resume the computation. If
+None, it is initialized as NaN.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – The low-pass filtered data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.LowPass.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'prev_value']</span></span><a class="headerlink" href="#py_online_forecast.features.LowPass.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.One">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">One</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.One" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Return a column of ones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ref</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a><em>, </em><em>optional</em>) – The source to use as reference for the length of the output column.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.One.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.One.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Return a column of ones of length t.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.One.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['t']</span></span><a class="headerlink" href="#py_online_forecast.features.One.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingMean">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">SlidingMean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.SlidingMean" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Compute sliding window mean using numpy’s sliding_window_view function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the sliding mean over.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em>) – The size of the sliding window to compute the mean over.</p></li>
+<li><p><strong>*args</strong> – Additional arguments to pass to numpy’s sliding_window_view function</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments to pass to numpy’s sliding_window_view function</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingMean.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.SlidingMean.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the sliding window mean.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to compute the sliding mean over.</p></li>
+<li><p><strong>old_data</strong> (<em>ndarray</em>) – Previous values of the input data to complete the sliding view.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – The sliding window mean of the input data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingMean.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'old_data']</span></span><a class="headerlink" href="#py_online_forecast.features.SlidingMean.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingSum">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">SlidingSum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_SOURCE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.SlidingSum" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Compute sliding window sum using numpy’s sliding_window_view function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Source" title="py_online_forecast.core.Source"><em>Source</em></a>) – The input data to compute the sliding sum over.</p></li>
+<li><p><strong>window_size</strong> (<em>int</em>) – The size of the sliding window to compute the sum over.</p></li>
+<li><p><strong>*args</strong> – Additional arguments to pass to numpy’s sliding_window_view function</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments to pass to numpy’s sliding_window_view function</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingSum.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.SlidingSum.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the sliding window sum.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to compute the sliding sum over.</p></li>
+<li><p><strong>old_data</strong> (<em>ndarray</em>) – Previous values of the input data to complete the sliding view.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – The sliding window sum of the input data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.SlidingSum.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data',</span> <span class="pre">'old_data']</span></span><a class="headerlink" href="#py_online_forecast.features.SlidingSum.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py_online_forecast.features.ToArray">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">ToArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ToArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="py_online_forecast.core.html#py_online_forecast.core.Transformation" title="py_online_forecast.core.Transformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transformation</span></code></a></p>
+<p>Transformation that converts input data to a numpy array.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py_online_forecast.features.ToArray.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.ToArray.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Convert input data to a numpy array.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="py_online_forecast.features.ToArray.evaluate_kwargs">
+<span class="sig-name descname"><span class="pre">evaluate_kwargs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['data']</span></span><a class="headerlink" href="#py_online_forecast.features.ToArray.evaluate_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py_online_forecast.features.forgetting_mean">
+<span class="sig-prename descclassname"><span class="pre">py_online_forecast.features.</span></span><span class="sig-name descname"><span class="pre">forgetting_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forgetting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#py_online_forecast.features.forgetting_mean" title="Link to this definition"></a></dt>
+<dd><p>Compute the running mean with exponential forgetting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>forgetting</strong> (<em>float</em>) – The forgetting factor for the exponential forgetting.</p></li>
+<li><p><strong>data</strong> (<em>ndarray</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>...</em><em>)</em>) – The input data to compute the running mean over.</p></li>
+<li><p><strong>state</strong> (<em>tuple</em>) – The previous state of the computation, i.e. a tuple of the most recent mean
+estimate and the effective memory.</p></li>
+<li><p><strong>track_memory</strong> (<em>bool</em>) – Whether to track the effective or assume saturated memory. If  True, the memory
+is updated as memory = forgetting * memory + 1 at each step. Otherwise, the
+memory is assumed to be saturated, i.e. 1/(1 - forgetting).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>result</strong> (<em>ndarray of shape (n_samples, …)</em>) – The running mean of the input data.</p></li>
+<li><p><strong>new_state</strong> (<em>tuple</em>) – The new state of the running mean and memory.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="py_online_forecast.core.html" class="btn btn-neutral float-left" title="py_online_forecast.core module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.prediction.html" class="btn btn-neutral float-right" title="py_online_forecast.prediction module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
