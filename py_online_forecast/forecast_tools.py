@@ -1054,11 +1054,19 @@ def _(source: ARX):
     def formatter(value_source, state, memory=None):
         value = state[value_source]
         Y = state[source.Y]
-        formatted_value, cols = format_forecast(
-            value, Y, horizon=source.horizon, cols=memory
-        )
-        return formatted_value, cols
 
+        if memory is None:
+            # Construct columns based on Y
+            name = Y.fc.variables[0]
+            memory = fc_columns_from_product(
+                [name], [h + 1 for h in range(source.horizon)]
+            )
+
+        mean = _to_pandas(value["mean"], index=Y.index, columns=memory)
+        var = _to_pandas(value["var"], index=Y.index, columns=memory)
+
+        return {"mean": mean, "var": var}, memory
+    
     return formatter
 
 

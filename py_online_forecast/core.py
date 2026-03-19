@@ -162,21 +162,23 @@ class Transformation(Source):
     
     Transforms combine sources and data via an ``evaluate`` method. Subclasses specify 
     input sources as arguments to ``__init__``, which are matched to ``evaluate`` method
-    parameters when called via ``apply``. Matching is done by name for keyword sources and
-    by position for positional sources by inspecting the ``evaluate`` method signature.
+    parameters when called via ``apply``. Matching is done by name for keyword sources 
+    and by position for positional sources by inspecting the ``evaluate`` method 
+    signature.
     
     Subclasses should override the ``evaluate`` method to implement the transformation
     logic and extend the '__init__' method to initialise fixed parameters and specify
-    external Source inputs for use with the ``apply`` method. When the ``apply`` method is
-    called, sources specified in ``__init__`` will be matched to values, either as direct
-    inputs if specified in the input data of ``apply``, or by recursively calling the
-    ``apply`` method on the sources that are transforms. Once dependencies are resolved,
-    the ``evaluate`` method is called with the resolved arguments to compute the output.
+    external Source inputs for use with the ``apply`` method. When the ``apply`` method 
+    is called, sources specified in ``__init__`` will be matched to values, either as 
+    direct inputs if specified in the input data of ``apply``, or by recursively calling
+    the ``apply`` method on the sources that are transforms. Once dependencies are 
+    resolved, the ``evaluate`` method is called with the resolved arguments to compute
+    the output.
     
-    The special keyword source MEMORY can be used to access outputs
-    from previous evaluations of the transformation, see also the ``evaluate`` method.
-    The STATE source can be used to access all intermediate results computed by the
-    ``apply`` method.
+    The special keyword source MEMORY can be used to access outputs from previous
+    evaluations of the transformation, see also the ``evaluate`` method. The STATE
+    source can be used to access all intermediate results computed by the ``apply``
+    method.
         
     Parameters
     ----------
@@ -316,7 +318,8 @@ class Transformation(Source):
     def set_format(self, data_format: type[Format]):
         """Set a format for the transformation.
 
-        This is the same as calling ``set_formatter`` with formatter instantiated on self.
+        This is the same as calling ``set_formatter`` with formatter instantiated on 
+        self.
         """
         self.formatter = data_format(self)
 
@@ -694,10 +697,17 @@ class Apply(Transformation):
         self.source_kwargs = {
             k: arg for k, arg in kwargs.items() if isinstance(arg, Source)
         }
-        super().__init__(*self.source_args.values(), **self.source_kwargs)
 
-    def evaluate(self, *args, **kwargs):
+        sources = list(self.source_args.values()) + list(self.source_kwargs.values())
+
+        super().__init__(*sources)
+
+    def evaluate(self, *sources):
         """Apply the callable to fixed inputs and Source values."""
+
+        args = list(sources[: len(self.source_args)])
+        kwargs = dict(zip(self.source_kwargs.keys(), sources[len(self.source_args) :]))
+
         # Combine fixed and source args and kwargs
 
         # Build args list by sorting the combined keys of fixed and source args
@@ -1040,7 +1050,8 @@ class Format(Transformation):
     @classmethod
     def get_formatter(cls, source):
         """Find or resolve a formatter function for given source."""
-        # Check if formatter (source, state) -> formatted value is registered for the source type
+        # Check if formatter (source, state) -> formatted value is registered for the 
+        # source type
         formatter = cls.find_formatter(source)
 
         # If not, find a resolver that can generate a formatter based on the source
@@ -1059,7 +1070,8 @@ class Format(Transformation):
 
     def evaluate(self, source, state, memory=None):
         """Apply resolved formatting function to source."""
-        # Note, source should stay in the evaluate method to ensure transformation treats it as a dependency
+        # Note, source should stay in the evaluate method to ensure transformation 
+        # treats it as a dependency
         return self._formatter(self.source, state, memory)
 
     @classmethod

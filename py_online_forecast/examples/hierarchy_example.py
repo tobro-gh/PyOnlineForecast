@@ -63,7 +63,7 @@ result_df = pd.concat(result)
 result_cov_df = pd.concat(result_cov)
 #%% For general hierarchies, we instead use the Reconciler class, which does not use the backshift structure
 #reconciler = Reconciler(S_top, config, horizon = 2, variance_name = "cov")
-reconciler = RidgeReconciliation(S_top, horizon = 2, opt_shrink = True)
+reconciler = RidgeReconciliation(S_top, horizon = 2, opt_shrink = False)
 
 # Alternatively,
 
@@ -122,15 +122,23 @@ rmse_rec_top = p.rmse(resid_rec_top)
 
 #%% Make histograms of residuals
 fig, axes = plt.subplots(2, 2)
-axes[0, 0].hist(resid_base_bot.dropna(), bins=30, alpha=0.7)
+axes[0, 0].hist(resid_base_bot.dropna(), bins=30, alpha=0.7, density = True)
 axes[0, 0].legend(["1-step", "2-step"])
 axes[0, 0].set_title(f"Base bottom level, rmse: {rmse_base_bot:.3f}")
-axes[0, 1].hist(resid_rec_bot.dropna(), bins=30, alpha=0.7)
+axes[0, 1].hist(resid_rec_bot.dropna(), bins=30, alpha=0.7, density = True)
 axes[0, 1].legend(["1-step", "2-step"])
 axes[0, 1].set_title(f"Reconciled bottom level, rmse: {rmse_rec_bot:.3f}")
-axes[1, 0].hist(resid_base_top.dropna(), bins=30, alpha=0.7)
+
+# Also include gaussian with unity variance (true noise distribution) for reference
+x = np.linspace(-4, 4, 100)
+y = 1/np.sqrt(2 * np.pi) * np.exp(-0.5 * x**2)
+axes[0, 0].plot(x, y)
+axes[0, 1].plot(x, y)
+
+
+axes[1, 0].hist(resid_base_top.dropna(), bins=30, alpha=0.7, density = True)
 axes[1, 0].set_title(f"Base top level, rmse: {rmse_base_top:.3f}")
-axes[1, 1].hist(resid_rec_top.dropna(), bins=30, alpha=0.7)
+axes[1, 1].hist(resid_rec_top.dropna(), bins=30, alpha=0.7, density = True)
 axes[1, 1].set_title(f"Reconciled top level, rmse: {rmse_rec_top:.3f}")
 plt.tight_layout()
 

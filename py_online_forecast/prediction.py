@@ -1160,12 +1160,10 @@ class RRR(OnlinePrediction):
         combine_variance=True,
         full_cov=True,
         center_cov=False,
-        format_as_Y=True,
         scorefun=rmse,
         default_params=None,
     ):
         self.horizon = horizon
-        self.format_as_Y = format_as_Y
         self.Y_hat = Lag(self, amount=horizon)
         self.scorefun = scorefun
         super().__init__(
@@ -1460,32 +1458,32 @@ class ARX(OnlinePrediction):
     
     def __init__(
         self,
-        exog,
         endog,
         horizon,
-        p,
-        burn_in=1,
+        p: int,
+        exog = None,
+        burn_in:int=1,
         init_K=0,
         track_memory=False,
         combine_variance=True,
         full_cov=True,
-        format_as_Y=True,
         scorefun=rmse,
         default_params=None,
     ):
         self.horizon = horizon
         self.p = p
 
+        # Ensure endog is (t, 1)
+        endog = Apply(lambda x: x.reshape(x.shape[0], 1) if x.ndim == 1 else x, endog)
+
         # Make regression model for 1-step forecasts
-        endog = BackShift(
+        X = BackShift(
             list(reversed(range(p))), endog
         )  # ordered as (y_t-p+1, ..., y_t-1, y_t)
-        X = Apply(np.hstack, endog, exog[:, 0])
-
-        self.format_as_Y = format_as_Y
+        if exog is not None:
+            X = Apply(np.hstack, X, exog[:, 0])
 
         self.scorefun = scorefun
-        self.format_as_Y = format_as_Y
 
         super().__init__(
             X,
@@ -1531,7 +1529,7 @@ class ARX(OnlinePrediction):
         x_i,
         y_i,
         x_train_i,
-        z_i,
+        z_i = None,
         Q: np.ndarray | float = None,
         theta0: np.ndarray = None,
         V: np.ndarray = None,
@@ -1563,16 +1561,32 @@ class ARX(OnlinePrediction):
         )
 
     def online_predict(
-        self, state: RRRPredictor, x_i, z_i, V=None, return_var_theta=False
+        self, state: RRRPredictor, x_i, z_i=None, V=None, return_var_theta=False
     ):
         """Compute h-step-ahead predictions and variances.
         
         Iterates through horizons, predict mean and variance using accumulated
         weight matrices from AR coefficient propagation.
+
+        Parameters
+        ----------
+        state : RRRPredictor
+            The predictor state.
+        x_i : ndarray of shape (p,)
+            Current endogenous history for prediction (lags).
+        z_i : ndarray of shape (h, m) or None
+            Current exogenous variables for prediction (lags). First dimension should
+            match prediction horizon. If None, exogenous features are not used.
+        V : ndarray of shape (p, p) or None
+            Variance-covariance matrix of the prediction errors.
+        return_var_theta : bool
+            Whether to return the variance of the regression coefficients.
+
+
         """
         result = state.online_predict(x_i, V=V, return_var_theta=return_var_theta)
 
-        theta = state.theta.squeeze()
+        theta = state.theta.flatten()
 
         arx_pred = np.full(self.horizon, np.nan)
         arx_var = np.full(
@@ -1584,9 +1598,7 @@ class ARX(OnlinePrediction):
 
         ar_params = theta[: self.p]
 
-        endog = x_i[
-            : self.p
-        ]  # x_i contains both endog and exog, but we only want the endog part.
+        endog = x_i.copy()
 
         if V is None:
             V = state.V
@@ -1595,7 +1607,10 @@ class ARX(OnlinePrediction):
         for h in range(self.horizon):
 
             # Combine endogenous history with exogenous for horizon h
-            reg_i = np.hstack([endog, z_i[h]])
+            if z_i is not None:
+                reg_i = np.hstack([endog, z_i[h]])
+            else:
+                reg_i = endog
 
             # Predict h-step ahead using theta and x_i
             arx_pred[h] = (reg_i.T @ theta).item()

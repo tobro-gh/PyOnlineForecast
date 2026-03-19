@@ -23,15 +23,15 @@ class RidgeReconciliation(c.Transformation):
 
     Reconciles forecasts across a hierarchy by predicting bottom-level base forecast
     errors using a linear model in the top-level coherency errors. The transformation
-    uses :class:`~prediction.RRR`` or optionally :class:``SRRR` to perform online
-    estimation and prediction at the bottom level and constructs reconciled forecasts by
-    shifting and scaling the base forecasts error predictions.
+    uses :class:`~prediction.RRR` or optionally :class:`SRRR` to perform online
+    estimation and prediction at the bottom level and constructs reconciled forecasts
+    by shifting and scaling the base forecast error predictions.
 
     Parameters
     ----------
     S_top : np.ndarray, shape (n_top, n_bot)
         Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
-        matrix, satisfying :math:`Y_{\\mathrm{top}}=S_\\mathrm{top} Y_{\\mathrm{bot}}`.
+        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
     Y_bot : Source or None, optional
         Source providing bottom-level observations. If ``None``, a new
         :class:`~core.Source` named ``"Y_bot"`` is created.
@@ -52,7 +52,7 @@ class RidgeReconciliation(c.Transformation):
         compute the prior for the ridge regression. Default is ``False``.
     **kwargs
         Additional keyword arguments passed to the underlying
-        :class:`~prediction.RRR`` or :class:``SRRR` predictor (e.g. ``mem``,
+        :class:`~prediction.RRR` or :class:`SRRR` predictor (e.g. ``mem``,
         ``burn_in``, ``init_K``, ``full_cov``). Note in particular when ``full_cov`` is
         False, only bottom level variances are used to estimate the full hierarchy
         covariance. Use ``full_cov=True`` for more accurate estimation.
@@ -74,26 +74,26 @@ class RidgeReconciliation(c.Transformation):
 
     .. math::
 
-        Y_{\\mathrm{bot}} - \\hat{Y}_{\\mathrm{bot}} =
-        (\\hat{Y}_{\\mathrm{top}} - \\hat{Y}_{\\mathrm{bot}} S_{\\mathrm{top}}^T)\\,\\theta + E,
-        \\qquad E \\sim \\mathcal{MN}(0, I, \\Sigma_r)
+        Y_{\text{bot}} - \hat{Y}_{\text{bot}} =
+        (\hat{Y}_{\text{top}} - \hat{Y}_{\text{bot}} S_{\text{top}}^T)\,\theta + E,
+        \qquad E \sim \mathcal{MN}(0, I, \Sigma_r)
 
     Estimation and prediction is posed as a special case of the ridge regression problem
-    solved by the :class:`~prediction.RRR`` predictor, with design matrix :math:``X` given
+    solved by the :class:`~prediction.RRR` predictor, with design matrix :math:`X` given
     by the incoherence at the top level and the target :math:`Y` given by the
     bottom-level base forecast errors. Reconciled forecasts are then constructed by
     shifting and scaling the predictions. Reconciled mean forecasts are computed as
 
     .. math::
-        \\hat{Y}_{\\mathrm{rec}} = (\\hat{Y}_{\\mathrm{bot}} + \\Delta_{\\mathrm{bot}}) S^T,
+        \hat{Y}_{\text{rec}} = (\hat{Y}_{\text{bot}} + \Delta_{\text{bot}}) S^T,
 
-    where :math:`\\Delta_{\\mathrm{bot}} = X \\theta` are the predicted bottom-level
+    where :math:`\Delta_{\text{bot}} = X \theta` are the predicted bottom-level
     base forecast errors. Reconciled forecast covariance is computed as
 
     .. math::
-        S \\tilde{\\Sigma}_{\\mathr{bot}} S^T,
+        S \tilde{\Sigma}_{\text{bot}} S^T,
 
-    where :math:`\\tilde{\\Sigma}_{\\mathrm{bot}}` is the predicted covariance at the
+    where :math:`\tilde{\Sigma}_{\text{bot}}` is the predicted covariance at the
     bottom level.
 
     See Also
@@ -140,9 +140,9 @@ class RidgeReconciliation(c.Transformation):
         Y = Y_bot - f.Lag(Y_hat_bot, horizon)
 
         if opt_shrink:
-            self.prediction = SRRR(X, Y, horizon, S_top, format_as_Y=False, **kwargs)
+            self.prediction = SRRR(X, Y, horizon, S_top, **kwargs)
         else:
-            self.prediction = p.RRR(X, Y, horizon, format_as_Y=False, **kwargs)
+            self.prediction = p.RRR(X, Y, horizon, **kwargs)
 
         super().__init__(Y_hat_bot, self.prediction)
 
@@ -289,7 +289,7 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
     ----------
     S_top : np.ndarray, shape (n_top, n_bot)
         Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
-        matrix, satisfying :math:`Y_{\\mathrm{top}}=S_\\mathrm{top} Y_{\\mathrm{bot}}`.
+        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
     B : list or dict
         Backshift structure for constructing bottom level observations.
         See :class:`~features.BackShift` for details.
@@ -504,18 +504,33 @@ class SRRRPredictor(p.RRRPredictor):
 
 
 class SRRR(p.RRR):
-    r"""Online recursive ridge regression with hierarcahical shrinkage priors.
-    
-    This wrapper around :class:`~prediction.RRR`` uses the :class:``SRRRPredictor` to 
-    perform online recursive ridge regression with priors for hierarchical forecast
-    reconciliation.
+    r"""Online recursive ridge regression with hierarchical shrinkage priors.
+
+    This wrapper around :class:`~prediction.RRR` uses :class:`SRRRPredictor` to
+    perform online recursive ridge regression with shrinkage priors for hierarchical
+    forecast reconciliation.
+
+    The prior is updated from the estimated top- and bottom-level error covariance
+    structure induced by
+
+    .. math::
+
+        Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}.
+
+    The resulting prior parameters are then passed to the recursive ridge update.
 
     Parameters
     ----------
     S_top : np.ndarray, shape (n_top, n_bot)
         Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
-        matrix, satisfying :math:`Y_{\\mathrm{top}}=S_\\mathrm{top} Y_{\\mathrm{bot}}`.
-    For other parameters, see :class:`RRR`` and :class:``SRRRPredictor`.
+        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
+    **kwargs
+        Additional keyword arguments passed to :class:`~prediction.RRR`.
+
+    See Also
+    --------
+    prediction.RRR : Base recursive ridge regression model.
+    SRRRPredictor : Predictor that updates the shrinkage prior online.
     """
 
     def __init__(self, X, Y, horizon, S_top, **kwargs):
