@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>py_online_forecast.datasets module &mdash; PyOnlineForecast  documentation</title>
+  <title>py_online_forecast.datasets &mdash; PyOnlineForecast  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
@@ -62,8 +62,11 @@
 <li class="toctree-l2"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">datasets</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.datasets.sample_data"><code class="docutils literal notranslate"><span class="pre">sample_data</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#py_online_forecast.datasets.sample_hierarchical_data"><code class="docutils literal notranslate"><span class="pre">sample_hierarchical_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-variables">Dataset variables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sample_data"><code class="docutils literal notranslate"><span class="pre">sample_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sample_hierarchical_data"><code class="docutils literal notranslate"><span class="pre">sample_hierarchical_data</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -85,7 +88,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="index.html">py_online_forecast</a></li>
-      <li class="breadcrumb-item active">py_online_forecast.datasets module</li>
+      <li class="breadcrumb-item active">py_online_forecast.datasets</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/py_online_forecast.datasets.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -95,286 +98,24 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-py_online_forecast.datasets">
-<span id="py-online-forecast-datasets-module"></span><h1>py_online_forecast.datasets module<a class="headerlink" href="#module-py_online_forecast.datasets" title="Link to this heading"></a></h1>
+  <section id="py-online-forecast-datasets">
+<h1>py_online_forecast.datasets<a class="headerlink" href="#py-online-forecast-datasets" title="Link to this heading"></a></h1>
+<p>Artificial datasets for getting started. Both datasets are lazily simulated and loaded when imported.</p>
+<section id="dataset-variables">
+<h2>Dataset variables<a class="headerlink" href="#dataset-variables" title="Link to this heading"></a></h2>
 <dl class="py data">
-<dt class="sig sig-object py" id="py_online_forecast.datasets.sample_data">
-<span class="sig-prename descclassname"><span class="pre">py_online_forecast.datasets.</span></span><span class="sig-name descname"><span class="pre">sample_data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Variable</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">energy</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">Taobs</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Ta</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Horizon</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">0</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">0</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">1</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">3</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">4</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">5</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">6</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">7</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">8</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">9</span>&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">26</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">27</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">28</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">29</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">30</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">31</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">32</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">33</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">34</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">35</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">36</span> <span class="pre">2130-01-01</span> <span class="pre">00:00:00</span>&#160; <span class="pre">51.531885</span>&#160; <span class="pre">15.668848</span>&#160; <span class="pre">14.732529</span>&#160; <span class="pre">18.112065</span>&#160; <span class="pre">19.681605</span>&#160; <span class="pre">18.771499</span>&#160; <span class="pre">21.419969</span>&#160; <span class="pre">15.487636</span>&#160; <span class="pre">19.788907</span>&#160; <span class="pre">17.361602</span>&#160; <span class="pre">13.290948</span>&#160; <span class="pre">...</span>&#160;&#160; <span class="pre">8.230798</span>&#160; <span class="pre">12.983567</span>&#160; <span class="pre">10.371454</span>&#160; <span class="pre">21.400448</span>&#160; <span class="pre">23.347353</span>&#160; <span class="pre">28.176337</span>&#160; <span class="pre">23.358935</span>&#160; <span class="pre">19.211341</span>&#160; <span class="pre">16.861098</span>&#160; <span class="pre">10.330258</span>&#160; <span class="pre">14.347315</span> <span class="pre">2130-01-01</span> <span class="pre">01:00:00</span>&#160; <span class="pre">50.988901</span>&#160; <span class="pre">16.327964</span>&#160; <span class="pre">18.274593</span>&#160; <span class="pre">18.991357</span>&#160; <span class="pre">17.737853</span>&#160; <span class="pre">18.759832</span>&#160; <span class="pre">23.977053</span>&#160; <span class="pre">16.933549</span>&#160; <span class="pre">17.239095</span>&#160; <span class="pre">16.527153</span>&#160; <span class="pre">18.254183</span>&#160; <span class="pre">...</span>&#160; <span class="pre">18.707453</span>&#160; <span class="pre">17.516476</span>&#160; <span class="pre">16.170587</span>&#160; <span class="pre">26.178953</span>&#160; <span class="pre">21.596161</span>&#160; <span class="pre">23.729750</span>&#160; <span class="pre">26.258443</span>&#160; <span class="pre">20.313309</span>&#160; <span class="pre">15.685899</span>&#160; <span class="pre">16.219082</span>&#160; <span class="pre">11.014641</span> <span class="pre">2130-01-01</span> <span class="pre">02:00:00</span>&#160; <span class="pre">50.479686</span>&#160; <span class="pre">18.319822</span>&#160; <span class="pre">15.477482</span>&#160; <span class="pre">22.260192</span>&#160; <span class="pre">18.234559</span>&#160; <span class="pre">19.841512</span>&#160; <span class="pre">22.875556</span>&#160; <span class="pre">16.066632</span>&#160; <span class="pre">16.861643</span>&#160; <span class="pre">15.807923</span>&#160; <span class="pre">16.346956</span>&#160; <span class="pre">...</span>&#160; <span class="pre">21.386658</span>&#160; <span class="pre">16.506238</span>&#160; <span class="pre">16.528348</span>&#160; <span class="pre">24.604612</span>&#160; <span class="pre">19.800079</span>&#160; <span class="pre">20.821690</span>&#160; <span class="pre">26.226752</span>&#160; <span class="pre">17.677946</span>&#160; <span class="pre">14.694473</span>&#160; <span class="pre">17.281854</span>&#160; <span class="pre">11.996720</span> <span class="pre">2130-01-01</span> <span class="pre">03:00:00</span>&#160; <span class="pre">50.420587</span>&#160; <span class="pre">20.230697</span>&#160; <span class="pre">15.111263</span>&#160; <span class="pre">20.589555</span>&#160; <span class="pre">17.946531</span>&#160; <span class="pre">19.198036</span>&#160; <span class="pre">22.903540</span>&#160; <span class="pre">16.519866</span>&#160; <span class="pre">15.873630</span>&#160; <span class="pre">13.954632</span>&#160; <span class="pre">16.884329</span>&#160; <span class="pre">...</span>&#160; <span class="pre">21.993715</span>&#160; <span class="pre">18.367779</span>&#160; <span class="pre">18.396483</span>&#160; <span class="pre">24.437826</span>&#160; <span class="pre">20.052625</span>&#160; <span class="pre">17.919086</span>&#160; <span class="pre">21.657610</span>&#160; <span class="pre">19.494532</span>&#160; <span class="pre">15.921790</span>&#160; <span class="pre">16.414568</span>&#160; <span class="pre">10.955961</span> <span class="pre">2130-01-01</span> <span class="pre">04:00:00</span>&#160; <span class="pre">56.704199</span>&#160; <span class="pre">19.268107</span>&#160; <span class="pre">17.443227</span>&#160; <span class="pre">20.205426</span>&#160; <span class="pre">17.796269</span>&#160; <span class="pre">18.872228</span>&#160; <span class="pre">20.405869</span>&#160; <span class="pre">15.417431</span>&#160; <span class="pre">16.084684</span>&#160; <span class="pre">14.099412</span>&#160; <span class="pre">15.534014</span>&#160; <span class="pre">...</span>&#160; <span class="pre">20.864005</span>&#160; <span class="pre">18.626096</span>&#160; <span class="pre">19.346677</span>&#160; <span class="pre">23.004401</span>&#160; <span class="pre">22.113936</span>&#160; <span class="pre">17.655539</span>&#160; <span class="pre">19.942610</span>&#160; <span class="pre">17.776346</span>&#160; <span class="pre">16.641365</span>&#160; <span class="pre">16.840502</span>&#160;&#160; <span class="pre">9.894370</span> <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span> <span class="pre">2133-12-30</span> <span class="pre">16:00:00</span>&#160; <span class="pre">52.603036</span>&#160;&#160; <span class="pre">8.565702</span>&#160; <span class="pre">12.032524</span>&#160; <span class="pre">11.768154</span>&#160; <span class="pre">15.215621</span>&#160; <span class="pre">11.475350</span>&#160; <span class="pre">11.231711</span>&#160; <span class="pre">11.321224</span>&#160; <span class="pre">12.266232</span>&#160; <span class="pre">10.005512</span>&#160; <span class="pre">12.496311</span>&#160; <span class="pre">...</span>&#160; <span class="pre">15.303531</span>&#160; <span class="pre">13.226945</span>&#160; <span class="pre">16.879003</span>&#160; <span class="pre">13.029638</span>&#160;&#160; <span class="pre">9.553980</span>&#160; <span class="pre">12.200386</span>&#160; <span class="pre">10.419974</span>&#160; <span class="pre">12.100663</span>&#160; <span class="pre">11.569954</span>&#160; <span class="pre">10.647129</span>&#160; <span class="pre">12.345349</span> <span class="pre">2133-12-30</span> <span class="pre">17:00:00</span>&#160; <span class="pre">62.886562</span>&#160;&#160; <span class="pre">8.795425</span>&#160;&#160; <span class="pre">9.991079</span>&#160; <span class="pre">12.394911</span>&#160; <span class="pre">13.982161</span>&#160; <span class="pre">11.649530</span>&#160;&#160; <span class="pre">9.999067</span>&#160; <span class="pre">11.458795</span>&#160; <span class="pre">11.638015</span>&#160;&#160; <span class="pre">9.623944</span>&#160; <span class="pre">12.947254</span>&#160; <span class="pre">...</span>&#160; <span class="pre">12.716339</span>&#160; <span class="pre">12.593394</span>&#160; <span class="pre">15.763426</span>&#160; <span class="pre">13.002197</span>&#160; <span class="pre">10.893834</span>&#160; <span class="pre">11.400308</span>&#160; <span class="pre">11.656662</span>&#160; <span class="pre">10.900732</span>&#160; <span class="pre">12.285458</span>&#160; <span class="pre">10.387447</span>&#160; <span class="pre">12.502228</span> <span class="pre">2133-12-30</span> <span class="pre">18:00:00</span>&#160; <span class="pre">53.311733</span>&#160;&#160; <span class="pre">9.793313</span>&#160;&#160; <span class="pre">9.834058</span>&#160; <span class="pre">11.325627</span>&#160; <span class="pre">12.605033</span>&#160; <span class="pre">11.192179</span>&#160; <span class="pre">10.432442</span>&#160; <span class="pre">10.826760</span>&#160; <span class="pre">11.929061</span>&#160;&#160; <span class="pre">9.717004</span>&#160; <span class="pre">13.141625</span>&#160; <span class="pre">...</span>&#160; <span class="pre">13.113893</span>&#160; <span class="pre">11.081893</span>&#160; <span class="pre">14.353379</span>&#160; <span class="pre">14.396653</span>&#160; <span class="pre">11.082111</span>&#160; <span class="pre">11.521859</span>&#160; <span class="pre">12.735361</span>&#160; <span class="pre">11.425047</span>&#160; <span class="pre">12.499179</span>&#160; <span class="pre">11.230820</span>&#160; <span class="pre">13.498177</span> <span class="pre">2133-12-30</span> <span class="pre">19:00:00</span>&#160; <span class="pre">68.630815</span>&#160; <span class="pre">10.377509</span>&#160;&#160; <span class="pre">9.663478</span>&#160; <span class="pre">11.352521</span>&#160; <span class="pre">11.442955</span>&#160; <span class="pre">10.481852</span>&#160; <span class="pre">10.341426</span>&#160; <span class="pre">11.497178</span>&#160; <span class="pre">11.739181</span>&#160; <span class="pre">10.087842</span>&#160; <span class="pre">14.139130</span>&#160; <span class="pre">...</span>&#160; <span class="pre">11.435292</span>&#160; <span class="pre">11.030505</span>&#160; <span class="pre">14.027481</span>&#160; <span class="pre">13.795238</span>&#160; <span class="pre">11.886279</span>&#160; <span class="pre">10.966356</span>&#160; <span class="pre">12.918889</span>&#160; <span class="pre">10.913744</span>&#160; <span class="pre">12.529793</span>&#160; <span class="pre">12.199280</span>&#160; <span class="pre">17.016741</span> <span class="pre">2133-12-30</span> <span class="pre">20:00:00</span>&#160; <span class="pre">48.707310</span>&#160; <span class="pre">10.988912</span>&#160;&#160; <span class="pre">8.788442</span>&#160; <span class="pre">11.913154</span>&#160; <span class="pre">12.448650</span>&#160;&#160; <span class="pre">9.795585</span>&#160; <span class="pre">10.616160</span>&#160; <span class="pre">12.652443</span>&#160; <span class="pre">12.802325</span>&#160; <span class="pre">10.839176</span>&#160; <span class="pre">15.056668</span>&#160; <span class="pre">...</span>&#160; <span class="pre">10.481153</span>&#160; <span class="pre">10.715991</span>&#160; <span class="pre">13.749100</span>&#160; <span class="pre">13.395124</span>&#160; <span class="pre">13.385588</span>&#160;&#160; <span class="pre">9.944380</span>&#160; <span class="pre">12.353471</span>&#160; <span class="pre">10.510719</span>&#160; <span class="pre">10.880171</span>&#160; <span class="pre">10.752745</span>&#160; <span class="pre">14.736332</span>&#160; <span class="pre">[35037</span> <span class="pre">rows</span> <span class="pre">x</span> <span class="pre">38</span> <span class="pre">columns]</span></span><a class="headerlink" href="#py_online_forecast.datasets.sample_data" title="Link to this definition"></a></dt>
-<dd><p>Two-dimensional, size-mutable, potentially heterogeneous tabular data.</p>
-<p>Data structure also contains labeled axes (rows and columns).
-Arithmetic operations align on both row and column labels. Can be
-thought of as a dict-like container for Series objects. The primary
-pandas data structure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>ndarray</em><em> (</em><em>structured</em><em> or </em><em>homogeneous</em><em>)</em><em>, </em><em>Iterable</em><em>, </em><em>dict</em><em>, or </em><em>DataFrame</em>) – <p>Dict can contain Series, arrays, constants, dataclass or list-like objects. If
-data is a dict, column order follows insertion-order. If a dict contains Series
-which have an index defined, it is aligned by its index. This alignment also
-occurs if data is a Series or a DataFrame itself. Alignment is done on
-Series/DataFrame inputs.</p>
-<p>If data is a list of dicts, column order follows insertion-order.</p>
-</p></li>
-<li><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.forecast_tools.html#py_online_forecast.forecast_tools.Index" title="py_online_forecast.forecast_tools.Index"><em>Index</em></a><em> or </em><em>array-like</em>) – Index to use for resulting frame. Will default to RangeIndex if
-no indexing information part of input data and no index provided.</p></li>
-<li><p><strong>columns</strong> (<a class="reference internal" href="py_online_forecast.forecast_tools.html#py_online_forecast.forecast_tools.Index" title="py_online_forecast.forecast_tools.Index"><em>Index</em></a><em> or </em><em>array-like</em>) – Column labels to use for resulting frame when data does not have them,
-defaulting to RangeIndex(0, 1, 2, …, n). If data contains column labels,
-will perform column selection instead.</p></li>
-<li><p><strong>dtype</strong> (<em>dtype</em><em>, </em><em>default None</em>) – Data type to force. Only a single dtype is allowed. If None, infer.</p></li>
-<li><p><strong>copy</strong> (<em>bool</em><em> or </em><em>None</em><em>, </em><em>default None</em>) – <p>Copy data from inputs.
-For dict data, the default of None behaves like <code class="docutils literal notranslate"><span class="pre">copy=True</span></code>.  For DataFrame
-or 2d ndarray input, the default of None behaves like <code class="docutils literal notranslate"><span class="pre">copy=False</span></code>.
-If data is a dict containing one or more Series (possibly of different dtypes),
-<code class="docutils literal notranslate"><span class="pre">copy=False</span></code> will ensure that these inputs are not copied.</p>
-<div class="versionchanged">
-<p><span class="versionmodified changed">Changed in version 1.3.0.</span></p>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<dl class="simple">
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataFrame.from_records</span></code></dt><dd><p>Constructor from tuples, also record arrays.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataFrame.from_dict</span></code></dt><dd><p>From dicts of Series, arrays, or dicts.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_csv</span></code></dt><dd><p>Read a comma-separated values (csv) file into DataFrame.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_table</span></code></dt><dd><p>Read general delimited file into DataFrame.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_clipboard</span></code></dt><dd><p>Read text from clipboard into DataFrame.</p>
-</dd>
-</dl>
-</div>
-<p class="rubric">Notes</p>
-<p>Please reference the <span class="xref std std-ref">User Guide</span> for more information.</p>
-<p class="rubric">Examples</p>
-<p>Constructing DataFrame from a dictionary.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;col1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;col2&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
-<span class="go">   col1  col2</span>
-<span class="go">0     1     3</span>
-<span class="go">1     2     4</span>
-</pre></div>
-</div>
-<p>Notice that the inferred dtype is int64.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
-<span class="go">col1    int64</span>
-<span class="go">col2    int64</span>
-<span class="go">dtype: object</span>
-</pre></div>
-</div>
-<p>To enforce a single dtype:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
-<span class="go">col1    int8</span>
-<span class="go">col2    int8</span>
-<span class="go">dtype: object</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from a dictionary including Series:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;col1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;col2&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="go">   col1  col2</span>
-<span class="go">0     0   NaN</span>
-<span class="go">1     1   NaN</span>
-<span class="go">2     2   2.0</span>
-<span class="go">3     3   3.0</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from numpy ndarray:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]]),</span>
-<span class="gp">... </span>                   <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span>
-<span class="go">   a  b  c</span>
-<span class="go">0  1  2  3</span>
-<span class="go">1  4  5  6</span>
-<span class="go">2  7  8  9</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from a numpy ndarray that has labeled columns:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">)],</span>
-<span class="gp">... </span>                <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">])</span>
-<span class="gp">...</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df3</span>
-<span class="go">   c  a</span>
-<span class="go">0  3  1</span>
-<span class="go">1  6  4</span>
-<span class="go">2  9  7</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from dataclass:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_dataclass</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Point</span> <span class="o">=</span> <span class="n">make_dataclass</span><span class="p">(</span><span class="s2">&quot;Point&quot;</span><span class="p">,</span> <span class="p">[(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
-<span class="go">   x  y</span>
-<span class="go">0  0  0</span>
-<span class="go">1  0  3</span>
-<span class="go">2  2  3</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from Series/DataFrame:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ser</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
-<span class="go">   0</span>
-<span class="go">a  1</span>
-<span class="go">c  3</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span>
-<span class="go">   x</span>
-<span class="go">a  1</span>
-<span class="go">c  3</span>
-</pre></div>
-</div>
+<dt class="sig sig-object py" id="sample_data">
+<span class="sig-name descname"><span class="pre">sample_data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span></span><a class="headerlink" href="#sample_data" title="Link to this definition"></a></dt>
+<dd><p>Simulated data of heat loads, temperatures and temperature forecasts.</p>
 </dd></dl>
 
 <dl class="py data">
-<dt class="sig sig-object py" id="py_online_forecast.datasets.sample_hierarchical_data">
-<span class="sig-prename descclassname"><span class="pre">py_online_forecast.datasets.</span></span><span class="sig-name descname"><span class="pre">sample_hierarchical_data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Variable</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Y_A</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Y_H</span>&#160; <span class="pre">pred_Y_A</span>&#160; <span class="pre">pred_Y_H</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Horizon</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">0</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">0</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">1</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">2</span> <span class="pre">0</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-4.106624</span> <span class="pre">-2.899548</span> <span class="pre">-3.833273</span> <span class="pre">-2.652854</span> <span class="pre">-2.427148</span> <span class="pre">1</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-5.258503</span> <span class="pre">-2.358955</span> <span class="pre">-4.913041</span> <span class="pre">-2.157604</span> <span class="pre">-1.973439</span> <span class="pre">2</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-5.507629</span> <span class="pre">-3.148674</span> <span class="pre">-5.147808</span> <span class="pre">-2.882293</span> <span class="pre">-2.638449</span> <span class="pre">3</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-6.273564</span> <span class="pre">-3.124891</span> <span class="pre">-5.869046</span> <span class="pre">-2.861292</span> <span class="pre">-2.619928</span> <span class="pre">4</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">-6.357276</span> <span class="pre">-3.232386</span> <span class="pre">-5.949235</span> <span class="pre">-2.960922</span> <span class="pre">-2.712257</span> <span class="pre">..</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">...</span> <span class="pre">995</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">4.891831</span>&#160; <span class="pre">2.370216</span>&#160; <span class="pre">4.613127</span>&#160; <span class="pre">2.194967</span>&#160; <span class="pre">2.032675</span> <span class="pre">996</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">4.019611</span>&#160; <span class="pre">1.649395</span>&#160; <span class="pre">3.789933</span>&#160; <span class="pre">1.527245</span>&#160; <span class="pre">1.414142</span> <span class="pre">997</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">3.150637</span>&#160; <span class="pre">1.501242</span>&#160; <span class="pre">2.970169</span>&#160; <span class="pre">1.390059</span>&#160; <span class="pre">1.287109</span> <span class="pre">998</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">4.854214</span>&#160; <span class="pre">3.352971</span>&#160; <span class="pre">4.577439</span>&#160; <span class="pre">3.105556</span>&#160; <span class="pre">2.876397</span> <span class="pre">999</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">4.786557</span>&#160; <span class="pre">1.433586</span>&#160; <span class="pre">4.513719</span>&#160; <span class="pre">1.327063</span>&#160; <span class="pre">1.228455</span>&#160; <span class="pre">[1000</span> <span class="pre">rows</span> <span class="pre">x</span> <span class="pre">5</span> <span class="pre">columns]</span></span><a class="headerlink" href="#py_online_forecast.datasets.sample_hierarchical_data" title="Link to this definition"></a></dt>
-<dd><p>Two-dimensional, size-mutable, potentially heterogeneous tabular data.</p>
-<p>Data structure also contains labeled axes (rows and columns).
-Arithmetic operations align on both row and column labels. Can be
-thought of as a dict-like container for Series objects. The primary
-pandas data structure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>ndarray</em><em> (</em><em>structured</em><em> or </em><em>homogeneous</em><em>)</em><em>, </em><em>Iterable</em><em>, </em><em>dict</em><em>, or </em><em>DataFrame</em>) – <p>Dict can contain Series, arrays, constants, dataclass or list-like objects. If
-data is a dict, column order follows insertion-order. If a dict contains Series
-which have an index defined, it is aligned by its index. This alignment also
-occurs if data is a Series or a DataFrame itself. Alignment is done on
-Series/DataFrame inputs.</p>
-<p>If data is a list of dicts, column order follows insertion-order.</p>
-</p></li>
-<li><p><strong>index</strong> (<a class="reference internal" href="py_online_forecast.forecast_tools.html#py_online_forecast.forecast_tools.Index" title="py_online_forecast.forecast_tools.Index"><em>Index</em></a><em> or </em><em>array-like</em>) – Index to use for resulting frame. Will default to RangeIndex if
-no indexing information part of input data and no index provided.</p></li>
-<li><p><strong>columns</strong> (<a class="reference internal" href="py_online_forecast.forecast_tools.html#py_online_forecast.forecast_tools.Index" title="py_online_forecast.forecast_tools.Index"><em>Index</em></a><em> or </em><em>array-like</em>) – Column labels to use for resulting frame when data does not have them,
-defaulting to RangeIndex(0, 1, 2, …, n). If data contains column labels,
-will perform column selection instead.</p></li>
-<li><p><strong>dtype</strong> (<em>dtype</em><em>, </em><em>default None</em>) – Data type to force. Only a single dtype is allowed. If None, infer.</p></li>
-<li><p><strong>copy</strong> (<em>bool</em><em> or </em><em>None</em><em>, </em><em>default None</em>) – <p>Copy data from inputs.
-For dict data, the default of None behaves like <code class="docutils literal notranslate"><span class="pre">copy=True</span></code>.  For DataFrame
-or 2d ndarray input, the default of None behaves like <code class="docutils literal notranslate"><span class="pre">copy=False</span></code>.
-If data is a dict containing one or more Series (possibly of different dtypes),
-<code class="docutils literal notranslate"><span class="pre">copy=False</span></code> will ensure that these inputs are not copied.</p>
-<div class="versionchanged">
-<p><span class="versionmodified changed">Changed in version 1.3.0.</span></p>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<dl class="simple">
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataFrame.from_records</span></code></dt><dd><p>Constructor from tuples, also record arrays.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataFrame.from_dict</span></code></dt><dd><p>From dicts of Series, arrays, or dicts.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_csv</span></code></dt><dd><p>Read a comma-separated values (csv) file into DataFrame.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_table</span></code></dt><dd><p>Read general delimited file into DataFrame.</p>
-</dd>
-<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_clipboard</span></code></dt><dd><p>Read text from clipboard into DataFrame.</p>
-</dd>
-</dl>
-</div>
-<p class="rubric">Notes</p>
-<p>Please reference the <span class="xref std std-ref">User Guide</span> for more information.</p>
-<p class="rubric">Examples</p>
-<p>Constructing DataFrame from a dictionary.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;col1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;col2&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
-<span class="go">   col1  col2</span>
-<span class="go">0     1     3</span>
-<span class="go">1     2     4</span>
-</pre></div>
-</div>
-<p>Notice that the inferred dtype is int64.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
-<span class="go">col1    int64</span>
-<span class="go">col2    int64</span>
-<span class="go">dtype: object</span>
-</pre></div>
-</div>
-<p>To enforce a single dtype:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
-<span class="go">col1    int8</span>
-<span class="go">col2    int8</span>
-<span class="go">dtype: object</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from a dictionary including Series:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;col1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;col2&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="go">   col1  col2</span>
-<span class="go">0     0   NaN</span>
-<span class="go">1     1   NaN</span>
-<span class="go">2     2   2.0</span>
-<span class="go">3     3   3.0</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from numpy ndarray:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]]),</span>
-<span class="gp">... </span>                   <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span>
-<span class="go">   a  b  c</span>
-<span class="go">0  1  2  3</span>
-<span class="go">1  4  5  6</span>
-<span class="go">2  7  8  9</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from a numpy ndarray that has labeled columns:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">)],</span>
-<span class="gp">... </span>                <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;i4&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">])</span>
-<span class="gp">...</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df3</span>
-<span class="go">   c  a</span>
-<span class="go">0  3  1</span>
-<span class="go">1  6  4</span>
-<span class="go">2  9  7</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from dataclass:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_dataclass</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Point</span> <span class="o">=</span> <span class="n">make_dataclass</span><span class="p">(</span><span class="s2">&quot;Point&quot;</span><span class="p">,</span> <span class="p">[(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
-<span class="go">   x  y</span>
-<span class="go">0  0  0</span>
-<span class="go">1  0  3</span>
-<span class="go">2  2  3</span>
-</pre></div>
-</div>
-<p>Constructing DataFrame from Series/DataFrame:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ser</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ser</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span>
-<span class="go">   0</span>
-<span class="go">a  1</span>
-<span class="go">c  3</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df2</span>
-<span class="go">   x</span>
-<span class="go">a  1</span>
-<span class="go">c  3</span>
-</pre></div>
-</div>
+<dt class="sig sig-object py" id="sample_hierarchical_data">
+<span class="sig-name descname"><span class="pre">sample_hierarchical_data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span></span><a class="headerlink" href="#sample_hierarchical_data" title="Link to this definition"></a></dt>
+<dd><p>Simulated hierarchical data using an AR(2) process.</p>
 </dd></dl>
 
+</section>
 </section>
 
 
