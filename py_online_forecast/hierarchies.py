@@ -593,6 +593,7 @@ class SRRR(p.RRR):
         # Return result and updated state
         return result, state
 
+
 class Node:
     """Class for constructing hierarchies of variables.
 
@@ -653,7 +654,7 @@ class Node:
 
     def get_nodes(self, nodes=None):
         """Return a list of all nodes in the hierarchy with self as root.
-        
+
         Parameters
         ----------
         nodes : list of Node or None, optional
@@ -679,11 +680,11 @@ class Node:
 
     def get_bot_nodes(self, nodes=None):
         """Return a list of leaf nodes in the hierarchy with self as root.
-        
+
         Parameters
         ----------
         nodes : list of Node or None, optional
-            List of nodes to consider when determining leaf nodes. If None (default), 
+            List of nodes to consider when determining leaf nodes. If None (default),
             all nodes in the hierarchy are considered. If provided, also specifies the
             ordering of the nodes in the output.
         """
@@ -705,9 +706,9 @@ class Node:
 
             return leafs
 
-    def get_top_nodes(self, nodes = None):
+    def get_top_nodes(self, nodes=None):
         """Return a list of top nodes in the hierarchy with self as root.
-        
+
         Parameters
         ----------
         nodes : list of Node or None, optional
@@ -731,7 +732,7 @@ class Node:
 
     def get_remaining_nodes(self, obs_nodes):
         """Return a list of remaining nodes in order.
-        
+
         The function returns all nodes in the hierarchy that are not in the given list
         of observed nodes, in the order they appear in the hierarchy, as if returned by
         get_nodes().
@@ -834,7 +835,7 @@ class Node:
         # Construct and return aggegation matrix
         return construct_aggregation_matrix(S, P, full=full)
 
-    def build_backshift(self, output_nodes, input_nodes = None):
+    def build_backshift(self, output_nodes, input_nodes=None):
         """Return backshift structure for given output nodes.
 
         Parameters
@@ -845,12 +846,16 @@ class Node:
             List of input nodes to determine backshift structure. If None (default), all
             required input nodes are inferred using get_input_nodes(output_nodes).
         """
-        output_nodes = [self.find_node(o) if isinstance(o, str) else o for o in output_nodes]
+        output_nodes = [
+            self.find_node(o) if isinstance(o, str) else o for o in output_nodes
+        ]
 
         if input_nodes is None:
             input_nodes = get_input_nodes(output_nodes)
         else:
-            input_nodes = [self.find_node(i) if isinstance(i, str) else i for i in input_nodes]
+            input_nodes = [
+                self.find_node(i) if isinstance(i, str) else i for i in input_nodes
+            ]
 
         return build_backshift(input_nodes, output_nodes)
 
@@ -974,8 +979,9 @@ def get_input_nodes(output_nodes):
             out = out.var
         if out not in input_nodes:
             input_nodes.append(out)
-    
+
     return input_nodes
+
 
 def build_backshift(input_nodes, output_nodes):
     """Return backshift matrix structure for temporal hierarchy.
@@ -984,7 +990,7 @@ def build_backshift(input_nodes, output_nodes):
     of the input nodes. The output is a list of pairs (i_k, j_k), k = 1, ..., m
     specifying that the i_k-th input state is lagged by j_k steps to construct the
     k-th output variable.
-    
+
     Parameters
     ----------
     input_nodes : list of Node
@@ -994,7 +1000,7 @@ def build_backshift(input_nodes, output_nodes):
     """
     B = []
     for out_node in output_nodes:
-        
+
         if isinstance(out_node, LaggedNode):
             in_node = input_nodes.index(out_node.var)
             lag = out_node.lag
@@ -1005,6 +1011,7 @@ def build_backshift(input_nodes, output_nodes):
         B.append((in_node, lag))
 
     return B
+
 
 class LaggedNode(Node):
     """Class for lagged nodes in a temporal hierarchy.
