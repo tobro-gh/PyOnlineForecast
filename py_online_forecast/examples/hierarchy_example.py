@@ -76,7 +76,7 @@ reconciler = RidgeReconciliation(S_top, horizon = 2, opt_shrink = False)
 # NOTE: in sample results on variance-reduction are not guaranteed in the online setting, hence, forecasts may get worse depending on the setup
 
 # Since the hierarchy is temporal, we need to manually lag the bottom level observations. For this we use the BackShift class (which is also used internally by the TemporalReconciler).
-bs = p.BackShift([[1], [0]], skip_duplicates=True)
+bs = p.BackShift([1, 0], skip_duplicates=True)
 Y_bot_lagged = bs.apply(Y_bot)
 
 # Then we can fit the reconciler using rec_fit
@@ -148,7 +148,7 @@ Y_rec = reconciler.Y({reconciler.Y_bot: Y_bot_lagged, reconciler.Y_hat: Y_hat})
 
 # Notice, X_rec is a dict with keys "X_pred" and "X_train", where X_train is the same as X_pred but lagged according to the forecast horizon (2 in this case).
 
-#%% For more complex hierarchies, we the library provides tools to build and manipulate hierarchies using Nodes.
+#%% For more complex hierarchies, the library provides tools to build and manipulate hierarchies using Nodes.
 v00 = Node(name="v00")
 v00_1 = v00.shift(1)
 v01 = Node(name="v01")
@@ -156,15 +156,22 @@ v10 = Node(v00, v00_1, name = "v10")
 v2 = Node(v10, v01, name = "v2")
 
 v2.print_hierarchy()
-bot_nodes = v2.get_leaf_nodes()
-top_nodes, S_top = v2.build_S_top(*bot_nodes)
+bot_nodes = v2.get_bot_nodes()
+top_nodes = v2.get_top_nodes()
+#top_nodes, S_top = v2.build_S_top(*bot_nodes)
+S_top = v2.build_summation_matrix()
 
-# Building A_lat will be same as S_top if the the observed nodes are the bottom nodes
-lat_nodes, A_lat = v2.build_A_lat(*bot_nodes)
 
 #%% Or alternatively, if we observe v2, v00 and v00_1
-lat_nodes, A_lat = v2.build_A_lat(v2, v00, v00_1)
+obs_nodes = [v2, v00, v00_1]
 
+A_lat = v2.build_aggregation_matrix(obs_nodes)
+
+# The remaining nodes are latent. To get them in order, we do
+lat_nodes = v2.get_remaining_nodes(obs_nodes)
+
+# Building A_lat will be same as S_top if the the observed nodes are the bottom nodes
+v2.build_aggregation_matrix(bot_nodes) == S_top
 
 #%% Constructing more complex hierarchies can be done manually using Nodes
 level_names = {}
@@ -182,7 +189,7 @@ level_3 = Node(level_2[0], level_2[1], name = get_name(3))
 level_3.print_hierarchy()
 
 #%% Alternatively, the make_hierarchy function can be used
-nodes, bot_nodes, top_nodes = make_hierarchy({"v3": ["v20", "v21"],
+nodes = make_hierarchy({"v3": ["v20", "v21"],
                                             "v20": ["v00", "v01"],
                                             "v21": ["v02", "v03"],
                                             "v00": ["v000", "v001"],
@@ -192,7 +199,9 @@ nodes, bot_nodes, top_nodes = make_hierarchy({"v3": ["v20", "v21"],
 nodes["v3"].print_hierarchy()
 
 #%% S_top and A_lat can then be retrieved from the top node
-top_nodes, S_top = nodes["v3"].build_S_top(*bot_nodes)
+top_nodes = nodes["v3"].get_top_nodes()
+bot_nodes = nodes["v3"].get_bot_nodes()
+S_top = nodes["v3"].build_summation_matrix(bot_nodes)
 
 
 #%% Temporal hierarchy
@@ -201,11 +210,15 @@ top_nodes, S_top = nodes["v3"].build_S_top(*bot_nodes)
 
 #nodes, bot_nodes, top_nodes = make_hierarchy({"v2": [("v10", 1)], "v10": ["v00", "v01"]})
 # Instead of the above, use
-nodes, bot_nodes, top_nodes = make_hierarchy({"v2": ["v10_1"], "v10_1": [("v00", 1), ("v01", 1)]})
+nodes = make_hierarchy({"v2": ["v10_1"], "v10_1": [("v00", 1), ("v01", 1)]})
 
 #%% A little more complex hierarchy
-nodes, bot_nodes, top_nodes = make_hierarchy({"v2": ["v10", "v11", "v11_1"], "v11": ["v00", "v01"], "v11_1": [("v00", 1), ("v01", 1)]})
-nodes["v2"].print_hierarchy()
-obs_nodes, B = nodes["v2"].build_B("v00", "v01", "v10")
-lat_nodes, A_lat = nodes["v2"].build_A_lat(*obs_nodes)
-# %%
+nodes = make_hierarchy({"v2": ["v10", "v11", "v11_1"], "v11": ["v00", "v01"], "v11_1": [("v00", 1), ("v01", 1)]})
+bot_nodes = nodes["v2"].get_bot_nodes()
+
+#%% We can retrieve the backshift structure to produce a given set of observed or bottom
+# level nodes. To get the backshift structure for the bot nodes, we do
+B = nodes["v2"].build_backshift(bot_nodes)
+
+# Since we did not provide it, this assumes the following input order,
+get_input_nodes(bot_nodes)

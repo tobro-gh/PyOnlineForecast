@@ -1144,8 +1144,19 @@ class RRR(OnlinePrediction):
 
     Parameters
     ----------
-    Same as ``RRRPredictor``, plus transformation wiring inputs (``X``, ``Y``) and
-    optional ``scorefun`` for ``score``.
+    X : Source
+        Input data source. Output should be compatible with the Lag transformation.
+    Y : Source
+        Target data source.
+    horizon : int
+        Forecast horizon in time steps (used for prediction error variance estimation).
+    scorefun : function, default rmse
+        Function to compute the score on the residuals. Should take an array of
+        residuals and return a scalar score.
+    default_params : dict, optional
+        Default parameters for the predictor. Can include any parameters accepted by
+        ``RRRPredictor.online_update`` and ``RRRPredictor.online_predict``.
+    Otherwise same as ``RRRPredictor``.
     """
     
     # TODO: consider including batch functionality into this class
@@ -1290,11 +1301,9 @@ class BackShift(Transformation):
     
     Parameters
     ----------
-    shifts : dict or list of lists
-        Shift specification. If dict, keys are (i, j) tuples indicating output row i
-        depends on input column j with the corresponding lag value. If list of lists,
-        each inner list represents an output row with lags for each input (None = 0).
-        Single list assumes single input column.
+    shifts : list
+        Shift specification as list. Either integer lags or tuples of (input_index, lag)
+        can be used.
     data : Source, default DEFAULT_SOURCE
         Input data source.
     skip_duplicates : bool, default False
@@ -1320,37 +1329,18 @@ class BackShift(Transformation):
         skip_duplicates=False,
         initial_value=np.nan,
     ):
-
-        # Check that object is a list of lists of same length
-        if not isinstance(shifts, dict):
-
-            if isinstance(shifts, list) and not isinstance(shifts[0], list):
-                # Assume "diagonal" structure with single input, i.e. m = 1
-                shifts = {(i, 0): s for i, s in enumerate(shifts) if s is not None}
-
-            # Check that all sublists have same length
-            elif not all(len(s) == len(shifts[0]) for s in shifts):
-                raise ValueError("All sublists must have the same length")
+        self.shifts = []
+        for shift in shifts:
+            if isinstance(shift, int):
+                self.shifts.append((0, shift))
             else:
-                shifts = {
-                    (i, j): s
-                    for i, s in enumerate(shifts)
-                    for j, s in enumerate(s)
-                    if s is not None
-                }
+                self.shifts.append(shift)
 
-        self.n = max(i for i, j in shifts.keys()) + 1  # Number of outputs
-
-        if self.n == 0:
-            raise ValueError("Shifts cannot be empty")
-
-        self.max_shifts = {
-            i: max(s for (ii, j), s in shifts.items() if ii == i) for i in range(self.n)
-        }
-        self.max_shift = max(self.max_shifts.values())
-        self.shifts = shifts
+        self.n = len(shifts)
         self.skip_duplicates = skip_duplicates
+        self.max_shift = max(shift[1] for shift in self.shifts)
         self.initial_value = initial_value
+
         super().__init__(data=data, memory=MEMORY)
 
     def evaluate(self, data, memory=None):
@@ -1367,10 +1357,14 @@ class BackShift(Transformation):
         -------
         X : ndarray of shape (n_obs, n_outputs)
             Transformed output with lagged combinations. If skip_duplicates=True,
-            most rows are NaN.
+            most rows are NaN. n_outputs is equal 
         memory : tuple
             Updated (historical_data, offset) for next call.
         """
+        # Ensure 2D
+        if data.ndim != 2:
+            data = np.reshape(data, (data.shape[0], -1))  # Ensure 2D array
+
         # Fetch data from memory
         # TODO: use CircularBuffer for efficiency
         if memory is None:
@@ -1382,45 +1376,40 @@ class BackShift(Transformation):
 
         all_data = np.vstack((old_data, data))
 
-        shifted_data = {}
+        shifted_data = []
         # Input Z (t x n) -> Temp Y -> Output X
         t = data.shape[0]
 
         # Collect lagged series
-        for (i, j), lag in self.shifts.items():
-            if (j, lag) not in shifted_data:
-                if lag == 0:
-                    shifted_data[(j, lag)] = all_data[
-                        self.max_shift : self.max_shift + t, j
-                    ]
-                elif lag > 0:
-                    shifted_data[(j, lag)] = all_data[-(t + lag) : -lag, j]
+        for (j, lag) in self.shifts:
+            if lag == 0:
+                shifted_data.append(all_data[
+                    self.max_shift : self.max_shift + t, j
+                ])
+            elif lag > 0:
+                shifted_data.append(all_data[-(t + lag) : -lag, j]
+                )
+
+        # Concatenate arrays
+        result = np.column_stack(shifted_data)
 
         # Form output
         if self.skip_duplicates:
-            X = np.full((t, self.n), np.nan)
 
             # Get mask to select every max(lag)'th row, starting from an offset
             mask = np.arange(self.max_shift - offset, t, self.max_shift + 1)
-            X[mask, :] = 0
 
             # Update offset
             offset = (offset + t) % (self.max_shift + 1)
 
-            # Sum contributions
-            for (i, j), lag in self.shifts.items():
-                X[mask, i] += shifted_data[(j, lag)][mask]
+            # Fill non-masked rows with NaN
+            masked = np.full_like(result, np.nan)
+            masked[mask, :] = result[mask, :]
+
+            return masked, (all_data[-self.max_shift :], offset)
+        
         else:
-            X = np.zeros((t, self.n))
-
-            for (i, j), lag in self.shifts.items():
-
-                X[:, i] += shifted_data[(j, lag)]
-
-        if self.skip_duplicates:
-            return X, (all_data[-self.max_shift :], offset)
-        else:
-            return X, (all_data[-self.max_shift :], None)
+            return result, (all_data[-self.max_shift :], None)
 
 
 class ARX(OnlinePrediction):

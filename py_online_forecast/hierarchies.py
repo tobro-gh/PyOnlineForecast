@@ -363,16 +363,14 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
         Returns
         -------
         dict
-            Dictionariy with keys ``"mean"`` and ``"cov"`` containing reconciled 
+            Dictionariy with keys ``"mean"`` and ``"cov"`` containing reconciled
             forecasts and covariance predictions.
         """
-        return self(
-            {self.Z_bot: Z_bot, self.Y_hat: Y_hat}, track_state=True, **kwargs
-        )
+        return self({self.Z_bot: Z_bot, self.Y_hat: Y_hat}, track_state=True, **kwargs)
 
     def fit(self, Y_bot, Y_hat=None, **model_params):
         """Reset the model state and update.
-        
+
         See ``update`` for parameter descriptions.
         """
         self.reset_state()
@@ -381,7 +379,7 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
 
 class SRRRPredictor(p.RRRPredictor):
     """Predictor for ridge regression with shrinkage priors.
-    
+
     This predictor extends :class:`~prediction.RRRPredictor` to include shrinkage
     priors used in forecast reconciliation.
 
@@ -420,11 +418,11 @@ class SRRRPredictor(p.RRRPredictor):
 
     def update_prior(self, x_i, y_i, mem, l_shrink):
         """Update the prior for ridge regression based on current error estimates.
-        
+
         The class supports fixed or automatically estimated shrinkage parameters. When
         ``l_shrink`` is set to ``"auto"``, the shrinkage parameter is estimated based on
         optimal shrinkage estimation, see Bergsteinsson et al. (2021) for details.
-         
+
         Parameters
         ----------
         x_i : ndarray of shape (n_features,)
@@ -572,7 +570,7 @@ class SRRR(p.RRR):
         **kwargs,
     ):
         """Delegate single-step update to ``SRRRPredictor.online_update``.
-        
+
         Parameters
         ----------
         state : SRRRPredictor
@@ -595,27 +593,9 @@ class SRRR(p.RRR):
         # Return result and updated state
         return result, state
 
-
-def _find_nodes(func):
-    """Return wrapped function that finds replaces node names with matching objecs."""
-    def wrapper(self, *args, **kwargs):
-        nodes = []
-        all_nodes = self.get_nodes()
-        for arg in args:
-            if isinstance(arg, Node):
-                nodes.append(arg)
-            else:
-                # Find node in hierarchy with name arg
-                nodes.append(next(n for n in all_nodes if n.name == arg))
-
-        return func(self, *nodes, **kwargs)
-
-    return wrapper
-
-
 class Node:
     """Class for constructing hierarchies of variables.
-    
+
     Parameters
     ----------
     sources : list of Node
@@ -637,6 +617,10 @@ class Node:
             name = str(Node._counter)
             Node._counter += 1
         self.name = name
+
+    def find_node(self, name):
+        """Find node with given name in the hierarchy."""
+        return next(n for n in self.get_nodes() if n.name == name)
 
     def __add__(self, other):
         """Combine two nodes into a new node with both as sources."""
@@ -667,63 +651,42 @@ class Node:
                 return True
         return False
 
-    def get_nodes(self):
-        """Return a list of all nodes in the hierarchy with self as root."""
-        nodes = [self]
-        current_nodes = nodes
+    def get_nodes(self, nodes=None):
+        """Return a list of all nodes in the hierarchy with self as root.
+        
+        Parameters
+        ----------
+        nodes : list of Node or None, optional
+            List of nodes to consider when determining nodes. If None (default), all
+            nodes in the hierarchy are considered. If provided, also specifies the
+            ordering of the nodes in the output.
+        """
+        all_nodes = [self]
+        current_nodes = all_nodes
         while len(current_nodes) > 0:
             new_nodes = []
             for node in current_nodes:
                 new_nodes.extend(node.sources)
-            nodes.extend(new_nodes)
+            all_nodes.extend(new_nodes)
             current_nodes = new_nodes
 
-        return nodes
+        if nodes is not None:
+            # Find nodes if strings
+            nodes = [self.find_node(n) if isinstance(n, str) else n for n in nodes]
+            all_nodes = [n for n in nodes if n in all_nodes]
 
-    def get_top_nodes(self):
-        """Return a list of top nodes in the hierarchy with self as root."""
-        bot_nodes = self.get_leaf_nodes()
-        top_nodes = []
-        for c in self.get_nodes():
-            if c not in bot_nodes:
-                top_nodes.append(c)
-        return top_nodes
+        return all_nodes
 
-    @_find_nodes
-    def build_B(self, *obs_vars):
-        """Build backshift matrix structure B for temporal hierarchy.
+    def get_bot_nodes(self, nodes=None):
+        """Return a list of leaf nodes in the hierarchy with self as root.
         
         Parameters
         ----------
-        obs_vars : list of Node or str
-            List of observable variables in the hierarchy.        
+        nodes : list of Node or None, optional
+            List of nodes to consider when determining leaf nodes. If None (default), 
+            all nodes in the hierarchy are considered. If provided, also specifies the
+            ordering of the nodes in the output.
         """
-        # Get all observable nodes, based on observable variables (not including lagged nodes/variables)
-        # Check that obs_vars are not LaggedNodes
-        for obs in obs_vars:
-            if isinstance(obs, LaggedNode):
-                raise ValueError("Observed variables cannot be lagged nodes")
-
-        # Get all lagged variables of the observed variables
-        lagged_vars = list(obs_vars)
-        for obs in obs_vars:
-            lagged_vars.extend(obs.lags.values())
-
-        # Get only the lagged variables that are part of the hierarchy
-        obs_nodes = [v for v in lagged_vars if self.is_parent(v)]
-
-        # Build B matrix from temporal variables to observed variables
-        B = {}
-        for i, temp in enumerate(obs_nodes):
-            for j, obs in enumerate(obs_vars):
-                if obs is temp:
-                    B[i, j] = 0
-                elif temp in obs.lags.values():
-                    B[i, j] = temp.lag
-        return obs_nodes, B
-
-    def get_leaf_nodes(self):
-        """Return a list of leaf nodes in the hierarchy with self as root."""
         # Get all leaf nodes (nodes without sources)
         if not self.sources:
             return [self]
@@ -731,97 +694,165 @@ class Node:
             leafs = []
             for src in self.sources:
                 # Add leaves not already in list
-                for leaf in src.get_leaf_nodes():
+                for leaf in src.get_bot_nodes():
                     if leaf not in leafs:
                         leafs.append(leaf)
+
+            if nodes is not None:
+                # Find nodes if strings
+                nodes = [self.find_node(n) if isinstance(n, str) else n for n in nodes]
+                leafs = [n for n in nodes if n in leafs]
+
             return leafs
 
-    @_find_nodes
-    def build_S_top(self, *bot_nodes):
-        """Return top level summation matrix S_top for hierarchy.
+    def get_top_nodes(self, nodes = None):
+        """Return a list of top nodes in the hierarchy with self as root.
         
         Parameters
         ----------
-        bot_nodes : list of Node or str
-            List of bottom-level nodes in the hierarchy.
+        nodes : list of Node or None, optional
+            List of nodes to consider when determining top nodes. If None (default), all
+            nodes in the hierarchy are considered. If provided, also specifies the
+            ordering of the nodes in the output.
+
+        """
+        bot_nodes = self.get_bot_nodes()
+        top_nodes = []
+        for n in self.get_nodes():
+            if n not in bot_nodes:
+                top_nodes.append(n)
+
+        if nodes is not None:
+            # Find nodes if strings
+            nodes = [self.find_node(n) if isinstance(n, str) else n for n in nodes]
+            top_nodes = [n for n in nodes if n in top_nodes]
+
+        return top_nodes
+
+    def get_remaining_nodes(self, obs_nodes):
+        """Return a list of remaining nodes in order.
+        
+        The function returns all nodes in the hierarchy that are not in the given list
+        of observed nodes, in the order they appear in the hierarchy, as if returned by
+        get_nodes().
+
+        Parameters
+        ----------
+        obs_nodes : list of Node
+            List of observed nodes to determine latent nodes.
+        """
+        all_nodes = self.get_nodes()
+        remaining_nodes = [n for n in all_nodes if n not in obs_nodes]
+        return remaining_nodes
+
+    def build_summation_matrix(self, full=False, nodes=None):
+        """Return summation matrix for hierarchy.
+
+        Parameters
+        ----------
+        full : bool, optional
+            Whether to return the full summation matrix including the identity for
+            observed (bottom) nodes. If False (default), only the latent (top) nodes
+            are included in the output.
+        nodes : list of Node or None, optional
+            List of nodes to include in the summation matrix. If None (default), all
+            nodes in the hierarchy are included. If provided, also specifies the
+            ordering of the nodes in the summation matrix.
 
         Returns
         -------
-        top_nodes : list of Node
-            List of top-level nodes in the hierarchy.
-        S_top : np.ndarray of shape (n_top, n_bot)
-            Summation matrix for top levels in terms of bottom-level nodes.
+        S : np.ndarray of shape (n_top, n_bot) or (n_top + n_bot, n_bot)
+            Summation matrix for top levels (if full=False) or all nodes (if full=True).
         """
-        # Check that bot_nodes are the right ones
-        if not set(bot_nodes) == set(self.get_leaf_nodes()):
-            raise ValueError("Bottom nodes do not match hierarchy.")
+        bot_nodes = self.get_bot_nodes()
         top_nodes = self.get_top_nodes()
-        n, m = len(top_nodes), len(bot_nodes)
-        S_top = np.zeros((n, m))
-        for i, lat in enumerate(top_nodes):
-            for j, obs in enumerate(bot_nodes):
-                if lat.is_parent(obs):
-                    S_top[i, j] = 1
 
-        return top_nodes, S_top
+        if nodes is not None:
+            # Find nodes if strings
+            nodes = [self.find_node(n) if isinstance(n, str) else n for n in nodes]
 
-    @_find_nodes
-    def build_A_lat(self, *obs_nodes):
-        """Return aggregation matrix for latent nodes in hierarchy.
-        
+            bot_nodes = [n for n in nodes if n in bot_nodes]
+            top_nodes = [n for n in nodes if n in top_nodes]
+
+        return build_summation_matrix(bot_nodes, top_nodes, full=full)
+
+    def build_aggregation_matrix(self, obs_nodes, lat_nodes=None, full=False):
+        """Return aggregation matrix ordered by obs_nodes and lat_nodes.
+
         Parameters
         ----------
-        obs_nodes : list of Node or str
-            List of observable variables in the hierarchy.
+        obs_nodes : list of Node
+            List of observable nodes to include.
+        lat_nodes : list of Node or None, optional
+            List of latent nodes to include. If None (default), all remaining
+            descendants of self that are not in obs_nodes are used.
+        full : bool, optional
+            Whether to return the full aggregation matrix including the identity for
+            observed (bottom) nodes. If False (default), only the latent (top) nodes
+            are included in the output.
 
         Returns
         -------
-        lat_nodes : list of Node
-            List of latent nodes in the hierarchy.
-        A_lat : np.ndarray of shape (n_lat, n_obs)
-            Aggregation matrix for latent nodes in terms of observable nodes.
+        A : np.ndarray of shape (n_lat, n_obs) or (n_lat + n_obs, n_obs)
+            Aggregation matrix for latent nodes (if full=False) or all nodes (if
+            full=True).
         """
-        # Get obs nodes if not provided
-        bot_nodes = self.get_leaf_nodes()
+        # Find obs nodes if any are strings
+        obs_nodes = [self.find_node(o) if isinstance(o, str) else o for o in obs_nodes]
 
-        n_bot = len(bot_nodes)
-        n_obs = len(obs_nodes)
-        #        if n_bot != n_obs:
-        #            raise ValueError("Number of observed nodes must match number of bottom nodes")
-        # Get invers of K satisfying bot_nodes = K @ obs_nodes
-        # obs_nodes = K_inv @ bot_nodes
-        K_inv = np.zeros((n_obs, n_bot))
-        for i, bot in enumerate(bot_nodes):
-            for j, obs in enumerate(obs_nodes):
-                if bot is obs or obs.is_parent(bot):
-                    K_inv[j, i] = 1
+        if lat_nodes is None:
+            # Get latent nodes if not provided
+            lat_nodes = [n for n in self.get_nodes() if not n in obs_nodes]
+        else:
+            # Find lat nodes if any are strings
+            lat_nodes = [
+                self.find_node(l) if isinstance(l, str) else l for l in lat_nodes
+            ]
 
-        K = np.linalg.pinv(K_inv)  # inv if n = m?
-        #        K = np.linalg.inv(K_inv) # inv if n = m?
+            # Check that lat nodes don't include obs nodes
+            for lat in lat_nodes:
+                if lat in obs_nodes:
+                    raise ValueError("Latent nodes cannot include observed nodes")
 
-        # Get latent nodes
-        lat_nodes = [v for v in self.get_nodes() if not v in obs_nodes]
+        # Get a list of all nodes to be used (not necessarily all descendants of self)
+        all_nodes = obs_nodes + lat_nodes
 
-        # Get top nodes
-        top_nodes, S_top = self.build_S_top(*bot_nodes)
+        # Get bottom and top level nodes
+        bot_nodes = [node for node in self.get_bot_nodes() if node in all_nodes]
+        top_nodes = [node for node in self.get_top_nodes() if node in all_nodes]
 
-        n_top = len(top_nodes)
-        n_lat = len(lat_nodes)
-        C_top_lat = np.zeros((n_top, n_lat))
-        # Fill in entries of permutation matrix C_top_lat
-        for i, top in enumerate(top_nodes):
-            for j, lat in enumerate(lat_nodes):
-                if top is lat:
-                    C_top_lat[i, j] = 1
+        # Build summation matrix from selected nodes
+        S = build_summation_matrix(bot_nodes, top_nodes, full=True)
 
-        C_bot_lat = np.zeros((n_bot, n_lat))
-        for i, bot in enumerate(bot_nodes):
-            for j, lat in enumerate(lat_nodes):
-                if bot is lat:
-                    C_bot_lat[i, j] = 1
+        # Build lists of old and new nodes for permutation matrix
+        old_nodes = top_nodes + bot_nodes
+        new_nodes = lat_nodes + obs_nodes
 
-        A_lat = (C_top_lat.T @ S_top + C_bot_lat.T) @ K
-        return lat_nodes, A_lat.round().astype(int)
+        # Build permutation matrix to reorder from old_nodes to new_nodes
+        P = build_permutation_matrix(old_nodes, new_nodes)
+
+        # Construct and return aggegation matrix
+        return construct_aggregation_matrix(S, P, full=full)
+
+    def build_backshift(self, output_nodes, input_nodes = None):
+        """Return backshift structure for given output nodes.
+
+        Parameters
+        ----------
+        output_nodes : list of Node
+            List of output nodes to determine backshift structure.
+        input_nodes : list of Node or None, optional
+            List of input nodes to determine backshift structure. If None (default), all
+            required input nodes are inferred using get_input_nodes(output_nodes).
+        """
+        output_nodes = [self.find_node(o) if isinstance(o, str) else o for o in output_nodes]
+
+        if input_nodes is None:
+            input_nodes = get_input_nodes(output_nodes)
+        else:
+            input_nodes = [self.find_node(i) if isinstance(i, str) else i for i in input_nodes]
+
+        return build_backshift(input_nodes, output_nodes)
 
     def print_hierarchy(self, n=0):
         """Print the hierarchy structure starting from self as root."""
@@ -835,9 +866,149 @@ class Node:
         return f"Node({self.name})"
 
 
+def build_summation_matrix(bot_nodes, top_nodes, full=False):
+    """Return summation matrix for hierarchy.
+
+    Parameters
+    ----------
+    bot_nodes : list of Node or str
+        List of observable (bottom) nodes to include in the summation matrix.
+    top_nodes : list of Node or str
+        List of latent (top) nodes to include in the summation matrix.
+
+    full : bool, optional
+        Whether to return the full summation matrix including the identity for
+        observed (bottom) nodes. If False (default), only the latent (top) nodes
+        are included.
+
+    Returns
+    -------
+    S : np.ndarray of shape (m, n_bot)
+        Summation matrix for latent nodes (if full=False) with m = n_lat, or for all
+        nodes (if full=True) with m = n_lat + n_bot.
+    """
+    S = np.zeros((len(top_nodes), len(bot_nodes)))
+    for i, lat in enumerate(top_nodes):
+        for j, obs in enumerate(bot_nodes):
+            if lat.is_parent(obs):
+                S[i, j] = 1
+    if full:
+        S = np.vstack((S, np.eye(len(bot_nodes))))
+
+    return S
+
+
+def build_permutation_matrix(old_nodes, new_nodes):
+    """Return permutation matrix for reordering nodes in hierarchy.
+
+    Parameters
+    ----------
+    old_nodes : list of Node
+        List of nodes in the original order.
+    new_nodes : list of Node
+        List of nodes in the new order.
+
+    Returns
+    -------
+    C : np.ndarray of shape (n, n)
+        Permutation matrix such that x_new = C @ x_old, where x_old and x_new are state
+        vectors of the nodes in the old and new order, respectively.
+    """
+    # Check that old and new nodes contain the same nodes
+    if set(old_nodes) != set(new_nodes):
+        raise ValueError("Old and new nodes must contain the same nodes")
+    n = len(old_nodes)
+    C = np.zeros((n, n))
+    for i, new in enumerate(new_nodes):
+        for j, old in enumerate(old_nodes):
+            if new is old:
+                C[i, j] = 1
+    return C
+
+
+def construct_aggregation_matrix(S, P, full=False):
+    """Return aggregation matrix for latent nodes in hierarchy.
+
+    Parameters
+    ----------
+    S : np.ndarray of shape (n_tot, n_bot)
+        Summation matrix for latent nodes in terms of observable nodes.
+    P : np.ndarray of shape (n_tot, n_tot)
+        Permutation matrix for reordering top and bottom level nodes to latent and
+        observable nodes.
+
+    Returns
+    -------
+    A: np.ndarray of shape (m, n_bot)
+        Aggregation matrix for latent nodes in terms of observable nodes. If full=False
+        (default), only the latent nodes are included, with m = n_top. If full=True, all
+        nodes are included, with m = n_tot.
+    """
+    n_tot, n_bot = S.shape
+    n_top = n_tot - n_bot
+    P_lat = P[:n_top]
+    P_obs = P[n_top:]
+
+    #    A = P_lat @ S @ np.linalg.inv(P_obs @ S)
+    tmp1 = P_lat @ S
+    tmp2 = P_obs @ S
+    A = np.linalg.solve(tmp2.T, tmp1.T).T
+
+    if full:
+        A = np.vstack((A, np.eye(n_bot)))
+
+    return A.round().astype(int)
+
+
+def get_input_nodes(output_nodes):
+    """Return a list of required input nodes for given output nodes.
+
+    Parameters
+    ----------
+    output_nodes : list of Node or None, optional
+        List of output nodes to determine required input nodes.
+    """
+    input_nodes = []
+    for out in output_nodes:
+        if isinstance(out, LaggedNode):
+            out = out.var
+        if out not in input_nodes:
+            input_nodes.append(out)
+    
+    return input_nodes
+
+def build_backshift(input_nodes, output_nodes):
+    """Return backshift matrix structure for temporal hierarchy.
+
+    Constructs a backshift operator B such that y_bot = B z, where z are the states
+    of the input nodes. The output is a list of pairs (i_k, j_k), k = 1, ..., m
+    specifying that the i_k-th input state is lagged by j_k steps to construct the
+    k-th output variable.
+    
+    Parameters
+    ----------
+    input_nodes : list of Node
+        List of input nodes in the hierarchy.
+    output_nodes : list of Node
+        List of output nodes in the hierarchy.
+    """
+    B = []
+    for out_node in output_nodes:
+        
+        if isinstance(out_node, LaggedNode):
+            in_node = input_nodes.index(out_node.var)
+            lag = out_node.lag
+        else:
+            in_node = input_nodes.index(out_node)
+            lag = 0
+
+        B.append((in_node, lag))
+
+    return B
+
 class LaggedNode(Node):
     """Class for lagged nodes in a temporal hierarchy.
-    
+
     Parameters
     ----------
     lag : int
@@ -861,7 +1032,7 @@ class LaggedNode(Node):
 
 def make_hierarchy(edges):
     """Construct a hierarchy of nodes from a dictionary of edges.
-    
+
     Parameters
     ----------
     edges : dict
@@ -869,7 +1040,7 @@ def make_hierarchy(edges):
         values are lists of child node names or tuples of (child node name, lag) for
         temporal hierarchies. For example, for a simple hierarchy with top node "A" and
         bottom nodes "B" and "C", the edges could be defined as ``{"A": ["B", "C"]}``.
-        For a temporal hierarchy with top node "A" and bottom node "B" lagged by 1, 
+        For a temporal hierarchy with top node "A" and bottom node "B" lagged by 1,
         the edges could be defined as ``{"A": [("B", 1)]}``. Nodes that are not parents
         (i.e. do not appear as keys) are assumed to be leaf nodes.
 
@@ -892,8 +1063,6 @@ def make_hierarchy(edges):
             if node not in node_names:
                 node_names.append(node)
 
-    bot_nodes = [n for n in node_names if n not in edges]
-
     # Then create top nodes
     to_process = node_names.copy()
     nodes = {}
@@ -913,4 +1082,4 @@ def make_hierarchy(edges):
                 nodes[node] = Node(name=node)
                 to_process.remove(node)
 
-    return nodes, bot_nodes, top_nodes
+    return nodes
