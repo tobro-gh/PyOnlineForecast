@@ -414,6 +414,9 @@ class DataCleaner(Transformation):
     freq : str, optional
         If specified, reindex data to this frequency before cleaning, using
         ``Reindexer``.
+    var_forgetting : float, optional
+        Forgetting factor for variance estimation. If ``None``, use same forgetting as 
+        mean estimation.
     """
 
     def __init__(
@@ -424,14 +427,18 @@ class DataCleaner(Transformation):
         forward_fill=True,
         track_memory=True,
         freq: str = None,
+        var_forgetting: float = None,
     ):
 
         if freq is not None:
             data = Reindexer(freq, data)
 
+        if var_forgetting is None:
+            var_forgetting = forgetting
+
         mean = ForgettingMean(forgetting, track_memory=track_memory, data=data)
         variance = ForgettingVariance(
-            forgetting,
+            var_forgetting,
             track_memory=track_memory,
             center=mean,
             covariance=False,

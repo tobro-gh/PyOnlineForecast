@@ -380,6 +380,10 @@ class ForgettingVariance(Transformation):
 
         forgetting = forgetting or self.forgetting
 
+        # Center estimate if mean is provided
+        if mean is not None:
+            data = data - mean
+
         # Compute unentered variance
         if self.covariance:
             data = np.einsum('ij,ik->ijk', data, data)
@@ -387,15 +391,6 @@ class ForgettingVariance(Transformation):
             data = data**2
 
         var, state = forgetting_mean(forgetting, data, state, self.track_memory)
-
-        # Center estimate if mean is provided
-        if mean is not None:
-            if self.covariance:
-                mean_outer = np.einsum('ij,ik->ijk', mean, mean)
-                var = var - mean_outer
-            else:
-                mean_sq = mean**2
-                var = var - mean_sq
 
         return var, state
     
