@@ -229,7 +229,7 @@ class Transformation(Source):
         # Check that args and kwargs refer to valid inputs
         for val in list(apply_kwargs.values()) + list(apply_args):
             if not isinstance(val, Source):
-                raise ValueError(f"Input {val} must be a Source instance: {self}.")
+                raise ValueError(f"{self}: Input {val} must be a Source instance.")
 
         # Build pairs of (name, value) for args and kwargs combined
         self._apply_pairs = [(None, val) for val in apply_args] + list(

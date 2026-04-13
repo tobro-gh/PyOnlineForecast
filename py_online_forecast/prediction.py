@@ -1469,8 +1469,10 @@ class ARX(OnlinePrediction):
         X = BackShift(
             list(reversed(range(p))), endog
         )  # ordered as (y_t-p+1, ..., y_t-1, y_t)
+
         if exog is not None:
-            X = Apply(np.hstack, X, exog[:, 0])
+            # Include the zeroth horizon of exogenous features
+            X = Apply(lambda x, y: np.hstack((x, y)), X, exog[:, 0])
 
         self.scorefun = scorefun
 
@@ -1497,8 +1499,7 @@ class ARX(OnlinePrediction):
         init_K,
         track_memory,
         combine_variance,
-        full_cov,
-        **default_params,
+        full_cov
     ):
         """Initialize RRR predictor state for 1-step predictions."""
         return RRRPredictor(
@@ -1561,8 +1562,9 @@ class ARX(OnlinePrediction):
         ----------
         state : RRRPredictor
             The predictor state.
-        x_i : ndarray of shape (p,)
-            Current endogenous history for prediction (lags).
+        x_i : ndarray of shape (p+m,)
+            Current endogenous history for prediction (lags) and exogenous features for 
+            horizon 0. Should be ordered as (y_t-p+1, ..., y_t-1, y_t, z_0).
         z_i : ndarray of shape (h, m) or None
             Current exogenous variables for prediction (lags). First dimension should
             match prediction horizon. If None, exogenous features are not used.
@@ -1589,6 +1591,9 @@ class ARX(OnlinePrediction):
 
         endog = x_i.copy()
 
+        if z_i is not None:
+            m = z_i.shape[1]
+
         if V is None:
             V = state.V
 
@@ -1597,12 +1602,13 @@ class ARX(OnlinePrediction):
 
             # Combine endogenous history with exogenous for horizon h
             if z_i is not None:
-                reg_i = np.hstack([endog, z_i[h]])
-            else:
-                reg_i = endog
+#                reg_i = np.hstack([endog, z_i[h]])
+#            else:
+#                reg_i = endog
+                x_i[-m:] = z_i[h]
 
             # Predict h-step ahead using theta and x_i
-            arx_pred[h] = (reg_i.T @ theta).item()
+            arx_pred[h] = (x_i.T @ theta).item()
 
             # Push weights forward for next prediction
             new_weight = weights @ ar_params
