@@ -1294,10 +1294,10 @@ class RRR(OnlinePrediction):
 
 
 class BackShift(Transformation):
-    r"""Apply linear combinations of time-lagged variables.
+    r"""Create columns of time-lagged variables.
     
-    Creates output variables as sums of lagged input variables, specified by a shift
-    matrix. Useful for constructing autoregressive features.
+    Creates output variables as lags of input variables, specified by a list of shifts.
+    Useful for constructing autoregressive features.
     
     Parameters
     ----------
@@ -1324,7 +1324,7 @@ class BackShift(Transformation):
 
     def __init__(
         self,
-        shifts: list | dict,
+        shifts: list,
         data=DEFAULT_SOURCE,
         skip_duplicates=False,
         initial_value=np.nan,
@@ -1344,7 +1344,7 @@ class BackShift(Transformation):
         super().__init__(data=data, memory=MEMORY)
 
     def evaluate(self, data, memory=None):
-        """Return linear combinations of lagged input data.
+        """Return combinations of lagged input data.
         
         Parameters
         ----------
@@ -1357,7 +1357,7 @@ class BackShift(Transformation):
         -------
         X : ndarray of shape (n_obs, n_outputs)
             Transformed output with lagged combinations. If skip_duplicates=True,
-            most rows are NaN. n_outputs is equal 
+            most rows are NaN. n_outputs is equal to the number of shifts specified.
         memory : tuple
             Updated (historical_data, offset) for next call.
         """
@@ -1460,7 +1460,7 @@ class ARX(OnlinePrediction):
         default_params=None,
     ):
         self.horizon = horizon
-        self.p = p
+        self.p = p if isinstance(p, int) else len(p)
 
         # Ensure endog is (t, 1)
         endog = Apply(lambda x: x.reshape(x.shape[0], 1) if x.ndim == 1 else x, endog)
@@ -1471,7 +1471,7 @@ class ARX(OnlinePrediction):
         )  # ordered as (y_t-p+1, ..., y_t-1, y_t)
 
         if exog is not None:
-            # Include the zeroth horizon of exogenous features
+            # Include the first horizon of exogenous features
             X = Apply(lambda x, y: np.hstack((x, y)), X, exog[:, 0])
 
         self.scorefun = scorefun
@@ -1505,7 +1505,7 @@ class ARX(OnlinePrediction):
         return RRRPredictor(
             n,
             m,
-            self.horizon,
+            1,
             burn_in,
             init_K,
             track_memory,
@@ -1564,7 +1564,7 @@ class ARX(OnlinePrediction):
             The predictor state.
         x_i : ndarray of shape (p+m,)
             Current endogenous history for prediction (lags) and exogenous features for 
-            horizon 0. Should be ordered as (y_t-p+1, ..., y_t-1, y_t, z_0).
+            horizon 0. Should be ordered as (y_t-p+1, ..., y_t-1, y_t, z_1).
         z_i : ndarray of shape (h, m) or None
             Current exogenous variables for prediction (lags). First dimension should
             match prediction horizon. If None, exogenous features are not used.
@@ -1602,9 +1602,7 @@ class ARX(OnlinePrediction):
 
             # Combine endogenous history with exogenous for horizon h
             if z_i is not None:
-#                reg_i = np.hstack([endog, z_i[h]])
-#            else:
-#                reg_i = endog
+                # Update the exogenous part of the input for horizon h
                 x_i[-m:] = z_i[h]
 
             # Predict h-step ahead using theta and x_i

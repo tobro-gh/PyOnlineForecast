@@ -926,12 +926,11 @@ class ToExog(Transformation):
     data : Source, optional
         Source providing data to convert. Output should be a pandas DataFrame in the
         forecast matrix format (see ``ForecastMatrix``) or a 3D numpy array of shape
-        (t, n_horizon+1, n_var).  If ``None`` (default) use ``DEFAULT_SOURCE``.
+        (t, n_horizon, n_var).  If ``None`` (default) use ``DEFAULT_SOURCE``.
     """
 
     def __init__(self, horizon, data=DEFAULT_SOURCE):
-        self.horizons = np.arange(horizon + 1)
-        self._horizon = horizon
+        self.horizons = np.arange(horizon)
         super().__init__(data=data, indices=MEMORY)
 
     def evaluate(self, data, indices=None):
@@ -946,7 +945,7 @@ class ToExog(Transformation):
         data : pd.DataFrame or np.ndarray
             Data to convert. Should be either a pandas DataFrame in the forecast matrix
             format (see ``ForecastMatrix``) or a 3D numpy array of shape
-            (t, n_horizon+1, n_var).
+            (t, n_horizon, n_var).
         indices : list of int, optional
             If provided, should be a list of column indices to extract from the
             DataFrame. Will be inferred from the DataFrame columns if not provided.
@@ -972,7 +971,7 @@ class ToExog(Transformation):
 
             # Stack 3D array by horizon
             result = np.full(
-                (data.shape[0], len(indices), data.shape[1] // self._horizon),
+                (data.shape[0], len(indices), data.shape[1] // len(self.horizons)),
                 np.nan,
             )
             for i, idx in enumerate(indices):
