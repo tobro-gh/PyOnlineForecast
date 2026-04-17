@@ -429,8 +429,7 @@ class Transformation(Source):
                     data=data,
                     recursion_pars=recursion_pars,
                     return_recursion_pars=True,
-                    copy_data=False,
-                    **params,
+                    copy_data=False
                 )
 
                 new_recursion_pars.update(t_rec_pars)

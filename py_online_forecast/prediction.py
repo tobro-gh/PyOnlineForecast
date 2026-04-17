@@ -286,8 +286,9 @@ class Prediction(Transformation):
     def predict(self, state, X, Z=None, **params):
         """Make predictions without updating predictor state.
 
-        Subclasses should implement this to make predictions using the current state
-        while leaving the state unchanged.
+        Subclasses should implement this to make predictions using the current state.
+        The implementation should be a pure function, and in particular leave the state
+        unchanged.
 
         Parameters
         ----------
@@ -1448,8 +1449,8 @@ class ARX(OnlinePrediction):
     def __init__(
         self,
         endog,
-        horizon,
-        p: int,
+        horizon: int,
+        order: int | list,
         exog = None,
         burn_in:int=1,
         init_K=0,
@@ -1460,15 +1461,17 @@ class ARX(OnlinePrediction):
         default_params=None,
     ):
         self.horizon = horizon
-        self.p = p if isinstance(p, int) else len(p)
+#        self.p = p if isinstance(p, int) else len(p)
+        self._lag_indices = np.array(order)-1 if isinstance(order, list) else np.arange(order)
+        self.p = max(self._lag_indices) + 1
 
         # Ensure endog is (t, 1)
         endog = Apply(lambda x: x.reshape(x.shape[0], 1) if x.ndim == 1 else x, endog)
 
         # Make regression model for 1-step forecasts
         X = BackShift(
-            list(reversed(range(p))), endog
-        )  # ordered as (y_t-p+1, ..., y_t-1, y_t)
+            list(range(self.p)), endog
+        )  # ordered as (y_t, y_t-1, ..., y_t-p+1)
 
         if exog is not None:
             # Include the first horizon of exogenous features
@@ -1502,8 +1505,15 @@ class ARX(OnlinePrediction):
         full_cov
     ):
         """Initialize RRR predictor state for 1-step predictions."""
+        n_lags = len(self._lag_indices)  # Number of AR lags
+        n_feat = n-self.p # Number of exogenous features
+        n_reg = n_lags + n_feat  # Total number of regression features
+
+        # Build indices for selecting input features, i.e. lags and features
+        self._exog_indices = np.arange(self.p, self.p+n_feat)
+        self._indices = np.concat([self._lag_indices, self._exog_indices])
         return RRRPredictor(
-            n,
+            n_reg,
             m,
             1,
             burn_in,
@@ -1533,9 +1543,9 @@ class ARX(OnlinePrediction):
         using AR coefficients and updated endogenous history to forecast h horizons.
         """
         state.online_update(
-            x_i,
+            x_i[self._indices],
             y_i,
-            x_train_i=x_train_i,
+            x_train_i=x_train_i[self._indices],
             Q=Q,
             theta0=theta0,
             V=V,
@@ -1575,7 +1585,7 @@ class ARX(OnlinePrediction):
 
 
         """
-        result = state.online_predict(x_i, V=V, return_var_theta=return_var_theta)
+        result = state.online_predict(x_i[self._indices], V=V, return_var_theta=return_var_theta)
 
         theta = state.theta.flatten()
 
@@ -1584,15 +1594,12 @@ class ARX(OnlinePrediction):
             self.horizon, np.nan
         )  # TODO: consider computing full covariance between horizons rather than just variances
 
-        weights = np.zeros(self.p)
-        weights[-1] = 1
+        weights = np.zeros(max(self.horizon, self.p))  # Initialize AR weights for variance computation
+        weights[0] = 1
 
-        ar_params = theta[: self.p]
+        ar_params = theta[: len(self._lag_indices)]  # AR coefficients from theta
 
-        endog = x_i.copy()
-
-        if z_i is not None:
-            m = z_i.shape[1]
+        endog = x_i[: self.p]  # Full endogenous history
 
         if V is None:
             V = state.V
@@ -1600,23 +1607,28 @@ class ARX(OnlinePrediction):
         # Modify result to include predictions for all horizons
         for h in range(self.horizon):
 
-            # Combine endogenous history with exogenous for horizon h
+            reg_i = endog[self._lag_indices] # Select only the lags specified by order
+
+            # Combine AR with exogenous features for horizon h
             if z_i is not None:
-                # Update the exogenous part of the input for horizon h
-                x_i[-m:] = z_i[h]
+                reg_i = np.hstack((reg_i, z_i[h]))
 
-            # Predict h-step ahead using theta and x_i
-            arx_pred[h] = (x_i.T @ theta).item()
+            # Predict next step ahead using theta and 
+            arx_pred[h] = (reg_i.T @ theta).item()
 
-            # Push weights forward for next prediction
-            new_weight = weights @ ar_params
-            weights = np.append(weights[1:], new_weight)
-
-            # Compute variance
+            # Compute variance, using weights so far.
             arx_var[h] = (V * (weights @ weights)).item()
 
+            # Push weights forward for next prediction. Use only the specified lags
+            new_weight = weights[self._lag_indices] @ ar_params
+
+            # Prepend new weight
+            weights[1:] = weights[:-1]
+            weights[0] = new_weight
+
             # Update endogenous history
-            endog = np.append(endog[1:], arx_pred[h])
+            endog[1:] = endog[:-1]
+            endog[0] = arx_pred[h]
 
         result["mean"] = arx_pred
         result["var"] = arx_var

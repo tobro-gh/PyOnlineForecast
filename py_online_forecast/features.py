@@ -89,15 +89,22 @@ class One(Transformation):
     ----------
     ref : Source, optional
         The source to use as reference for the length of the output column.
+    shape : tuple, optional
+        The shape of the output array, excluding the first dimension. If None, the
+        output will be a 1D array of shape (t,).
     """
 
-    def __init__(self, ref = DEFAULT_SOURCE):
+    def __init__(self, ref = DEFAULT_SOURCE, shape = None):
         t = Dim(ref, axis = 0)
+        self._shape = shape
         super().__init__(t)
 
     def evaluate(self, t):
         """Return a column of ones of length t."""
-        return np.ones(t)
+        if self._shape is None:
+            return np.ones(t)
+        else:
+            return np.ones((t,) + self._shape)
 
 class SlidingSum(Transformation):
     """Compute sliding window sum using numpy's sliding_window_view function.
