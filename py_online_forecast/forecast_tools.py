@@ -225,19 +225,18 @@ def subset_columns(columns, *variables, horizons=None, return_index=False):
         Subset of columns matching the specified variables and horizons, or a boolean
         indexer if ``return_index`` is ``True``.
     """
-    if len(variables) == 0 and horizons is None:
-        index = [True] * len(columns)
-    elif len(variables) == 0:
+    if len(variables) > 0:
+        var_filter = columns.get_level_values(0).isin(variables)
+    else:
+        var_filter = np.array([True] * len(columns))
+    if horizons is not None:
         if isinstance(columns, pd.MultiIndex):
-            index = columns.get_level_values(1).isin(horizons)
+            horizon_filter = columns.get_level_values(1).isin(horizons)
         else:
             raise ValueError(
                 "Cannot subset by horizon when columns are not MultiIndex."
             )
-    elif horizons is None:
-        index = [col[0] in variables for col in columns]
-    else:
-        index = [(col[0] in variables) and (col[1] in horizons) for col in columns]
+    index = var_filter & horizon_filter if horizons is not None else var_filter
 
     if return_index:
         return index
@@ -294,7 +293,6 @@ def _make_fc_columns(names, horizons, outer_prod=False):
 def _get_forecast_columns(names, horizon, outer_prod=False):
     horizons = [horizon] * len(names)
     return _make_fc_columns(names, horizons, outer_prod=outer_prod)
-
 
 class Subset(Transformation):
     """Subset data by variable names and horizons.
@@ -1377,3 +1375,81 @@ class ForecastEnsemble(Transformation):
         """Fit the ensemble by resetting state and calling update."""
         self.reset_state()
         return self.update(data, update_predictor=update_predictor, **params)
+
+class Residuals(Transformation):
+    """Compute residuals for forecast matrix data.
+    
+    Parameters
+    ----------
+    Y : Source
+        Source providing dataframe of target variable. Should be in forecast matrix
+        format with zero as the only horizon, or a dataframe with a single level of
+        columns.
+    Y_hat : Source
+        Source providing dataframe of forecasts. Should be in forecast matrix format
+        with variable names matching those in Y.
+    """
+
+    def __init__(self, Y, Y_hat):
+        super().__init__(Y, Y_hat, memory = MEMORY)
+
+    def evaluate(self, Y, Y_hat, memory = None):
+        """Return dataframe of residuals.
+
+        The residuals are computed by lagging the forecasts and subtracting from the 
+        corresponding columns in Y. Memory is used to store indices for subsetting and
+        old forecasted values for lagging.
+
+        Parameters
+        ----------
+        Y : pd.DataFrame
+            DataFrame of target variable, in forecast matrix format with zero as the
+            only horizon, or a dataframe with a single level of columns.
+        Y_hat : pd.DataFrame
+            DataFrame of forecasts, in forecast matrix format with variable names
+            matching those in Y.
+        memory : list of tuples of int and pd.DataFrame, optional
+            If provided, should be a list of tuples containing indices for subsetting Y
+            and Y_hat and old forecasted values for lagging. Should be in the same
+            order as the horizons in Y_hat. If not provided, indices and old values
+            will be computed from Y and Y_hat.
+        """ 
+        horizons = Y_hat.fc.horizons
+
+        if memory is None:
+            
+            # Build indices
+            y_hat_indices = []
+            y_indices = []
+            for h in horizons:
+                idx_y_hat = subset_columns(Y_hat.columns, horizons=[h], return_index=True)
+                vars = Y_hat.columns[idx_y_hat].get_level_values(0).tolist()
+                idx_y = subset_columns(Y.columns, *vars, return_index=True)
+                y_hat_indices.append(idx_y_hat)
+                y_indices.append(idx_y)
+            indices = list(zip(y_hat_indices, y_indices))
+
+            # Lag values
+            lagged = Y_hat.fc.lag()
+        else:
+            # Retrieve indices and old values
+            indices, old_vals = memory
+
+            # Stack old_vals and Y_hat vertically, then lag
+            all_vals = pd.concat([old_vals, Y_hat], axis=0)
+            lagged = all_vals.fc.lag().loc[Y_hat.index]
+
+        # Preallocate result dataframe
+        result = pd.DataFrame(index=Y.index, columns = Y_hat.columns, dtype = float)
+
+        y_np = Y.to_numpy()
+        y_hat_np = lagged.to_numpy()
+
+        for (idx_y_hat, idx_y) in indices:
+            result.iloc[:, idx_y_hat] = y_np[:, idx_y] - y_hat_np[:, idx_y_hat]
+
+        old_vals = Y_hat.iloc[-max(horizons):]
+
+        return result, (indices, old_vals)
+
+

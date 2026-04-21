@@ -1430,15 +1430,15 @@ class ARX(OnlinePrediction):
         Endogenous target variable. Should produce an array of endogenous values.
     horizon : int
         Forecast horizon in time steps.
-    p : int
-        Autoregressive order (number of lags).
+    p : int or list
+        Autoregressive order (number of lags), or a list of specific lags to include.
     burn_in, init_K, track_memory, combine_variance, full_cov, scorefun, default_params
         Forwarded to ``RRRPredictor``. See ``RRR`` for details.
 
     Attributes
     ----------
-    p : int
-        AR order.
+    p : int or list
+        AR order or list of specific lags used as features.
 
     See Also
     --------
@@ -1461,7 +1461,6 @@ class ARX(OnlinePrediction):
         default_params=None,
     ):
         self.horizon = horizon
-#        self.p = p if isinstance(p, int) else len(p)
         self._lag_indices = np.array(order)-1 if isinstance(order, list) else np.arange(order)
         self.p = max(self._lag_indices) + 1
 

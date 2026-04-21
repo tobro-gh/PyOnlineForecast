@@ -610,3 +610,50 @@ class Lag(Transformation):
         result = prev_values.update(data)
 
         return result, prev_values
+    
+class Periodic(Transformation):
+    """Map pre-computed values periodically from a reference index.
+    
+    Parameters
+    ----------
+    values: np.ndarray
+        Array of shape (n_times, ...) containing the values to map from.
+    index: np.ndarray
+        Array of shape (n_times,) containing the index corresponding to the values.
+    """
+
+    def __init__(self, values: np.ndarray, index: Transformation, horizons: list = None):
+        self.values = values
+        n = len(values)
+
+        self.horizons = horizons
+        self._n = len(values)
+        
+        super().__init__(index)
+
+    def evaluate(self, index: np.ndarray) -> np.ndarray:
+        """Return values mapped from reference_time.
+        
+        Parameters
+        ----------
+        reference_time: np.ndarray
+            Array of shape (t,) containing the times for which to map values.
+        
+        Returns
+        -------
+        result: np.ndarray
+            Array of shape (t, len(horizons), ...) containing the mapped values for each
+            time and horizon.
+        """
+        # Map reference_time to values using times as reference, applying offsets
+        index = index % self._n
+        
+        if self.horizons is None:
+            return self.values[index]
+
+        result = []
+        for h in self.horizons:
+            shifted_index = (index + h) % self._n
+            result.append(self.values[shifted_index])
+
+        return np.stack(result, axis=1)
