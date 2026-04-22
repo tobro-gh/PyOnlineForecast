@@ -657,3 +657,17 @@ class Periodic(Transformation):
             result.append(self.values[shifted_index])
 
         return np.stack(result, axis=1)
+    
+class Difference(Transformation):
+    """Compute the difference along the first dimension."""
+    def __init__(self, data):
+        data = ToArray(data)
+        super().__init__(data = data, prev_value = MEMORY)
+
+    def evaluate(self, data, prev_value = None):
+        if prev_value is None:
+            prev_value = np.full(data.shape[1:], np.nan)
+        data = np.vstack((prev_value, data))
+        diff = np.diff(data, axis = 0)
+        new_prev_value = data[-1]
+        return diff, new_prev_value

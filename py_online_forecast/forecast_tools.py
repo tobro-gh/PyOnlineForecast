@@ -23,6 +23,7 @@ from .features import (
     SlidingMean,
     SlidingSum,
     ToArray,
+    Difference
 )
 from .hierarchies import RidgeReconciliation
 from .prediction import ARX, RRR, WLS
@@ -157,7 +158,7 @@ class ForecastMatrix:
 
         data.columns = pd.MultiIndex.from_tuples(new_columns, names=self.names)
 
-        if isinstance(data.index, pd.DatetimeIndex):
+        if isinstance(data.index, pd.DatetimeIndex) and len(data.index) >=3:
             # Infer frequency
             inferred_freq = pd.infer_freq(data.index)
             if inferred_freq is not None:
@@ -1145,6 +1146,10 @@ def _(source: ForgettingVariance):
         return formatter
     else:
         return mean_formatter
+
+@ForecastFormat.register_resolver(Difference)
+def _(source: Difference):
+    return ForecastFormat.get_formatter(source.apply_args[0])
 
 
 def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols=None):

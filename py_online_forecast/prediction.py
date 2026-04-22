@@ -1394,6 +1394,9 @@ class BackShift(Transformation):
         # Concatenate arrays
         result = np.column_stack(shifted_data)
 
+        # Get index for next memory
+        end_idx = len(all_data) - self.max_shift
+
         # Form output
         if self.skip_duplicates:
 
@@ -1407,10 +1410,10 @@ class BackShift(Transformation):
             masked = np.full_like(result, np.nan)
             masked[mask, :] = result[mask, :]
 
-            return masked, (all_data[-self.max_shift :], offset)
+            return masked, (all_data[end_idx:], offset)
         
         else:
-            return result, (all_data[-self.max_shift :], None)
+            return result, (all_data[end_idx:], None)
 
 
 class ARX(OnlinePrediction):
