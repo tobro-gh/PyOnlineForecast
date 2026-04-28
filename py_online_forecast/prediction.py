@@ -565,7 +565,7 @@ class OnlinePrediction(Prediction):
         Z : ndarray of shape (n_obs, n_exog), optional
             Exogenous features.
         **params : object
-            Additional parameters distributed to update_params and predict_params.
+            Additional parameters provided to ``online_update`` and ``online_predict``.
 
         Returns
         -------
@@ -574,19 +574,8 @@ class OnlinePrediction(Prediction):
             result is a dict of arrays; otherwise a single array.
         state : object
             Updated predictor state after processing all rows.
-
-        Notes
-        -----
-        Rows with NaN values in Y or X_train are skipped for updates but still get
-        predictions via ``online_predict``.
         """
         X, Y, X_train, Z = self._convert_arrays(X, Y, X_train, Z)
-
-        # Distribute params
-        update_params = {
-            k: v for k, v in params.items() if k in self.update_model_params
-        }
-        predict_params = {k: v for k, v in params.items() if k in self.predict_params}
 
         n = X.shape[0]
         forecasts = []
@@ -599,19 +588,12 @@ class OnlinePrediction(Prediction):
             x_train = X_train[i]
 
             if self._use_Z:
-                update_params["z_i"] = Z[i]
-                predict_params["z_i"] = Z[i]
+                params["z_i"] = Z[i]
 
-            y_ready = not np.isnan(y).any()
-            x_train_ready = not np.isnan(x_train).any()
-
-            # Only update if data is valid
-            if x_train_ready and y_ready:
-                forecast, state = self.online_update(
-                    state, x, y, x_train, **update_params
-                )
-            else:
-                forecast = self.online_predict(state, x, **predict_params)
+            # Update model
+            forecast, state = self.online_update(
+                state, x, y, x_train, **params
+            )
 
             forecasts.append(forecast)
 
@@ -1034,31 +1016,36 @@ class RRRPredictor:
         if V is not None:
             self.V = V
 
-        x_outer = np.outer(x_train_i, x_train_i)
+        y_ready = not np.isnan(y_i).any()
+        x_train_ready = not np.isnan(x_train_i).any()
 
-        if self.K is None:
-            self.K = x_outer
-        else:
-            self.K = mem * self.K + x_outer
+        if y_ready and x_train_ready:
 
-        if self.L is None:
-            self.L = np.outer(x_train_i, y_i)
-        else:
-            self.L = mem * self.L + np.outer(x_train_i, y_i)
+            x_outer = np.outer(x_train_i, x_train_i)
 
-        KpQ = self.K + Q
-        LpQtheta = self.L + Q @ theta0
+            if self.K is None:
+                self.K = x_outer
+            else:
+                self.K = mem * self.K + x_outer
 
-        self.theta = np.linalg.solve(KpQ, LpQtheta)
+            if self.L is None:
+                self.L = np.outer(x_train_i, y_i)
+            else:
+                self.L = mem * self.L + np.outer(x_train_i, y_i)
 
-        # Update estimate of variance
-        self.H = mem**2 * self.H + x_outer
+            KpQ = self.K + Q
+            LpQtheta = self.L + Q @ theta0
 
-        temp1 = np.linalg.solve(KpQ, self.H)
+            self.theta = np.linalg.solve(KpQ, LpQtheta)
 
-        self.psi = np.linalg.solve(KpQ, temp1.T).T  # K^-1 H K^-1^T
+            # Update estimate of variance
+            self.H = mem**2 * self.H + x_outer
 
-        if estimate_V and self._n_updates >= self.burn_in:
+            temp1 = np.linalg.solve(KpQ, self.H)
+
+            self.psi = np.linalg.solve(KpQ, temp1.T).T  # K^-1 H K^-1^T
+
+        if y_ready and estimate_V and self._n_updates >= self.burn_in:
 
             y_i_hat = self.Y_hat.get(1)  # Get oldest prediction
             resid = np.atleast_2d(y_i - y_i_hat)

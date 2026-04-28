@@ -335,7 +335,6 @@ class Transformation(Source):
         memory=None,
         recursion_pars=None,
         return_recursion_pars=False,
-        ref=None,
         copy_data=True,
         track_state=False,
         formatter: Format = None,
@@ -379,7 +378,7 @@ class Transformation(Source):
             (Only if ``return_recursion_pars=True``)
         """
         # NOTE: copy_data is used to avoid modifying input data (unless requested). When applied recursively, copy_data should be False, as we do want to update the data with intermediate results.
-        data = parse_data(data, ref=ref, copy=copy_data)
+        data = parse_data(data, copy=copy_data)
 
         evaluate_kwargs = {}
         evaluate_args = []
@@ -607,17 +606,15 @@ class Transformation(Source):
         return self.apply(*args, **kwargs)
 
 
-def parse_data(data: dict, ref=None, copy=True):
+def parse_data(data: dict, copy=True):
     """Normalize input into a source-value dict and ensure DEFAULT_SOURCE is present."""
     if not isinstance(data, dict):
         data = {DEFAULT_SOURCE: data}
     elif copy:
         data = data.copy()
 
-    ref_val = data[ref or next(iter(data))]
-
     if DEFAULT_SOURCE not in data:
-        data[DEFAULT_SOURCE] = ref_val
+        data[DEFAULT_SOURCE] = data
 
     return data
 

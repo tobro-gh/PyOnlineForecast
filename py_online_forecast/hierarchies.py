@@ -494,7 +494,7 @@ class SRRRPredictor(p.RRRPredictor):
 
         Q = (
             1 / (1 - mem) * (l_shrink / (1 - l_shrink)) * b0
-        )  # Check that this is correct. Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
+        )  # Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
 
         theta0 = np.linalg.solve(b0, b1)
 
@@ -584,11 +584,25 @@ class SRRR(p.RRR):
         state : SRRRPredictor
             Updated predictor instance.
         """
-        # Compute optimal Q and theta0 based on current error estimates
-        Q, theta0 = state.update_prior(x_i, y_i, mem, l_shrink)  # x_i or x_train_i?
+        x_ready = not np.isnan(x_i).any()
+        y_ready = not np.isnan(y_i).any()
 
-        # Call parent online_update with computed Q and theta0
-        result = state.online_update(x_i, y_i, x_train_i, Q, theta0, mem=mem, **kwargs)
+
+        # Distribute params
+        update_params = {
+            k: v for k, v in kwargs.items() if k in self.update_model_params
+        }
+        predict_params = {k: v for k, v in kwargs.items() if k in self.predict_params}
+
+        if x_ready and y_ready:
+
+            # Compute optimal Q and theta0 based on current error estimates
+            Q, theta0 = state.update_prior(x_i, y_i, mem, l_shrink)  # x_i or x_train_i?
+
+            # Call parent online_update with computed Q and theta0
+            result = state.online_update(x_i, y_i, x_train_i, Q, theta0, mem=mem, **update_params)
+        else:
+            result = state.online_predict(x_i, **predict_params)
 
         # Return result and updated state
         return result, state
