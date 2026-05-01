@@ -111,41 +111,6 @@ class Prediction(Transformation):
     are optional exogenous features.
     """
 
-    def __init_subclass__(cls):
-        """Set parameters for the predictor by inspecting ``update`` and ``predict``."""
-        super().__init_subclass__()
-        cls.set_params()
-
-    @classmethod
-    def set_params(cls):
-        """Set the parameters that are accepted by the ``update`` and ``predict`` methods.
-
-        Detected parameters are used to validate default parameters provided at
-        initialization. May be overridden by subclasses if different behavior is desired.
-        """
-        # TODO: consider removing this functionality and simply waiting for error on
-        # application of prediction (if parameters are misspecified).
-
-        # Set update parameters for the predictor
-        update_sig = inspect.signature(cls.update)
-        cls.params = [
-            k
-            for k, v in list(update_sig.parameters.items())[1:]
-            if v.kind
-            not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            and k not in ["state", "X", "Y", "X_train"]
-        ]
-
-        # Set parameters for the predict method
-        predict_sig = inspect.signature(cls.predict)
-        predict_params = [
-            k
-            for k, v in list(predict_sig.parameters.items())[1:]
-            if v.kind
-            not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.predict_params = predict_params
-
     def __init__(
         self,
         X,
@@ -164,11 +129,6 @@ class Prediction(Transformation):
         self.kwargs = kwargs
         self._score_mode = score_mode
         self._default_params = default_params or {}
-
-        # Check that default_params are valid
-        for param in self._default_params.keys():
-            if param not in self.params:
-                raise ValueError(f"Parameter '{param}' not recognized for predictor.")
 
         if Z is None:
             Z_kwarg = {}
@@ -477,43 +437,6 @@ class OnlinePrediction(Prediction):
     Prediction : Parent class for batch-mode prediction.
     """
 
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls.set_params()
-
-    @classmethod
-    def set_params(cls):
-        """Detect parameters from ``online_update`` and ``online_predict`` signatures.
-
-        Introspects both methods to build combined parameter lists for validation.
-        Separates update-specific from predict-specific parameters.
-        """
-        cls._set_predict_params()
-        cls._set_update_model_params()
-        cls.params = cls.predict_params + cls.update_model_params
-
-    @classmethod
-    def _set_predict_params(cls):
-        predict_sig = inspect.signature(cls.online_predict)
-        predict_params = [
-            k
-            for k, v in list(predict_sig.parameters.items())[1:]
-            if v.kind
-            not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.predict_params = predict_params
-
-    @classmethod
-    def _set_update_model_params(cls):
-        update_model_sig = inspect.signature(cls.online_update)
-        update_model_params = [
-            k
-            for k, v in list(update_model_sig.parameters.items())[1:]
-            if v.kind
-            not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
-        cls.update_model_params = update_model_params
-
     @classmethod
     def _convert_arrays(cls, X, Y=None, X_train=None, Z=None):
         if not isinstance(X, np.ndarray):
@@ -548,9 +471,7 @@ class OnlinePrediction(Prediction):
     ):
         """Update predictor with batch data by processing rows incrementally.
 
-        Iterates over each row, calling ``online_update`` when data is valid (no NaN
-        values) and ``online_predict`` otherwise. Distributes parameters to appropriate
-        methods.
+        Iterates over data rows, calling ``online_update`` for each and stacks results.
 
         Parameters
         ----------
@@ -628,11 +549,6 @@ class OnlinePrediction(Prediction):
         ValueError
             If any parameter key is not recognized for prediction.
         """
-        # Check parameters
-        for k in params.keys():
-            if k not in self.predict_params:
-                raise ValueError(f"Parameter '{k}' not recognized for prediction.")
-
         X, _, _, Z = self._convert_arrays(X, Z=Z)
 
         # Predict multiple rows.
@@ -686,7 +602,24 @@ class OnlinePrediction(Prediction):
 
     @abstractmethod
     def online_predict(self, state, x_i, z_i=None, **params):
-        # Predict a single row.
+        """Predict a single row.
+
+        Parameters
+        ----------
+        state : object
+            Current predictor state.
+        x_i : object
+            Single entry of input features.
+        z_i : object, optional
+            Single entry of exogenous features.
+        **params : object
+            Additional prediction parameters.
+
+        Returns
+        -------
+        prediction : dict or ndarray
+            Prediction for the current entry x_i.
+        """
         pass
 
 
@@ -930,6 +863,7 @@ class RRRPredictor:
         self._forgetting_var_state = None
         self._full_cov = full_cov
         self.Y_hat = CircularBuffer(horizon, m)
+        self.mem = mem
 
         self._forgetting_var = ForgettingVariance(
             forgetting=mem,
@@ -946,9 +880,10 @@ class RRRPredictor:
         Q: np.ndarray | float = None,
         theta0: np.ndarray = None,
         V: np.ndarray = None,
-        estimate_V=True,
+        update_V=True,
         mem=None,
         return_var_theta=False,
+        update_theta=True
     ):
         r"""Update model with single observation and return prediction.
         
@@ -972,14 +907,16 @@ class RRRPredictor:
         V : ndarray of shape (n_targets, n_targets) or (n_targets,), optional
             Fixed prediction error covariance. If provided, overrides internal estimate.
             Default is None.
-        estimate_V : bool, default True
+        update_V : bool, default True
             If True, updates prediction error covariance V from residuals after burn-in.
         mem : float, optional
             Forgetting factor for this update. If None, uses value from initialization.
             Must be in [0, 1]. Default is None.
         return_var_theta : bool, default False
             If True, includes parameter covariance in the returned prediction dict.
-        
+        update_theta : bool, default True
+            If True, updates theta parameters with the new observation.
+
         Returns
         -------
         result : dict
@@ -994,24 +931,10 @@ class RRRPredictor:
         ValueError
             If mem is not in [0, 1] or if Q is not symmetric.
         """
-        if mem < 0 or mem > 1:
-            raise ValueError("Memory must be between 0 and 1.")
+        if mem is None:
+            mem = self.mem
 
         n, m = self.n, self.m
-
-        if theta0 is None:
-            theta0 = np.zeros((n, m))
-
-        if Q is None:
-            Q = np.zeros((n, n))
-        elif isinstance(Q, (float, int)):
-            Q = np.eye(n) * Q
-
-        elif not np.allclose(Q, Q.T):
-            raise ValueError("Q must be symmetric.")
-
-        if theta0 is None:
-            theta0 = np.zeros((n, m))
 
         if V is not None:
             self.V = V
@@ -1019,7 +942,25 @@ class RRRPredictor:
         y_ready = not np.isnan(y_i).any()
         x_train_ready = not np.isnan(x_train_i).any()
 
-        if y_ready and x_train_ready:
+        if update_theta and y_ready and x_train_ready:
+
+            # Check inputs
+            if mem < 0 or mem > 1:
+                raise ValueError("Memory must be between 0 and 1.")
+
+            if theta0 is None:
+                theta0 = np.zeros((n, m))
+
+            if Q is None:
+                Q = np.zeros((n, n))
+            elif isinstance(Q, (float, int)):
+                Q = np.eye(n) * Q
+
+            elif not np.allclose(Q, Q.T):
+                raise ValueError("Q must be symmetric.")
+
+            if theta0 is None:
+                theta0 = np.zeros((n, m))
 
             x_outer = np.outer(x_train_i, x_train_i)
 
@@ -1045,7 +986,7 @@ class RRRPredictor:
 
             self.psi = np.linalg.solve(KpQ, temp1.T).T  # K^-1 H K^-1^T
 
-        if y_ready and estimate_V and self._n_updates >= self.burn_in:
+        if y_ready and update_V and self._n_updates >= self.burn_in:
 
             y_i_hat = self.Y_hat.get(1)  # Get oldest prediction
             resid = np.atleast_2d(y_i - y_i_hat)
@@ -1160,7 +1101,8 @@ class RRR(OnlinePrediction):
         full_cov=True,
         center_cov=False,
         scorefun=rmse,
-        default_params=None,
+        mem=0.99,
+        default_params=None
     ):
         self.horizon = horizon
         self.Y_hat = Lag(self, amount=horizon)
@@ -1177,6 +1119,7 @@ class RRR(OnlinePrediction):
             combine_variance=combine_variance,
             full_cov=full_cov,
             center_cov=center_cov,
+            mem=mem,
             default_params=default_params,
         )
 
@@ -1190,7 +1133,7 @@ class RRR(OnlinePrediction):
         combine_variance,
         full_cov,
         center_cov,
-        **default_params,
+        mem
     ):
         """Create amd return ``RRRPredictor``."""
         return RRRPredictor(
@@ -1203,6 +1146,7 @@ class RRR(OnlinePrediction):
             combine_variance,
             full_cov,
             center_cov,
+            mem
         )
 
     def online_update(
@@ -1214,9 +1158,10 @@ class RRR(OnlinePrediction):
         Q: np.ndarray | float = None,
         theta0: np.ndarray = None,
         V: np.ndarray = None,
-        estimate_V=True,
+        update_V=True,
         mem=0.99,
         return_var_theta=False,
+        update_theta=True
     ):
         """Delegate single-step update to ``RRRPredictor.online_update``.
 
@@ -1240,11 +1185,13 @@ class RRR(OnlinePrediction):
             Q=Q,
             theta0=theta0,
             V=V,
-            estimate_V=estimate_V,
+            update_V=update_V,
             mem=mem,
             return_var_theta=return_var_theta,
+            update_theta=update_theta
         )
         return result, state
+    
     def online_predict(self, state: RRRPredictor, x_i, V=None, return_var_theta=False):
         """Delegate single-step prediction to ``RRRPredictor.online_predict``.
 
@@ -1279,7 +1226,6 @@ class RRR(OnlinePrediction):
             Y_hat, Y, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
         )
         return prediction
-
 
 class BackShift(Transformation):
     r"""Create columns of time-lagged variables.
@@ -1402,7 +1348,6 @@ class BackShift(Transformation):
         else:
             return result, (all_data[end_idx:], None)
 
-
 class ARX(OnlinePrediction):
     r"""Autoregressive model with exogenous input using recursive ridge regression.
 
@@ -1448,6 +1393,7 @@ class ARX(OnlinePrediction):
         combine_variance=True,
         full_cov=True,
         scorefun=rmse,
+        mem=0.99,
         default_params=None,
     ):
         self.horizon = horizon
@@ -1480,6 +1426,7 @@ class ARX(OnlinePrediction):
             track_memory=track_memory,
             combine_variance=combine_variance,
             full_cov=full_cov,
+            mem=mem,
             default_params=default_params,
         )
 
@@ -1491,7 +1438,8 @@ class ARX(OnlinePrediction):
         init_K,
         track_memory,
         combine_variance,
-        full_cov
+        full_cov,
+        mem
     ):
         """Initialize RRR predictor state for 1-step predictions."""
         n_lags = len(self._lag_indices)  # Number of AR lags
@@ -1510,6 +1458,7 @@ class ARX(OnlinePrediction):
             track_memory,
             combine_variance,
             full_cov,
+            mem = mem
         )
 
     def online_update(
@@ -1522,7 +1471,7 @@ class ARX(OnlinePrediction):
         Q: np.ndarray | float = None,
         theta0: np.ndarray = None,
         V: np.ndarray = None,
-        estimate_V=True,
+        update_V=True,
         mem=0.99,
         return_var_theta=False,
     ):
@@ -1538,7 +1487,7 @@ class ARX(OnlinePrediction):
             Q=Q,
             theta0=theta0,
             V=V,
-            estimate_V=estimate_V,
+            update_V=update_V,
             mem=mem,
             return_var_theta=False,
         )

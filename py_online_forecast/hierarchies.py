@@ -3,29 +3,687 @@
 This module provides transformations and tools for working with hierarchical forecast
 reconciliation. The main class is ``RidgeReconciliation``, which uses the ``RRR`` (or
 optionally ``SRRR``) prediction to model the bottom level forecast errors and then
-constructs reconciled forecasts at all levels of the hierarchy.
+constructs reconciled forecasts at all levels of the hierarchy. Behind the scenes, these
+classes use the ``HierarchicalForecastReconciliation`` transformation, which provides
+a generic way to setup forecast reconciliation using any prediction model.
 
-For working with temporal hierarchies, the ``TemporalRidgeReconciliation`` class is a thin
-wrapper around ``RidgeReconciliation`` that uses a ``BackShift`` transformation to construct
-a bottom level variable for a temporal hierarchy.
+For working with temporal hierarchies, the ``TemporalRidgeReconciliation`` class is a
+thin wrapper around ``RidgeReconciliation`` that uses a ``BackShift`` transformation to
+construct a bottom level variable for a temporal hierarchy.
 
-The module also includes some tools for construct hierarchies using a ``Node`` class.
+The module also includes some tools for constructing hierarchies using a ``Node`` class.
 """
 
 import numpy as np
+
 from . import core as c
-from . import prediction as p
 from . import features as f
+from . import prediction as p
 
 
-class RidgeReconciliation(c.Transformation):
+class HierarchicalForecastReconciliation(c.Transformation):
+    r"""Hierarchical forecast reconciliation using predictions of bottom-level errors.
+
+    This transformation performs hierarchical forecast reconciliation by predicting
+    bottom-level base forecast errors from top-level incoherence using an arbitrary
+    prediction model and then constructing reconciled forecasts by shifting and
+    aggregating the predicted bottom-level errors.
+
+    Parameters
+    ----------
+    S_top : np.ndarray, shape (n_top, n_bot)
+        Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
+        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
+    prediction_factory : callable
+        Function to create the prediction model. The function should take exactly two
+        arguments, the design matrix :math:`X` and response variable :math:`Y` of the
+        hierarchical regression problem, and return a transformation that produces
+        predictions of the bottom-level errors at the given horizon, when called with
+        appropriate inputs. The design and response variables are provided as
+        transformations, and the output of the prediction model should be a dictionary
+        containing at least the key specified by ``mean_key`` with the predicted
+        bottom-level errors. If covariance predictions are also provided, the
+        dictionary should also contain the key specified by ``cov_key``.
+    Y_bot : Source or None, optional
+        Bottom-level observations.
+    Y_hat : Source or None, optional
+        Bottom-level forecasts.
+    horizon : int, default=1
+        Forecast horizon.
+    mean_key : any, default="mean"
+        Key for accessing the mean predictions.
+    cov_key : any, optional
+        Key for accessing the covariance predictions.
+
+    Attributes
+    ----------
+    S : np.ndarray, shape (n_top + n_bot, n_bot)
+        Summation matrix.
+    prediction : Transformation
+        The underlying prediction transformation for bottom-level errors.
+    Y_bot : Source
+        Source node for bottom-level observations.
+    Y_hat : Source
+        Source node for hierarchical forecasts.
+
+    Notes
+    -----
+    For a summation matrix :math:`S`, bottom-level observations :math:`Y_{\text{bot}}`,
+    and base forecasts at the top and bottom levels :math:`\hat{Y}_{\text{top}}` and
+    :math:`\hat{Y}_{\text{bot}}`, the regression model is given by
+
+    .. math::
+
+        Y_{\text{bot}} - \hat{Y}_{\text{bot}} =
+        (\hat{Y}_{\text{top}} - \hat{Y}_{\text{bot}} S_{\text{top}}^T)\,\theta + E
+
+    where :math:`\theta` are the regression parameters, and :math:`E` is a  noise term.
+    Given a prediction of the bottom-level errors, the reconciled forecasts are 
+    constructed by shifting and scaling the predictions. Given a forecast of the mean of
+    the bottom-level errors :math:`\Delta_{\text{bot}}`, the reconciled mean forecasts
+    are computed as
+
+    .. math::
+        \hat{Y}_{\text{rec}} = (\hat{Y}_{\text{bot}} + \Delta_{\text{bot}}) S^T,
+
+    Given a forecast of the covariance of the bottom-level errors
+    :math:`\Sigma_{\text{bot}}`, reconciled forecast covariance is computed as
+
+    .. math::
+        S \tilde{\Sigma}_{\text{bot}} S^T.
+    """
+
+    def __init__(
+        self,
+        S_top,
+        prediction_factory,
+        Y_bot=None,
+        Y_hat=None,
+        horizon=1,
+        mean_key="mean",
+        cov_key=None,
+        full_cov=False,
+    ):
+        Y_bot = Y_bot or c.Source("Y_bot")
+        Y_hat = Y_hat or c.Source("Y_hat")
+
+        # Store inputs
+        self.S_top = S_top
+        self.S = np.vstack((S_top, np.eye(S_top.shape[1])))
+        self.Y_bot = Y_bot
+        self.Y_hat = Y_hat
+
+        # Construct the regression problem
+        nsm, m = S_top.shape
+
+        Y_hat_arr = f.ToArray(Y_hat)  # Ensure output of Y_hat is a numpy array.
+        Y_hat_top = Y_hat_arr[:, :nsm]  # First n-m columns
+        Y_hat_bot = Y_hat_arr[:, -m:]  # Last m columns
+
+        # Incoherence at top level
+        X = Y_hat_top - Y_hat_bot @ S_top.T
+
+        # Bottom level forecast errors
+        Y = Y_bot - f.Lag(Y_hat_bot, horizon)
+
+        # Construct the prediciton of bottom level errors
+        self.prediction = prediction_factory(X, Y)
+
+        # Get the predicted bottom level errors
+        err_bot_hat = self.prediction[mean_key]
+
+        # Construct the bottom level reconciled forecasts
+        Y_hat_rec_bot = Y_hat_bot + err_bot_hat
+
+        # Aggregate the reconciled forecasts to all levels of the hierarchy.
+        Y_hat_rec = Y_hat_rec_bot @ self.S.T
+
+        # Include covariance if provided.
+        self.full_cov = full_cov
+        if cov_key is None:
+            super().__init__(self.prediction, Y_hat_rec)
+        else:
+            cov_bot = self.prediction[cov_key]
+            super().__init__(self.prediction, Y_hat_rec, cov_bot=cov_bot)
+
+    def evaluate(self, prediction, Y_hat_rec, cov_bot=None):
+        """Return the reconciled results and original predictions.
+
+        Parameters
+        ----------
+        prediction : dict
+            The output of the underlying prediction transformation, containing at least
+            the key specified by ``mean_key`` with the predicted bottom-level errors.
+            If covariance predictions are also provided, the dictionary should also
+            contain the key specified by ``cov_key``.
+        Y_hat_rec : array of shape (t, n_top + n_bot)
+            Reconciled forecasts at all levels of the hierarchy.
+        cov_bot : array, optional
+            Predicted covariance at the bottom level, with shape either (t, n_bot) if
+            only diagonal variances are provided or (t, n_bot, n_bot) if full covariance
+            matrices are provided. If not provided, covariance is not included in the
+            output.
+
+        Returns
+        -------
+        dict
+            Dictionariy with keys ``"mean"`` and ``"cov"`` and
+            ``"bottom_level_prediction"`` containing reconciled forecasts, covariance
+            predictions, and original bottom-level error predictions
+        """
+        result = {"bottom_level_prediction": prediction, "mean": Y_hat_rec}
+
+        # Aggregate covariance if provided
+        if cov_bot is not None:
+            if cov_bot.ndim == 2:
+
+                t, n = cov_bot.shape
+
+                cov_bot_full = np.full((t, n, n), np.nan)
+
+                # Get mask for valid rows
+                valid_rows = ~np.any(np.isnan(cov_bot), axis=1)
+
+                # Initialise valid rows to zero
+                cov_bot_full[valid_rows] = 0
+
+                # Assign diagonal elements
+                ran = np.arange(n)
+                cov_bot_full[:, ran, ran] = cov_bot[:, ran]
+
+                cov_bot = cov_bot_full
+
+            # Compute reconciled variance S V[x] S.T
+            rec_var_est = self.S @ cov_bot @ self.S.T
+
+            # Fetch only diagonal? (TODO: consider doing self.S @ cov_bot @ self.S.T more efficiently if only diagonal is needed)
+            if not self.full_cov:
+                rec_var_est = np.diagonal(rec_var_est, axis1=1, axis2=2)
+
+            result["cov"] = rec_var_est
+
+        return result
+
+    @property
+    def X(self):
+        """Return the design matrix transformation from the underlying predictor."""
+        return self.prediction.X
+
+    @property
+    def Y(self):
+        """Return the target variable transformation from the underlying predictor."""
+        return self.prediction.Y
+
+    @property
+    def predictor(self):
+        """Return the underlying predictor."""
+        return self.recursion_pars[self.prediction][0]
+
+    def update(self, Y_bot, Y_hat, **kwargs):
+        """Update the model state with bottom-level observations and forecasts.
+
+        Parameters
+        ----------
+        Y_bot : array-like of shape (1, n_bot)
+            Bottom-level observations.
+        Y_hat : array-like of shape (1, n_bot)
+            New bottom-level forecasts.
+        **kwargs
+            Additional keyword arguments passed to transformations.
+
+        Returns
+        -------
+        dict
+            Dictionariy with keys ``"mean"`` and ``"cov"`` and
+            ``"bottom_level_prediction"`` containing reconciled forecasts, covariance
+            predictions, and original bottom-level error predictions.
+        """
+        return self({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, track_state=True, **kwargs)
+
+    def fit(self, Y_bot, Y_hat, **kwargs):
+        """Reset the model state and update.
+
+        See ``update`` for parameter descriptions.
+        """
+        self.reset_state()
+        return self({self.Y_bot: Y_bot, self.Y_hat: Y_hat}, **kwargs)
+
+class SRRRPredictor(p.RRRPredictor):
+    """Predictor for ridge regression with shrinkage priors.
+
+    This predictor extends :class:`~prediction.RRRPredictor` to include shrinkage
+    priors used in forecast reconciliation.
+
+    See :class:`SRRR` for details.
+    """
+
+    def __init__(
+        self,
+        S_top,
+        n,
+        m,
+        horizon,
+        burn_in,
+        init_K,
+        track_memory,
+        combine_variance,
+        full_cov,
+        center_cov=False,
+        mem=0.99,
+    ):
+        super().__init__(
+            n,
+            m,
+            horizon,
+            burn_in,
+            init_K,
+            track_memory,
+            combine_variance,
+            full_cov,
+            center_cov=center_cov,
+            mem=mem,
+        )
+        self.S_top = S_top
+        npm = n + m
+        self.sigma_bot_hat_d = np.zeros(m)
+        self.sigma_top_hat_d = np.zeros(n)
+        self.sigma_hat = np.zeros((npm, npm))
+        self.var_sigma_hat = np.zeros((npm, npm))
+        self.diag_mask = np.eye(npm, dtype=bool)
+
+    def update_prior(self, x_i, y_i, mem, l_shrink):
+        """Update the prior for ridge regression based on current error estimates.
+
+        The class supports fixed or automatically estimated shrinkage parameters. When
+        ``l_shrink`` is set to ``"auto"``, the shrinkage parameter is estimated based on
+        optimal shrinkage estimation, see Bergsteinsson et al. (2021) for details.
+
+        Parameters
+        ----------
+        x_i : ndarray of shape (n_features,)
+            Current input features for prediction.
+        y_i : ndarray of shape (n_targets,)
+            Current target observation for model update.
+        mem : float
+            Forgetting factor for this update.
+        l_shrink : float or "auto"
+            If float, the shrinkage parameter for the ridge regression prior. If "auto",
+            the shrinkage parameter is estimated from the current error estimates.
+
+        References
+        ----------
+        Bergsteinsson, H.G., Moller, J.K., Nystrup, P., Palsson, O.P., Guericke, D.,
+        Madsen, H., 2021. Heat load forecasting using adaptive temporal hierarchies.
+        Applied Energy 292, 116872.
+        https://doi.org/10.1016/j.apenergy.2021.116872
+        """
+        # Compute optimal Q and theta0 based on current error estimates
+        err_top = self.S_top @ y_i - x_i
+
+        if (
+            l_shrink == "auto"
+        ):  # Estimate shrinkage parameter using full covariance matrix
+
+            if mem == 1:
+                raise ValueError(
+                    "Automatic shrinkage parameter estimation is not supported for no forgetting (mem=1)."
+                )
+
+            err_full = np.append(err_top, y_i)
+
+            self.sigma_hat = mem * self.sigma_hat + (1 - mem) * np.outer(
+                err_full, err_full
+            )
+
+            err_sq = err_full**2
+            sigma_sq = self.sigma_hat**2
+
+            # Update higer order variance estimates
+            self.var_sigma_hat = (
+                mem * (1 - mem) ** 2 * (np.outer(err_sq, err_sq) - sigma_sq)
+                + mem**2 * self.var_sigma_hat
+            )
+
+            # Sum non-diagonal elements to estimate shrinkage parameter
+            l_shrink = (
+                np.where(self.diag_mask, 0, self.var_sigma_hat).sum()
+                / np.where(self.diag_mask, 0, sigma_sq).sum()
+            )
+
+            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[: self.n, : self.n]))
+            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n :, self.n :]))
+
+        else:  # Estimate covariance diagonal
+
+            # y_i contains bottom level errors
+            self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
+
+            # compute top level covariance from top level errors
+            self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
+
+            cov_top_hat_d = np.diag(self.sigma_top_hat_d)
+            cov_bot_hat_d = np.diag(self.sigma_bot_hat_d)
+
+        b0 = cov_top_hat_d + self.S_top @ cov_bot_hat_d @ self.S_top.T
+        b1 = self.S_top @ cov_bot_hat_d
+
+        Q = (
+            1 / (1 - mem) * (l_shrink / (1 - l_shrink)) * b0
+        )  # Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
+
+        theta0 = np.linalg.solve(b0, b1)
+
+        return Q, theta0
+
+    def online_update(
+        self,
+        x_i,
+        y_i,
+        x_train_i,
+        V=None,
+        update_V=True,
+        mem=None,
+        return_var_theta=False,
+        update_theta=True,
+        l_shrink="auto",
+    ):
+        """Return the online update for the predictor using shrinkage priors."""
+        if not (np.isnan(x_i).any() or np.isnan(y_i).any()):
+            Q, theta0 = self.update_prior(x_i, y_i, mem, l_shrink)
+        else:
+            update_theta = False
+            Q, theta0 = None, None
+        return super().online_update(
+            x_i,
+            y_i,
+            x_train_i,
+            Q,
+            theta0,
+            V,
+            update_V,
+            mem,
+            return_var_theta,
+            update_theta,
+        )
+
+class SRRR(p.RRR):
+    r"""Online recursive ridge regression with hierarchical shrinkage priors.
+
+    This wrapper around :class:`~prediction.RRR` uses :class:`SRRRPredictor` to
+    perform online recursive ridge regression with shrinkage priors for hierarchical
+    forecast reconciliation.
+
+    The prior is updated from the estimated top- and bottom-level error covariance
+    structure implied by
+
+    .. math::
+
+        Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}.
+
+    The resulting prior parameters are then passed to the recursive ridge update.
+
+    Parameters
+    ----------
+    S_top : np.ndarray, shape (n_top, n_bot)
+        Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
+        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
+    **kwargs
+        Additional keyword arguments passed to :class:`~prediction.RRR`.
+
+    See Also
+    --------
+    prediction.RRR : Base recursive ridge regression model.
+    SRRRPredictor : Predictor that updates the shrinkage prior online.
+    """
+
+    def __init__(self, X, Y, horizon, S_top, **kwargs):
+        super().__init__(X, Y, horizon, **kwargs)
+        self.S_top = S_top
+
+    def online_update(
+        self,
+        state: SRRRPredictor,
+        x_i,
+        y_i,
+        x_train_i,
+        V=None,
+        update_V=True,
+        mem=0.99,
+        return_var_theta=False,
+        update_theta=True,
+    ):
+        """Return the online update for the predictor using shrinkage priors."""
+        result = state.online_update(
+            x_i,
+            y_i,
+            x_train_i=x_train_i,
+            V=V,
+            update_V=update_V,
+            mem=mem,
+            return_var_theta=return_var_theta,
+            update_theta=update_theta,
+        )
+        return result, state
+
+    def create(
+        self,
+        n,
+        m,
+        burn_in,
+        init_K,
+        track_memory,
+        combine_variance,
+        full_cov,
+        center_cov,
+        mem,
+    ):
+        """Create and return SRRR predictor."""
+        return SRRRPredictor(
+            self.S_top,
+            n,
+            m,
+            self.horizon,
+            burn_in,
+            init_K,
+            track_memory,
+            combine_variance,
+            full_cov,
+            center_cov,
+            mem,
+        )
+
+
+class _TemporalRRRPredictor(p.RRRPredictor):
+    """Wrapper to skip duplicate data updates for temporal hierarchies.
+    
+    This class is needed to get correct signatures and handling for RRRPredictor.
+    """
+
+    def __init__(self, n, m, horizon, *args, **kwargs):
+        super().__init__(n, m, horizon, *args, **kwargs)
+        self.horizon = horizon
+        self.offset = 0
+
+    def online_update(
+        self,
+        x_i,
+        y_i,
+        x_train_i,
+        Q=None,
+        theta0=None,
+        V=None,
+        update_V=True,
+        mem=None,
+        return_var_theta=False,
+    ):
+        """Return the online update for the predictor, skipping duplicate data."""
+        update_theta = self.offset == 0
+        result = super().online_update(
+            x_i,
+            y_i,
+            x_train_i,
+            Q,
+            theta0,
+            V,
+            update_V,
+            mem,
+            return_var_theta,
+            update_theta,
+        )
+        self.offset = (self.offset + 1) % self.horizon
+        return result
+
+
+class _TemporalSRRRPredictor(SRRRPredictor):
+    """Wrapper to skip duplicate data updates for temporal hierarchies.
+    
+    This class is needed to get correct signatures and handling for SRRRPredictor.
+    """
+
+    def __init__(self, S_top, n, m, horizon, *args, **kwargs):
+        super().__init__(S_top, n, m, horizon, *args, **kwargs)
+        self.horizon = horizon
+        self.offset = 0
+
+    def online_update(
+        self,
+        x_i,
+        y_i,
+        x_train_i,
+        V=None,
+        update_V=True,
+        mem=None,
+        return_var_theta=False,
+        l_shrink="auto",
+    ):
+        """Return the online update for the predictor, skipping duplicate data."""
+        update_theta = self.offset == 0
+        result = super().online_update(
+            x_i,
+            y_i,
+            x_train_i,
+            V,
+            update_V,
+            mem,
+            return_var_theta,
+            update_theta,
+            l_shrink,
+        )
+        self.offset = (self.offset + 1) % self.horizon
+        return result
+
+
+class _TemporalRRR(p.RRR):
+    """Wrapper to skip duplicate data updates for temporal hierarchies.
+    
+    This class is needed to get correct signatures and handling for RRR.
+    """
+
+    def online_update(
+        self,
+        state: _TemporalRRRPredictor,
+        x_i,
+        y_i,
+        x_train_i,
+        Q=None,
+        theta0=None,
+        V=None,
+        update_V=True,
+        mem=0.99,
+        return_var_theta=False,
+    ):
+        result = state.online_update(
+            x_i, y_i, x_train_i, Q, theta0, V, update_V, mem, return_var_theta
+        )
+        return result, state
+
+    def create(
+        self,
+        n,
+        m,
+        burn_in,
+        init_K,
+        track_memory,
+        combine_variance,
+        full_cov,
+        center_cov,
+        mem,
+    ):
+        return _TemporalRRRPredictor(
+            n,
+            m,
+            self.horizon,
+            burn_in,
+            init_K,
+            track_memory,
+            combine_variance,
+            full_cov,
+            center_cov,
+            mem,
+        )
+
+
+class _TemporalSRRR(SRRR):
+    """Wrapper to skip duplicate data updates for temporal hierarchies.
+    
+    This class is needed to get correct signatures and handling for SRRR.
+    """
+    
+    def online_update(
+        self,
+        state: _TemporalSRRRPredictor,
+        x_i,
+        y_i,
+        x_train_i,
+        V=None,
+        update_V=True,
+        mem=None,
+        return_var_theta=False,
+        l_shrink="auto",
+    ):
+        result = state.online_update(
+            x_i, y_i, x_train_i, V, update_V, mem, return_var_theta, l_shrink
+        )
+        return result, state
+
+    def create(
+        self,
+        n,
+        m,
+        burn_in,
+        init_K,
+        track_memory,
+        combine_variance,
+        full_cov,
+        center_cov,
+        mem,
+    ):
+        return _TemporalSRRRPredictor(
+            self.S_top,
+            n,
+            m,
+            self.horizon,
+            burn_in,
+            init_K,
+            track_memory,
+            combine_variance,
+            full_cov,
+            center_cov,
+            mem,
+        )
+
+
+class RidgeReconciliation(HierarchicalForecastReconciliation):
     r"""Hierarchical forecast reconciliation using ridge regression.
 
     Reconciles forecasts across a hierarchy by predicting bottom-level base forecast
     errors using a linear model in the top-level coherency errors. The transformation
     uses :class:`~prediction.RRR` or optionally :class:`SRRR` to perform online
     estimation and prediction at the bottom level and constructs reconciled forecasts
-    by shifting and scaling the base forecast error predictions.
+    by shifting and scaling the base forecast error predictions. When 
+    ``temporal_skip=True``, wrapper classes are used internally instead, to restrict
+    parameter updates to every ``horizon`` steps, which may be desirable for temporal
+    hierarchies to avoid resuing observations for training.
 
     Parameters
     ----------
@@ -50,23 +708,15 @@ class RidgeReconciliation(c.Transformation):
     opt_shrink : bool, optional
         If ``True``, uses :class:`SRRR` with optimal covariance shrinkage to
         compute the prior for the ridge regression. Default is ``False``.
+    temporal_skip : bool, optional
+        If ``True``, the model parameters are only updated every ``horizon`` steps. May
+        be used for temporal hierarchies, to avoid reusing observations for training.
     **kwargs
         Additional keyword arguments passed to the underlying
         :class:`~prediction.RRR` or :class:`SRRR` predictor (e.g. ``mem``,
         ``burn_in``, ``init_K``, ``full_cov``). Note in particular when ``full_cov`` is
         False, only bottom level variances are used to estimate the full hierarchy
         covariance. Use ``full_cov=True`` for more accurate estimation.
-
-    Attributes
-    ----------
-    S : np.ndarray, shape (n, m)
-        Summation matrix.
-    prediction : RRR or SRRR
-        The underlying online prediction transformation.
-    Y_bot : Source
-        Source node for bottom-level observations.
-    Y_hat : Source
-        Source node for hierarchical forecasts.
 
     Notes
     -----
@@ -98,7 +748,8 @@ class RidgeReconciliation(c.Transformation):
 
     See Also
     --------
-    TemporalRidgeReconciliation : Wrapper for temporal hierarchies using backshift.
+    HierarchicalForecastReconciliation : General hierarchical forecast reconciliation
+    using arbitrary prediction models.
     prediction.RRR : Online recursive ridge regression used internally.
     SRRR : Ridge regression with optimal shrinkage prior.
     """
@@ -111,126 +762,32 @@ class RidgeReconciliation(c.Transformation):
         horizon=1,
         full_hierarchy_cov=False,
         opt_shrink=False,
+        temporal_skip=False,
         **kwargs,
     ):
 
-        Y_bot = Y_bot or c.Source("Y_bot")
-        Y_hat = Y_hat or c.Source("Y_hat")
+        def prediction_factory(X, Y):
+            if opt_shrink:
+                if temporal_skip:
+                    return _TemporalSRRR(X, Y, horizon, S_top, **kwargs)
+                else:
+                    return SRRR(X, Y, horizon, S_top, **kwargs)
+            else:
+                if temporal_skip:
+                    return _TemporalRRR(X, Y, horizon, **kwargs)
+                else:
+                    return p.RRR(X, Y, horizon, **kwargs)
 
-        self.Y_bot = Y_bot
-        self.Y_hat = Y_hat
-        self.rec_err = c.Source("rec_err")
-
-        self.S_top = S_top
-        nsm, m = S_top.shape
-        n = m + nsm
-        self._n, self._m = n, m
-
-        self.full_hierarchy_cov = full_hierarchy_cov
-        self.S = np.vstack((S_top, np.eye(S_top.shape[1])))
-
-        Y_hat_arr = f.ToArray(Y_hat)  # Ensure output of Y_hat is a numpy array.
-        Y_hat_top = Y_hat_arr[:, :nsm]  # First n-m columns
-        Y_hat_bot = Y_hat_arr[:, -m:]  # Last m columns
-
-        # Incoherence at top level
-        X = Y_hat_top - Y_hat_bot @ S_top.T
-
-        # Bottom level forecast errors
-        Y = Y_bot - f.Lag(Y_hat_bot, horizon)
-
-        if opt_shrink:
-            self.prediction = SRRR(X, Y, horizon, S_top, **kwargs)
-        else:
-            self.prediction = p.RRR(X, Y, horizon, **kwargs)
-
-        super().__init__(Y_hat_bot, self.prediction)
-
-    def evaluate(self, Y_hat_bot, pred):
-        """Evaluate reconciled forecasts and covariance from bottom-level inputs.
-
-        Parameters
-        ----------
-        Y_hat_bot : array-like of shape (t, n_bot)
-            Bottom-level base forecasts.
-        pred : dict
-            Output from the underlying predictor with keys:
-            ``"mean"`` (shape ``(t, n_bot)``) and ``"cov"`` (shape ``(t, n_bot)`` or
-            ``(t, n_bot, n_bot)``).
-
-        Returns
-        -------
-        dict
-            Copy of ``pred`` with reconciled outputs:
-            ``"mean"`` as shape ``(t, n_bot + n_top)``, and ``"cov"`` as shape
-            ``(t, n_bot + n_top)`` or ``(t, n_top + n_bot, n_top + n_bot)`` depending on
-            ``full_hierarchy_cov``.
-        """
-        if not isinstance(Y_hat_bot, np.ndarray):
-            Y_hat_bot = np.asarray(Y_hat_bot)
-
-        # Prepare result
-        res = pred.copy()
-
-        # Get predicted bottom level errors
-        err_bot_hat = pred["mean"]
-
-        # Reconciled bottom level forecasts
-        Y_bot_rec = Y_hat_bot + err_bot_hat
-
-        # Sum to get reconciled forecasts at all levels
-        Y_hat_rec = Y_bot_rec @ self.S.T
-
-        # Store reconciled forecasts in result
-        res["mean"] = Y_hat_rec
-
-        # Compute (co)variance
-        var_bot = pred["cov"]
-
-        # If variance is given as diagonal, convert to full covariance matrix (assuming zero correlations)
-        if var_bot.ndim == 2:
-
-            t, n = var_bot.shape
-
-            var_bot_full = np.full((t, n, n), np.nan)
-
-            # Get mask for valid rows
-            valid_rows = ~np.any(np.isnan(var_bot), axis=1)
-
-            # Initialise valid rows to zero
-            var_bot_full[valid_rows] = 0
-
-            # Assign diagonal elements
-            ran = np.arange(n)
-            var_bot_full[:, ran, ran] = var_bot[:, ran]
-
-            var_bot = var_bot_full
-
-        # Compute reconciled variance S V[x] S.T
-        rec_var_est = self.S @ var_bot @ self.S.T
-
-        # Fetch only diagonal? (TODO: consider doing self.S @ var_bot @ self.S.T more efficiently if only diagonal is needed)
-        if not self.full_hierarchy_cov:
-            rec_var_est = np.diagonal(rec_var_est, axis1=1, axis2=2)
-
-        res["cov"] = rec_var_est
-
-        return res
-
-    @property
-    def X(self):
-        """Return the design matrix transformation from the underlying predictor."""
-        return self.prediction.X
-
-    @property
-    def Y(self):
-        """Return the target variable transformation from the underlying predictor."""
-        return self.prediction.Y
-
-    @property
-    def predictor(self):
-        """Return the underlying predictor."""
-        return self.recursion_pars[self.prediction][0]
+        super().__init__(
+            S_top,
+            prediction_factory,
+            Y_bot,
+            Y_hat,
+            horizon,
+            mean_key="mean",
+            cov_key="cov",
+            full_cov=full_hierarchy_cov,
+        )
 
     def update(self, Y_bot, Y_hat, **kwargs):
         """Update the model state with bottom-level observations and forecasts.
@@ -341,11 +898,17 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
 
         # Construct backshift operator
         self.Z_bot = Z_bot or c.Source("Z_bot")
-        Y_bot = p.BackShift(B, skip_duplicates=skip_duplicates, data=self.Z_bot)
+        Y_bot = p.BackShift(B, data=self.Z_bot)
 
-        # Initialize Reconciler with lagged bottom level data as regressand input
         super().__init__(
-            S_top, Y_bot, Y_hat, horizon, full_hierarchy_cov, opt_shrink, **kwargs
+            S_top,
+            Y_bot=Y_bot,
+            Y_hat=Y_hat,
+            horizon=horizon,
+            full_hierarchy_cov=full_hierarchy_cov,
+            opt_shrink=opt_shrink,
+            temporal_skip=skip_duplicates,
+            **kwargs,
         )
 
     def update(self, Z_bot, Y_hat, **kwargs):
@@ -375,237 +938,6 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
         """
         self.reset_state()
         return self.update(Y_bot, Y_hat, **model_params)
-
-
-class SRRRPredictor(p.RRRPredictor):
-    """Predictor for ridge regression with shrinkage priors.
-
-    This predictor extends :class:`~prediction.RRRPredictor` to include shrinkage
-    priors used in forecast reconciliation.
-
-    See :class:`SRRR` for details.
-    """
-
-    def __init__(
-        self,
-        S_top,
-        n,
-        m,
-        burn_in,
-        init_K,
-        track_memory,
-        combine_variance,
-        full_cov,
-        center_cov=False,
-    ):
-        super().__init__(
-            n,
-            m,
-            burn_in,
-            init_K,
-            track_memory,
-            combine_variance,
-            full_cov,
-            center_cov=center_cov,
-        )
-        self.S_top = S_top
-        npm = n + m
-        self.sigma_bot_hat_d = np.zeros(m)
-        self.sigma_top_hat_d = np.zeros(n)
-        self.sigma_hat = np.zeros((npm, npm))
-        self.var_sigma_hat = np.zeros((npm, npm))
-        self.diag_mask = np.eye(npm, dtype=bool)
-
-    def update_prior(self, x_i, y_i, mem, l_shrink):
-        """Update the prior for ridge regression based on current error estimates.
-
-        The class supports fixed or automatically estimated shrinkage parameters. When
-        ``l_shrink`` is set to ``"auto"``, the shrinkage parameter is estimated based on
-        optimal shrinkage estimation, see Bergsteinsson et al. (2021) for details.
-
-        Parameters
-        ----------
-        x_i : ndarray of shape (n_features,)
-            Current input features for prediction.
-        y_i : ndarray of shape (n_targets,)
-            Current target observation for model update.
-        mem : float
-            Forgetting factor for this update.
-        l_shrink : float or "auto"
-            If float, the shrinkage parameter for the ridge regression prior. If "auto",
-            the shrinkage parameter is estimated from the current error estimates.
-
-        References
-        ----------
-        Bergsteinsson, H.G., Moller, J.K., Nystrup, P., Palsson, O.P., Guericke, D.,
-        Madsen, H., 2021. Heat load forecasting using adaptive temporal hierarchies.
-        Applied Energy 292, 116872.
-        https://doi.org/10.1016/j.apenergy.2021.116872
-        """
-        # Compute optimal Q and theta0 based on current error estimates
-        err_top = self.S_top @ y_i - x_i
-
-        if (
-            l_shrink == "auto"
-        ):  # Estimate shrinkage parameter using full covariance matrix
-
-            if mem == 1:
-                raise ValueError(
-                    "Automatic shrinkage parameter estimation is not supported for no forgetting (mem=1)."
-                )
-
-            err_full = np.append(err_top, y_i)
-
-            self.sigma_hat = mem * self.sigma_hat + (1 - mem) * np.outer(
-                err_full, err_full
-            )
-
-            err_sq = err_full**2
-            sigma_sq = self.sigma_hat**2
-
-            # Update higer order variance estimates
-            self.var_sigma_hat = (
-                mem * (1 - mem) ** 2 * (np.outer(err_sq, err_sq) - sigma_sq)
-                + mem**2 * self.var_sigma_hat
-            )
-
-            # Sum non-diagonal elements to estimate shrinkage parameter
-            l_shrink = (
-                np.where(self.diag_mask, 0, self.var_sigma_hat).sum()
-                / np.where(self.diag_mask, 0, sigma_sq).sum()
-            )
-
-            cov_top_hat_d = np.diag(np.diag(self.sigma_hat[: self.n, : self.n]))
-            cov_bot_hat_d = np.diag(np.diag(self.sigma_hat[self.n :, self.n :]))
-
-        else:  # Estimate covariance diagonal
-
-            # y_i contains bottom level errors
-            self.sigma_bot_hat_d = self.sigma_bot_hat_d * mem + (1 - mem) * y_i**2
-
-            # compute top level covariance from top level errors
-            self.sigma_top_hat_d = self.sigma_top_hat_d * mem + (1 - mem) * err_top**2
-
-            cov_top_hat_d = np.diag(self.sigma_top_hat_d)
-            cov_bot_hat_d = np.diag(self.sigma_bot_hat_d)
-
-        b0 = cov_top_hat_d + self.S_top @ cov_bot_hat_d @ self.S_top.T
-        b1 = self.S_top @ cov_bot_hat_d
-
-        Q = (
-            1 / (1 - mem) * (l_shrink / (1 - l_shrink)) * b0
-        )  # Consider using a better reperesentative of current memory than the limit 1/(1 - mem).
-
-        theta0 = np.linalg.solve(b0, b1)
-
-        return Q, theta0
-
-
-class SRRR(p.RRR):
-    r"""Online recursive ridge regression with hierarchical shrinkage priors.
-
-    This wrapper around :class:`~prediction.RRR` uses :class:`SRRRPredictor` to
-    perform online recursive ridge regression with shrinkage priors for hierarchical
-    forecast reconciliation.
-
-    The prior is updated from the estimated top- and bottom-level error covariance
-    structure induced by
-
-    .. math::
-
-        Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}.
-
-    The resulting prior parameters are then passed to the recursive ridge update.
-
-    Parameters
-    ----------
-    S_top : np.ndarray, shape (n_top, n_bot)
-        Summation matrix for top levels, i.e. the first ``n_top`` rows of the summation
-        matrix, satisfying :math:`Y_{\text{top}} = S_{\text{top}} Y_{\text{bot}}`.
-    **kwargs
-        Additional keyword arguments passed to :class:`~prediction.RRR`.
-
-    See Also
-    --------
-    prediction.RRR : Base recursive ridge regression model.
-    SRRRPredictor : Predictor that updates the shrinkage prior online.
-    """
-
-    def __init__(self, X, Y, horizon, S_top, **kwargs):
-        super().__init__(X, Y, horizon, **kwargs)
-        self.S_top = S_top
-
-    def create(
-        self,
-        n,
-        m,
-        burn_in,
-        init_K,
-        track_memory,
-        combine_variance,
-        full_cov,
-        center_cov,
-    ):
-        """Create and return SRRR predictor."""
-        return SRRRPredictor(
-            self.S_top,
-            n,
-            m,
-            burn_in,
-            init_K,
-            track_memory,
-            combine_variance,
-            full_cov,
-            center_cov=center_cov,
-        )
-
-    def online_update(
-        self,
-        state: SRRRPredictor,
-        x_i,
-        y_i,
-        x_train_i,
-        mem=0.99,
-        l_shrink="auto",
-        **kwargs,
-    ):
-        """Delegate single-step update to ``SRRRPredictor.online_update``.
-
-        Parameters
-        ----------
-        state : SRRRPredictor
-            Current state of the predictor.
-        Otherwise same as ``RRR.online_update``.
-
-        Returns
-        -------
-        result : dict
-            Prediction dictionary produced by ``SRRRPredictor.online_update``.
-        state : SRRRPredictor
-            Updated predictor instance.
-        """
-        x_ready = not np.isnan(x_i).any()
-        y_ready = not np.isnan(y_i).any()
-
-
-        # Distribute params
-        update_params = {
-            k: v for k, v in kwargs.items() if k in self.update_model_params
-        }
-        predict_params = {k: v for k, v in kwargs.items() if k in self.predict_params}
-
-        if x_ready and y_ready:
-
-            # Compute optimal Q and theta0 based on current error estimates
-            Q, theta0 = state.update_prior(x_i, y_i, mem, l_shrink)  # x_i or x_train_i?
-
-            # Call parent online_update with computed Q and theta0
-            result = state.online_update(x_i, y_i, x_train_i, Q, theta0, mem=mem, **update_params)
-        else:
-            result = state.online_predict(x_i, **predict_params)
-
-        # Return result and updated state
-        return result, state
 
 
 class Node:
@@ -1026,7 +1358,6 @@ def build_backshift(input_nodes, output_nodes):
 
     return B
 
-
 class LaggedNode(Node):
     """Class for lagged nodes in a temporal hierarchy.
 
@@ -1049,7 +1380,6 @@ class LaggedNode(Node):
     def shift(self):
         """Return a further lagged version of the node with lag increased by 1."""
         return self.sources[0].shift(self.lag + 1)
-
 
 def make_hierarchy(edges):
     """Construct a hierarchy of nodes from a dictionary of edges.

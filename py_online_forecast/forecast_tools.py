@@ -427,8 +427,9 @@ class DataCleaner(Transformation):
         track_memory=True,
         freq: str = None,
         var_forgetting: float = None,
+        sort_columns=False,
+        check_columns=True
     ):
-
         if freq is not None:
             data = Reindexer(freq, data)
 
@@ -443,12 +444,14 @@ class DataCleaner(Transformation):
             covariance=False,
             data=data,
         )
-        super().__init__(data, variance=variance, mean=mean, last_state=MEMORY)
+        super().__init__(data, variance=variance, mean=mean, state=MEMORY)
         self.z_thresh = z_thresh
         self.forward_fill = forward_fill
         self.freq = freq
+        self.sort_columns = sort_columns
+        self.check_columns = check_columns
 
-    def evaluate(self, data, variance, mean, last_state=None):
+    def evaluate(self, data, variance, mean, state=None):
         """Return cleaned data.
 
         Parameters
@@ -459,8 +462,8 @@ class DataCleaner(Transformation):
             Variance estimates for the data.
         mean : np.ndarray
             Mean estimates for the data.
-        last_state : pd.Series, optional
-            Last row of the cleaned data from the previous steps.
+        state : (pd.Series, pd.Index), optional
+            Last row of the cleaned data from the previous steps and its column index.
 
         """
         if not isinstance(data, pd.DataFrame):
@@ -475,18 +478,30 @@ class DataCleaner(Transformation):
         # Replace outliers with NaN
         data_cleaned = data.mask(outliers)
 
-        if last_state is not None:
-            # Fill first row with last state
-            filled_first_row = data_cleaned.iloc[[0]].fillna(value=last_state)
-            data_cleaned.iloc[0] = filled_first_row.iloc[0]
+        # Sort columns if needed
+        if self.sort_columns:
+            data_cleaned = data_cleaned.sort_index(axis=1)
 
+        if state is not None:
+            last_row, last_columns = state
+
+            # Check columns
+            if self.check_columns and not data_cleaned.columns.equals(last_columns):
+                raise ValueError(
+                    "Columns of data have changed since last step."
+                )
+
+            # Fill first row with last state
+            filled_first_row = data_cleaned.iloc[[0]].fillna(value=last_row)
+            data_cleaned.iloc[0] = filled_first_row.iloc[0]
+    
         if self.forward_fill:
             data_cleaned = data_cleaned.ffill()
 
         # Store last state
-        last_state = data_cleaned.iloc[-1]
+        state = (data_cleaned.iloc[-1], data_cleaned.columns)
 
-        return data_cleaned, last_state
+        return data_cleaned, state
 
 
 class RenameColumns(Transformation):
@@ -1123,11 +1138,11 @@ def _(source: ForgettingMean):
 
 @ForecastFormat.register_resolver(ForgettingVariance)
 def _(source: ForgettingVariance):
-    mean_formatter = ForecastFormat.get_formatter(source.apply_kwargs["data"])
+    mean_formatter = ForecastFormat.get_formatter(source.apply_args[0])
     if source.covariance:
 
         def formatter(value_source, state, memory=None):
-            formatted_mean = mean_formatter(source.apply_kwargs["data"], state, None)
+            formatted_mean = mean_formatter(source.apply_args[0], state, None)
 
             if memory is None:
 
