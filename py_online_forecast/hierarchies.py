@@ -54,6 +54,10 @@ class HierarchicalForecastReconciliation(c.Transformation):
         Key for accessing the mean predictions.
     cov_key : any, optional
         Key for accessing the covariance predictions.
+    full_cov : bool, default=False
+        Whether the covariance predictions are full covariance matrices or just diagonal
+        variances. If False, only the diagonal of the reconciled covariance is computed
+        and returned.
 
     Attributes
     ----------

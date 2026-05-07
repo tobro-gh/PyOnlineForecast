@@ -1457,7 +1457,7 @@ class Residuals(Transformation):
 
             # Stack old_vals and Y_hat vertically, then lag
             all_vals = pd.concat([old_vals, Y_hat], axis=0)
-            lagged = all_vals.fc.lag().loc[Y_hat.index]
+            lagged = all_vals.fc.lag().iloc[len(old_vals):]
 
         # Preallocate result dataframe
         result = pd.DataFrame(index=Y.index, columns = Y_hat.columns, dtype = float)

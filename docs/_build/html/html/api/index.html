@@ -1,0 +1,163 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py_online_forecast &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast.core module" href="py_online_forecast.core.html" />
+    <link rel="prev" title="Hierarchy example" href="../examples/hierarchy_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py_online_forecast</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.core.html">core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.features.html">features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">py_online_forecast</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="py-online-forecast">
+<h1>py_online_forecast<a class="headerlink" href="#py-online-forecast" title="Link to this heading"></a></h1>
+<p id="module-py_online_forecast">A package for online forecasting and reconciliation.</p>
+<p>The package provides tools for building data pipelines for online forecasting models.
+The package is built around the concept of <code class="docutils literal notranslate"><span class="pre">Source</span></code> objects that act as placeholders
+for data in the pipeline and <code class="docutils literal notranslate"><span class="pre">Transformation</span></code> objects that define data transformations
+on those sources. All transformations are also sources and can be used freely to compose
+new transformations. This defines a computational graphs from input root <code class="docutils literal notranslate"><span class="pre">Source</span></code>
+nodes to leaf <code class="docutils literal notranslate"><span class="pre">Transformation</span></code> nodes. Once data is available, any transformations in
+the graph may be resolved to produce output values, as long as all the required sources
+are provided. The package mostly uses <cite>numpy</cite> for data handling and manipulation.</p>
+<p>Various transformations are included in the <code class="docutils literal notranslate"><span class="pre">features</span></code> module of the package. These
+transformations are used without the rest of the package and may prove useful for other
+applications.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Prediction</span></code> transformations are included in the <code class="docutils literal notranslate"><span class="pre">prediction</span></code> module. They align
+lagged input features with new observations to train model parameters which are then
+used for making forecasts. A simple online forecasting model is included in the package
+through the <cite>RRR</cite> prediction. This class enables recursive estimation in a regularised
+linear model.</p>
+<p>Hierarchical forecast reconciliation can be done using the <code class="docutils literal notranslate"><span class="pre">hierarchies</span></code> module and
+the <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> transformation which uses the <code class="docutils literal notranslate"><span class="pre">RRR</span></code> prediction to estimate
+a linear model in the bottom level forecast errors.</p>
+<p>The package further includes some tools for working with data stored in formats typical
+for forecasting. We say that such data is stored as a forecast matrix. The tools use
+pandas and a custom accessor for working with forecast matrix data and defines some
+convenience functions and classes for creating data pipeliens using this data.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.core.html">core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.features.html">features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.prediction.html">prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.forecast_tools.html">forecast_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.hierarchies.html">hierarchies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="py_online_forecast.datasets.html">datasets</a></li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../examples/hierarchy_example.html" class="btn btn-neutral float-left" title="Hierarchy example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="py_online_forecast.core.html" class="btn btn-neutral float-right" title="py_online_forecast.core module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -338,7 +338,7 @@ class Transformation(Source):
         copy_data=True,
         track_state=False,
         formatter: Format = None,
-        keywords=None,
+        targeted_params = None,
         **params,
     ):
         """Evaluate the transformation with given data.
@@ -365,10 +365,12 @@ class Transformation(Source):
             If True, store recursion state for future calls.
         formatter : Format, optional
             Formatter to apply to results.
-        keywords : dict, optional
-            Mapping of keyword names to values.
+        targeted_params : dict, optional
+            Parameters to pass to specific transformations. Keys should be
+            transformations and values should be dicts mapping parameter names to
+            values.
         **params : Any
-            Additional parameters for free parameters or nested transforms.
+            Parameters to pass to the evaluate method of this transformation.
         
         Returns
         -------
@@ -391,16 +393,13 @@ class Transformation(Source):
             else:
                 recursion_pars = {}
 
-        new_recursion_pars = {}
+        targeted_params = targeted_params or {}
 
-        targeted_params = params.get(self, {})
+        new_recursion_pars = {}
 
         # Load memory from provided recursion pars
         if memory is None:
             memory = recursion_pars.get(self, None)
-
-        if keywords is None:
-            keywords = {}
 
         # Check inputs
         for name, val in self._apply_pairs:
@@ -415,9 +414,6 @@ class Transformation(Source):
 
             elif val is STATE:
                 t_val = data.copy()  # Pass all data computed so far
-
-            elif val in targeted_params:
-                t_val = targeted_params[val]
 
             elif val in params:
                 t_val = params[val]
@@ -435,9 +431,6 @@ class Transformation(Source):
 
                 data[val] = t_val  # Store in data for potential reuse
 
-            elif val in keywords:
-                t_val = keywords[val]
-
             else:
                 raise ValueError(f"Missing data for input: {val} in {self}.")
 
@@ -447,11 +440,17 @@ class Transformation(Source):
             else:
                 evaluate_kwargs[name] = t_val
 
+        if self in targeted_params:
+            for p_name, p_val in targeted_params[self].items():
+                if p_name in evaluate_kwargs:
+                    raise ValueError(f"Parameter {p_name} for {self} multiply specified.")
+                evaluate_kwargs[p_name] = p_val
+
         # Check for free parameters
         for p in self._free_params:
-            if p in targeted_params:
-                evaluate_kwargs[p] = targeted_params[p]
-            elif p in params:
+            if p in params:
+                if p in evaluate_kwargs:
+                    raise ValueError(f"Parameter {p} for {self} multiply specified.")
                 evaluate_kwargs[p] = params[p]
 
         # If evaluate accepts var kwargs, pass all params not already used for specific inputs

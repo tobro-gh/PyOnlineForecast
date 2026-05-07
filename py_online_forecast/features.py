@@ -7,7 +7,7 @@ models.
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
-from .core import DEFAULT_SOURCE, MEMORY, CircularBuffer, Dim, Transformation
+from .core import DEFAULT_SOURCE, MEMORY, CircularBuffer, Dim, Transformation, Source
 
 
 ### Transformations
@@ -660,14 +660,78 @@ class Periodic(Transformation):
     
 class Difference(Transformation):
     """Compute the difference along the first dimension."""
+
     def __init__(self, data):
         data = ToArray(data)
         super().__init__(data = data, prev_value = MEMORY)
 
     def evaluate(self, data, prev_value = None):
+        """Return the difference along the first dimension of the input data."""
         if prev_value is None:
             prev_value = np.full(data.shape[1:], np.nan)
         data = np.vstack((prev_value, data))
         diff = np.diff(data, axis = 0)
         new_prev_value = data[-1]
         return diff, new_prev_value
+    
+class Map(Transformation):
+    """Apply a transformation to multiple inputs.
+    
+    Parameters
+    ----------
+    transformation : Transformation
+        The transformation to apply to the inputs.
+    *mapping : iterable of dict or Source
+        An iterable of input mappings. Each mapping should be either a dict or a Source.
+        If a dict, each key should be a dependency of the transformation, and the
+        corresponding value should be the source to map from. If a Source, it is assumed
+        to be the only dependency (DEFAULT_SOURCE) for the transformation.
+    names : list, optional
+        The names to use for the outputs of the transformation. If provided, the output
+        will be a dict mapping names to the corresponding outputs. If not provided, the
+        output is a list ordered as the input mappings.
+    """
+    
+    def __init__(self, transformation, *mapping, names = None):
+
+        if names is not None and len(names) != len(mapping):
+            raise ValueError("Length of names must match number of mappings.")
+        self.names = names
+
+        standard_mapping = []
+        for m in mapping:
+            if isinstance(m, Source):
+                standard_mapping.append({DEFAULT_SOURCE: m})
+            elif isinstance(m, dict):
+                standard_mapping.append(m)
+            else:
+                raise ValueError(f"Mapping should be either a dict or a Source, got {type(m)}.")
+
+        sources = set()
+        for m in standard_mapping:
+            sources.update(m.values())
+            
+        self.transform_sources = list(sources)
+        self.mapping = standard_mapping
+        super().__init__(*self.transform_sources, states = MEMORY)
+        self.transformation = transformation
+    
+    def evaluate(self, *data, states = None):
+        """Apply the transformation to the input data."""
+        results = []
+        if states is None:
+            states = [None] * len(self.mapping)
+
+        for i, m in enumerate(self.mapping):
+            mapped_data = {dep: data[self.transform_sources.index(src)] for dep, src in m.items()}
+            result, state = self.transformation(mapped_data, recursion_pars = states[i], return_recursion_pars = True)
+            results.append(result)
+            states[i] = state
+        
+        if self.names is not None:
+            results = {name: res for name, res in zip(self.names, results)}
+
+        return results, states
+
+
+

@@ -1,0 +1,924 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast example &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hierarchy example" href="hierarchy_example.html" />
+    <link rel="prev" title="Basics" href="basics.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Basics</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Forecast example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Data-&amp;-forecast-matrices">Data &amp; forecast matrices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Forecasting">Forecasting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Hyperparameter-optimization">Hyperparameter optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hierarchy_example.html">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">py_online_forecast</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Forecast example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/forecast_example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Forecast-example">
+<h1>Forecast example<a class="headerlink" href="#Forecast-example" title="Link to this heading"></a></h1>
+<p>This notebook provides a basic example of forecasting using the PyOnlineForecast package.</p>
+<p>The notebook covers</p>
+<ul class="simple">
+<li><p>Working with data in “forecast matrix” format</p></li>
+<li><p>Basic prediction using `<code class="docutils literal notranslate"><span class="pre">WLS</span></code></p></li>
+<li><p>Recursive ridge regression and prediction using <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code></p></li>
+<li><p>Making ensembles for multi-horizon forecasting using <code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code></p></li>
+<li><p>Suggestion for hyper parameter optimization</p></li>
+</ul>
+<p>We will use an artificial dataset from the <code class="docutils literal notranslate"><span class="pre">datasets</span></code> module.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.forecast_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subset</span>
+</pre></div>
+</div>
+</div>
+<section id="Data-&amp;-forecast-matrices">
+<h2>Data &amp; forecast matrices<a class="headerlink" href="#Data-&-forecast-matrices" title="Link to this heading"></a></h2>
+<p>The sample data is a pandas dataframe obeying the “forecast matrix” format. This means that the columns are a two level <code class="docutils literal notranslate"><span class="pre">MultiIndex</span></code> and that the (row) index is evenly spaced and monotonically increasing. We start by subsetting the data using the <code class="docutils literal notranslate"><span class="pre">fc</span></code> accessor, purpose built for working with data in this format.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">horizons</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">200</span><span class="p">]</span>
+<span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>energy</th>
+      <th>Taobs</th>
+      <th colspan="3" halign="left">Ta</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>0</th>
+      <th>0</th>
+      <th>1</th>
+      <th>2</th>
+      <th>4</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>51.531885</td>
+      <td>15.668848</td>
+      <td>14.732529</td>
+      <td>18.112065</td>
+      <td>18.771499</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>50.988901</td>
+      <td>16.327964</td>
+      <td>18.274593</td>
+      <td>18.991357</td>
+      <td>18.759832</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>50.479686</td>
+      <td>18.319822</td>
+      <td>15.477482</td>
+      <td>22.260192</td>
+      <td>19.841512</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>50.420587</td>
+      <td>20.230697</td>
+      <td>15.111263</td>
+      <td>20.589555</td>
+      <td>19.198036</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>56.704199</td>
+      <td>19.268107</td>
+      <td>17.443227</td>
+      <td>20.205426</td>
+      <td>18.872228</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>The forecast matrix prescribes that the columns should contain variable names and integer horizons. This way, the <span class="math notranslate nohighlight">\(i´th\)</span> row contains all data made available at the corresponding time, and forecasts are made for row <span class="math notranslate nohighlight">\(i+horizon\)</span>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">fc</span></code> accessor defines convenience methods for working with such data,</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">subset</span></code> subsets data by variable names and horizon</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lag</span></code> lags data according to the forecast horizon to align data with the time forecasts are made for</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">assert_format</span></code> asserts whether the dataframe conforms to the forecast matrix format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convert</span></code> converts nearly compatible dataframes to the format</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Subset data</span>
+<span class="n">subset_data</span>  <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="s2">&quot;Ta&quot;</span><span class="p">,</span> <span class="n">horizons</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+<span class="c1"># Lag data</span>
+<span class="n">lagged_data</span> <span class="o">=</span> <span class="n">subset_data</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span>
+
+<span class="c1"># Assert format</span>
+<span class="n">subset_data</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">assert_format</span><span class="p">()</span>
+
+<span class="c1"># Convert to forecast format</span>
+<span class="n">converted_data</span> <span class="o">=</span> <span class="n">lagged_data</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">convert</span><span class="p">()</span>
+
+<span class="n">converted_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>energy</th>
+      <th colspan="2" halign="left">Ta</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>0</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>51.531885</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>50.988901</td>
+      <td>14.732529</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>50.479686</td>
+      <td>18.274593</td>
+      <td>18.112065</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>50.420587</td>
+      <td>15.477482</td>
+      <td>18.991357</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>56.704199</td>
+      <td>15.111263</td>
+      <td>22.260192</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+<section id="Forecasting">
+<h2>Forecasting<a class="headerlink" href="#Forecasting" title="Link to this heading"></a></h2>
+<p>Our goal is now to model the <code class="docutils literal notranslate"><span class="pre">energy</span></code> variable based on temperature observations <code class="docutils literal notranslate"><span class="pre">Taobs</span></code> and forecasted temperatures <code class="docutils literal notranslate"><span class="pre">Ta</span></code>. First we define model features,</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Target variable</span>
+<span class="n">energy</span> <span class="o">=</span> <span class="n">DEFAULT_SOURCE</span><span class="p">[[</span><span class="s2">&quot;energy&quot;</span><span class="p">]]</span>
+
+<span class="c1"># Exogenous variables</span>
+<span class="n">taobs</span> <span class="o">=</span> <span class="n">DEFAULT_SOURCE</span><span class="p">[[</span><span class="s2">&quot;Taobs&quot;</span><span class="p">]]</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">Subset</span><span class="p">(</span><span class="n">DEFAULT_SOURCE</span><span class="p">,</span> <span class="s2">&quot;Ta&quot;</span><span class="p">,</span> <span class="n">horizons</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+<span class="n">const</span> <span class="o">=</span> <span class="n">One</span><span class="p">()</span>
+
+<span class="c1"># Low-pass filter</span>
+<span class="n">lp_Taobs</span> <span class="o">=</span> <span class="n">LowPass</span><span class="p">(</span><span class="n">taobs</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">lp_Ta</span> <span class="o">=</span> <span class="n">LowPass</span><span class="p">(</span><span class="n">ta</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="c1"># Construct the design matrix</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">DesignMatrix</span><span class="p">(</span><span class="n">const</span><span class="p">,</span> <span class="n">lp_Taobs</span><span class="p">,</span> <span class="n">lp_Ta</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<p>We can then create a simple weighted least squares model using the <code class="docutils literal notranslate"><span class="pre">WLS</span></code> class,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set a prediction model using weighted least squares (WLS)</span>
+<span class="n">pred</span> <span class="o">=</span> <span class="n">WLS</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Make predictions</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">pred</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="c1"># Produces a dict with a key &quot;mean&quot;</span>
+<span class="n">result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">][:</span><span class="mi">5</span><span class="p">]</span> <span class="c1"># Print the first 5 predictions</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[50.53197728],
+       [50.84301371],
+       [50.21675878],
+       [49.23751956],
+       [49.11157806]])
+</pre></div></div>
+</div>
+<p>Note, the output does not use the forecast matrix format, unless we set it using the <code class="docutils literal notranslate"><span class="pre">ForecastFormat</span></code>,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.forecast_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastFormat</span>
+<span class="n">pred</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="n">ForecastFormat</span><span class="p">)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">pred</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="c1"># Produces a dict with keys &quot;mean&quot;</span>
+<span class="n">result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span> <span class="c1"># Output is now a DataFrame</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>energy</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>50.531977</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>50.843014</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>50.216759</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>49.237520</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>49.111578</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Plot the predicted mean versus the observations</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>  <span class="c1"># Shift predictions 1 hour ahead</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Observations&quot;</span><span class="p">,</span> <span class="s2">&quot;Forecast&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_forecast_example_12_0.png" src="../_images/examples_forecast_example_12_0.png" />
+</div>
+</div>
+<p>For online forecasting, the <code class="docutils literal notranslate"><span class="pre">RRR</span></code> transformation or the <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> wrapper are better suited, as they use recursive updating schemes. The <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> is especially convenient, as it automatically formas a <code class="docutils literal notranslate"><span class="pre">DesignMatrix</span></code> from a tuple of input features and uses the <code class="docutils literal notranslate"><span class="pre">ForecastFormat</span></code>. It also exposes a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method, which resets the state of the <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> transformation and then calls it on the data.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create tuple of features</span>
+<span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="p">,</span> <span class="n">lp_Taobs</span><span class="p">,</span> <span class="n">lp_Ta</span><span class="p">)</span>
+
+<span class="c1"># Create the model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ForecastModel</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">track_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">init_K</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">)</span>
+
+<span class="c1"># Fit the model using the &quot;fit&quot; method</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Plot the predictions</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="c1"># Plot the mean prediction</span>
+<span class="n">lagged_mean</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># Shift predictions 1 hour ahead</span>
+<span class="n">lagged_mean</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+
+<span class="c1"># Plot prediction interval</span>
+<span class="n">lagged_cov</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;cov&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># Shift covariance 1 hour ahead</span>
+<span class="n">lower</span> <span class="o">=</span> <span class="n">lagged_mean</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">lagged_cov</span><span class="p">))</span>
+<span class="n">upper</span> <span class="o">=</span> <span class="n">lagged_mean</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">lagged_cov</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">)</span>
+
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Observations&quot;</span><span class="p">,</span> <span class="s2">&quot;Forecast&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_forecast_example_15_0.png" src="../_images/examples_forecast_example_15_0.png" />
+</div>
+</div>
+<p>Multivariate targets are supported with a similar setup,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target</span> <span class="o">=</span> <span class="n">DEFAULT_SOURCE</span><span class="p">[[</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="s2">&quot;Taobs&quot;</span><span class="p">]]</span>
+<span class="n">model_multi</span> <span class="o">=</span> <span class="n">ForecastModel</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">track_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">init_K</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">)</span>
+<span class="n">result_multi</span> <span class="o">=</span> <span class="n">model_multi</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Plot the predicted mean versus the observations</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;Taobs&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">result_multi</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Energy Observations&quot;</span><span class="p">,</span> <span class="s2">&quot;Taobs Observations&quot;</span><span class="p">,</span> <span class="s2">&quot;Energy Forecast&quot;</span><span class="p">,</span> <span class="s2">&quot;Taobs Forecast&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_forecast_example_17_0.png" src="../_images/examples_forecast_example_17_0.png" />
+</div>
+</div>
+<p>Online updates can be emulated by passing data points one at a time. Most transforms tacitly assume that the first axis of inputs correspond to observations. For single samples, we should therefore pass a dataframe with a single row as input.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Subset data</span>
+<span class="n">subsets</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">i</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))]</span>
+
+<span class="c1"># Reset model for proper comparison</span>
+<span class="n">model</span><span class="o">.</span><span class="n">reset_state</span><span class="p">()</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Update model with each data subset</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">subsets</span><span class="p">:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+    <span class="n">predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+<span class="c1"># Compare predictions with the previous results</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">predictions</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="mi">1</span><span class="p">:])</span>
+<span class="p">)</span>  <span class="c1"># Should be True</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<p>When forecasting multiple horizons, several approaches are possible. One approach is the create a separate model for each horizon. This is supported by the <code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code> transformation, which instantiates <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> for each horizon it is given. We begin by making a new model for the second horizon,</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a new model for 2-hour ahead forecasts</span>
+<span class="n">ta2</span> <span class="o">=</span> <span class="n">Subset</span><span class="p">(</span><span class="n">DEFAULT_SOURCE</span><span class="p">,</span> <span class="s2">&quot;Ta&quot;</span><span class="p">,</span> <span class="n">horizons</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,))</span>  <span class="c1"># Use all available forecasts of Ta</span>
+
+<span class="c1"># Low-pass filter for the new model</span>
+<span class="n">lp_Ta2</span> <span class="o">=</span> <span class="n">LowPass</span><span class="p">(</span><span class="n">ta2</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="n">X2</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="p">,</span> <span class="n">lp_Taobs</span><span class="p">,</span> <span class="n">lp_Ta2</span><span class="p">)</span>
+
+<span class="c1"># We then make a prediction for the 2-hour ahead forecast</span>
+<span class="n">model_2h</span> <span class="o">=</span> <span class="n">ForecastModel</span><span class="p">(</span><span class="n">X2</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">track_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">init_K</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">)</span>
+
+<span class="c1"># Note, we can still run the prediction as a standalone object</span>
+<span class="n">ref_1h</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ref_2h</span> <span class="o">=</span> <span class="n">model_2h</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>With this setup, some transformations are evaluated multiple times; first when <code class="docutils literal notranslate"><span class="pre">model</span></code> is called, then when <code class="docutils literal notranslate"><span class="pre">model_2h</span></code> is called. To avoid this, we can use <code class="docutils literal notranslate"><span class="pre">Combine</span></code> to evaluate both in one call,</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">models</span> <span class="o">=</span> <span class="n">Combine</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_2h</span><span class="p">)</span>
+
+<span class="c1"># Apply the combined model</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">models</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Results are returned in a dict indexed by the individual transforms (models),</span>
+<span class="n">result_model_1h</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">model</span><span class="p">]</span>
+<span class="n">result_model_2h</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">model_2h</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result_model_1h</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>energy</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>52.477670</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>54.352502</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>50.405863</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>56.399926</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result_model_2h</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>energy</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>53.309106</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>43.747420</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>19.704705</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Finally, we can achieve this more easily using the <code class="docutils literal notranslate"><span class="pre">ForecastEnsemble</span></code> class.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First, get all forecasts of Ta</span>
+<span class="n">ta_all</span> <span class="o">=</span> <span class="n">DEFAULT_SOURCE</span><span class="p">[[</span><span class="s2">&quot;Ta&quot;</span><span class="p">]]</span>
+
+<span class="c1"># Apply low-pass filters to all forecasts of Ta.</span>
+<span class="n">lp_Ta_all</span> <span class="o">=</span> <span class="n">LowPass</span><span class="p">(</span><span class="n">ta_all</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">Xall</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="p">,</span> <span class="n">lp_Taobs</span><span class="p">,</span> <span class="n">lp_Ta_all</span><span class="p">)</span>
+<span class="n">horizon_models</span> <span class="o">=</span> <span class="n">ForecastEnsemble</span><span class="p">(</span>
+    <span class="n">Xall</span><span class="p">,</span>
+    <span class="n">energy</span><span class="p">,</span>
+    <span class="n">horizons</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">input_horizons</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">track_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">init_K</span><span class="o">=</span><span class="mf">0.00001</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Then fit the ensemble as normal</span>
+<span class="n">horizon_result</span> <span class="o">=</span> <span class="n">horizon_models</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">horizon_result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th colspan="2" halign="left">energy</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2130-01-01 00:00:00</th>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 01:00:00</th>
+      <td>52.477670</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 02:00:00</th>
+      <td>54.352502</td>
+      <td>53.309106</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 03:00:00</th>
+      <td>50.405863</td>
+      <td>43.747420</td>
+    </tr>
+    <tr>
+      <th>2130-01-01 04:00:00</th>
+      <td>56.399926</td>
+      <td>19.704705</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensembles can also be updated in an online fashion</span>
+<span class="n">horizon_models</span><span class="o">.</span><span class="n">reset_state</span><span class="p">()</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">subsets</span><span class="p">:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">horizon_models</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+    <span class="n">predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Compare (except two first rows, as they contain NaNs)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">horizon_result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">predictions</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()[</span><span class="mi">2</span><span class="p">:])</span>
+<span class="p">)</span>  <span class="c1"># Should be True</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+</section>
+<section id="Hyperparameter-optimization">
+<h2>Hyperparameter optimization<a class="headerlink" href="#Hyperparameter-optimization" title="Link to this heading"></a></h2>
+<p>Hyperparameters are not optimized for in the forecast models. Instead we may manually change parameters and define an outer loop optimization procedure. As an example, consider a slow trend in the data</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># For a non-trivial case, we add a slow trend in the data</span>
+<span class="n">trend_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">trend_data</span><span class="p">[(</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">+=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trend_data</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Then we can use the <code class="docutils literal notranslate"><span class="pre">set_score_mode</span></code> of the model to compute a “score” field in the output. The <code class="docutils literal notranslate"><span class="pre">set_score_mode</span></code> is special to <code class="docutils literal notranslate"><span class="pre">Prediction</span></code> transformations, e.g. <code class="docutils literal notranslate"><span class="pre">ForecastModel</span></code> and <code class="docutils literal notranslate"><span class="pre">RRR</span></code>. The method asks the prediction model to also call a score function, which in this case computes the RMSE.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+
+<span class="c1"># Set score mode to true</span>
+<span class="n">model</span><span class="o">.</span><span class="n">set_score_mode</span><span class="p">()</span>
+
+<span class="c1"># Define objective in transformation parameters</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">obj</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">alpha</span><span class="p">,</span> <span class="n">mem</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">lp_Taobs</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+    <span class="n">lp_Ta</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">trend_data</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="n">mem</span><span class="p">)[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>
+
+<span class="c1"># Run the minimization</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Nelder-Mead&quot;</span><span class="p">)</span>
+<span class="n">res</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+       message: Optimization terminated successfully.
+       success: True
+        status: 0
+           fun: 5.700395088827669
+             x: [ 3.377e-01  9.324e-01]
+           nit: 63
+          nfev: 120
+ final_simplex: (array([[ 3.377e-01,  9.324e-01],
+                       [ 3.378e-01,  9.324e-01],
+                       [ 3.377e-01,  9.324e-01]]), array([ 5.700e+00,  5.700e+00,  5.700e+00]))
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basics.html" class="btn btn-neutral float-left" title="Basics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hierarchy_example.html" class="btn btn-neutral float-right" title="Hierarchy example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

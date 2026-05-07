@@ -1,0 +1,853 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hierarchy example &mdash; PyOnlineForecast  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py_online_forecast" href="../api/index.html" />
+    <link rel="prev" title="Forecast example" href="forecast_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyOnlineForecast
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="forecast_example.html">Forecast example</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Hierarchy example</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">py_online_forecast</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyOnlineForecast</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Hierarchy example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/hierarchy_example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Hierarchy-example">
+<h1>Hierarchy example<a class="headerlink" href="#Hierarchy-example" title="Link to this heading"></a></h1>
+<p>This notebook provides a toy example on how to perform hierarchical reconciliation using the PyOnlineForecast package.</p>
+<p>It uses artificial data from an AR(2) process (Møller et al., 2024). The case uses a temporal hierarchy,</p>
+<div class="math notranslate nohighlight">
+\[Y_{A, t} = Y_{H, t-1} + Y_{H, t}.\]</div>
+<p>i.e. the “annual” level is defined in terms of the two past “half-year” observations. The notebook covers,</p>
+<ul class="simple">
+<li><p>use of <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> for temporal hierarchies,</p></li>
+<li><p>use of <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> for general hierarchies</p></li>
+</ul>
+<p>We begin by importing the simulated data and base forecasts,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_hierarchical_data</span> <span class="k">as</span> <span class="n">data</span>
+<span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Y_A</th>
+      <th>Y_H</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>0</th>
+      <th>0</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-4.106624</td>
+      <td>-2.899548</td>
+      <td>-3.833273</td>
+      <td>-2.652854</td>
+      <td>-2.427148</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-5.258503</td>
+      <td>-2.358955</td>
+      <td>-4.913041</td>
+      <td>-2.157604</td>
+      <td>-1.973439</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-5.507629</td>
+      <td>-3.148674</td>
+      <td>-5.147808</td>
+      <td>-2.882293</td>
+      <td>-2.638449</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-6.273564</td>
+      <td>-3.124891</td>
+      <td>-5.869046</td>
+      <td>-2.861292</td>
+      <td>-2.619928</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-6.357276</td>
+      <td>-3.232386</td>
+      <td>-5.949235</td>
+      <td>-2.960922</td>
+      <td>-2.712257</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>The data is organized so that the i´th row contains the annual observations, <span class="math notranslate nohighlight">\(Y_{A,i}\)</span>, half-year observations <span class="math notranslate nohighlight">\(Y_{H,i}\)</span>, annual prediction <span class="math notranslate nohighlight">\(\hat{Y}_{A, t+2}\)</span> and half year predictions <span class="math notranslate nohighlight">\(\hat{Y}_{H,i+1}\)</span>, <span class="math notranslate nohighlight">\(\hat{Y}_{H,i+2}\)</span>.</p>
+<p>To perform forecast reconciliation, we first use the <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> class to model the data directly as a temporal hierarchy. This means defining a summation matrix to encode the hierarchy, and a back-shift structure to map bottom level observations <span class="math notranslate nohighlight">\(Y_{H,i}\)</span>, <span class="math notranslate nohighlight">\(i = 1, 2, ...\)</span> to the bottom level of the hierarchy, i.e. the vector <span class="math notranslate nohighlight">\((Y_{H, i-1}, Y_{H, i})\)</span>. Behind the scens, the class uses <code class="docutils literal notranslate"><span class="pre">RRR</span></code> from the <code class="docutils literal notranslate"><span class="pre">prediciton</span></code> module. This means parameters are updated
+recursively for every new row of data. When back-shifting the bottom level observations, we may choose to skip intermediate rows to avoid reusing data which would otherwise be duplicated for each lag. This behaviour is detailed in the <code class="docutils literal notranslate"><span class="pre">BackShift</span></code> transformation of the <code class="docutils literal notranslate"><span class="pre">prediction</span></code> module.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.hierarchies</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalRidgeReconciliation</span>
+
+<span class="c1"># Define the summation matrix</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">S_top</span> <span class="o">=</span> <span class="n">S</span><span class="p">[[</span><span class="mi">0</span><span class="p">]]</span>
+
+<span class="c1"># Define the back-shift structure</span>
+<span class="n">B</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># [Y_{H,t-1}, Y_{H,t-0}]</span>
+
+<span class="c1"># Define the reconciler</span>
+<span class="n">temporal_reconciler</span> <span class="o">=</span> <span class="n">TemporalRidgeReconciliation</span><span class="p">(</span>
+    <span class="n">S_top</span><span class="p">,</span>                      <span class="c1"># Summation matrix for top level</span>
+    <span class="n">B</span><span class="p">,</span>                          <span class="c1"># Back-shift structure</span>
+    <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>              <span class="c1"># Whether to estimate full covariance in bottom levels</span>
+    <span class="n">skip_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>       <span class="c1"># Whether to skip duplicate lagged data</span>
+    <span class="n">opt_shrink</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>           <span class="c1"># Whether to use ``SRRR`` instead of ``RRR``</span>
+    <span class="n">full_hierarchy_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>   <span class="c1"># Whether to output full covariance matrix of hierarchy</span>
+<span class="p">)</span>
+
+<span class="c1"># We also set the ForecastFormat to ensure outputs are formatted similarly to inputs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.forecast_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastFormat</span>
+<span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="n">ForecastFormat</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p>Note: by default, <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> will infer the prediction horizon based on the back-shift structure, as <span class="math notranslate nohighlight">\(\max(B) + 1\)</span>. This behaviour can be overwritten by explicitly passing the <code class="docutils literal notranslate"><span class="pre">horizon</span></code> argument.</p>
+</div></blockquote>
+<p>To apply the reconciler, we can use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method,</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the data</span>
+<span class="n">data_Y_hat</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;pred_Y_A&quot;</span><span class="p">,</span><span class="s2">&quot;pred_Y_H&quot;</span><span class="p">]]</span>
+<span class="n">data_Y_bot</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;Y_H&quot;</span><span class="p">]]</span>
+
+<span class="c1"># Fit the reconciler</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_Y_bot</span><span class="p">,</span> <span class="n">data_Y_hat</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The result is a dict, with predicted means under the “mean” key,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-6.543789</td>
+      <td>-3.352806</td>
+      <td>-3.190983</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-6.429518</td>
+      <td>-3.310783</td>
+      <td>-3.118735</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>And predicted covariances under the “cov” key,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;cov&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>0.001026</td>
+      <td>0.000823</td>
+      <td>0.000011</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>0.000748</td>
+      <td>0.000600</td>
+      <td>0.000008</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>The same results can be achieved in an online setting. We can test this, by emulating online updates, i.e. passing one new row of data at a time,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># First, reset the state of the reconciler</span>
+<span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">reset_state</span><span class="p">()</span>
+
+<span class="c1"># Then, loop over rows in the data and update the reconciler one step at a time</span>
+<span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">result_cov</span>  <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_Y_bot</span><span class="p">)):</span>
+    <span class="n">Y_bot_t</span> <span class="o">=</span> <span class="n">data_Y_bot</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">t</span><span class="p">]]</span>
+    <span class="n">Y_hat_t</span> <span class="o">=</span> <span class="n">data_Y_hat</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">t</span><span class="p">]]</span>
+    <span class="n">rec_t</span> <span class="o">=</span> <span class="n">temporal_reconciler</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">Y_bot_t</span><span class="p">,</span> <span class="n">Y_hat_t</span><span class="p">)</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rec_t</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">])</span>
+    <span class="n">result_cov</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rec_t</span><span class="p">[</span><span class="s2">&quot;cov&quot;</span><span class="p">])</span>
+
+<span class="c1"># Concatenate the results</span>
+<span class="n">result_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<span class="n">result_cov_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">result_cov</span><span class="p">)</span>
+<span class="n">result_df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-6.543789</td>
+      <td>-3.352806</td>
+      <td>-3.190983</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-6.429518</td>
+      <td>-3.310783</td>
+      <td>-3.118735</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>For structural hierarchies, the above approach is not applicable. Instead of a single bottom level observation, we are given observations on a set of bottom levels. We can demonstrate how reconciliation in such hierarchies is handled in the PyOnlineForecast package by first normalizing the input data. This is the same procedure, that the <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> object handles internally.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackShift</span>
+
+<span class="c1"># Manually apply the backshift operator</span>
+<span class="n">data_Y_bot_full</span> <span class="o">=</span> <span class="n">BackShift</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">skip_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">data_Y_bot</span><span class="p">)</span>
+
+<span class="c1"># Print the first few rows of the back-shifted data</span>
+<span class="n">data_Y_bot_full</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[        nan,         nan],
+       [-2.89954821, -2.35895524],
+       [        nan,         nan],
+       [-3.14867357, -3.12489082],
+       [        nan,         nan]])
+</pre></div></div>
+</div>
+<p>Then we define a reconciler for the structural hierarchy,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.hierarchies</span><span class="w"> </span><span class="kn">import</span> <span class="n">RidgeReconciliation</span>
+<span class="n">reconciler</span> <span class="o">=</span> <span class="n">RidgeReconciliation</span><span class="p">(</span><span class="n">S_top</span><span class="p">,</span> <span class="n">horizon</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">opt_shrink</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">reconciler</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="n">ForecastFormat</span><span class="p">)</span>
+<span class="n">rec_result</span> <span class="o">=</span> <span class="n">reconciler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data_Y_bot_full</span><span class="p">,</span> <span class="n">data_Y_hat</span><span class="p">)</span>
+
+<span class="c1"># Check that the result is the same</span>
+<span class="n">rec_result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-6.543789</td>
+      <td>-3.352806</td>
+      <td>-3.190983</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-6.429518</td>
+      <td>-3.310783</td>
+      <td>-3.118735</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Both <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> and <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> are transformations and support the same methods. Furthermore, the data inputs, i.e. base forecasts and bottom level observations, can be configured as sources. In fact, the <code class="docutils literal notranslate"><span class="pre">TemporalRidgeReconciliation</span></code> is implemented by passing base forecasts and back-shifted observations as source inputs to the <code class="docutils literal notranslate"><span class="pre">RidgeReconciliation</span></code> class. The implementation is more or less,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Source</span>
+
+<span class="c1"># Define sources</span>
+<span class="n">Z_bot</span> <span class="o">=</span> <span class="n">Source</span><span class="p">(</span><span class="s2">&quot;Z_bot&quot;</span><span class="p">)</span>
+<span class="n">Y_hat</span> <span class="o">=</span> <span class="n">Source</span><span class="p">(</span><span class="s2">&quot;Y_hat&quot;</span><span class="p">)</span>
+
+<span class="n">Y_bot_full</span> <span class="o">=</span> <span class="n">BackShift</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">skip_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">reconciler</span> <span class="o">=</span> <span class="n">RidgeReconciliation</span><span class="p">(</span><span class="n">S_top</span><span class="p">,</span> <span class="n">Y_bot</span> <span class="o">=</span> <span class="n">Y_bot_full</span><span class="p">,</span> <span class="n">Y_hat</span> <span class="o">=</span> <span class="n">Y_hat</span><span class="p">,</span> <span class="n">horizon</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">opt_shrink</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">reconciler</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="n">ForecastFormat</span><span class="p">)</span>
+
+<span class="c1"># Call the reconciler with the data (using the transfomation interface)</span>
+<span class="n">rec_result</span> <span class="o">=</span> <span class="n">reconciler</span><span class="p">({</span><span class="n">Y_bot_full</span><span class="p">:</span> <span class="n">data_Y_bot_full</span><span class="p">,</span> <span class="n">Y_hat</span><span class="p">:</span> <span class="n">data_Y_hat</span><span class="p">})</span>
+
+<span class="n">rec_result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead tr th {
+        text-align: left;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>pred_Y_A</th>
+      <th colspan="2" halign="left">pred_Y_H</th>
+    </tr>
+    <tr>
+      <th>Horizon</th>
+      <th>2</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-6.543789</td>
+      <td>-3.352806</td>
+      <td>-3.190983</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-6.429518</td>
+      <td>-3.310783</td>
+      <td>-3.118735</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Finally, we can plot the results.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+
+<span class="n">Y_hat_rec</span> <span class="o">=</span> <span class="n">rec_result</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">]</span>
+
+<span class="n">data_Y_top</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s2">&quot;Y_A&quot;</span><span class="p">]]</span>
+
+<span class="n">n_start</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">n_plot</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Half-year&quot;</span><span class="p">)</span>
+<span class="n">data_Y_bot</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">Y_hat_rec</span><span class="p">[[</span><span class="s2">&quot;pred_Y_H&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">data_Y_hat</span><span class="p">[[</span><span class="s2">&quot;pred_Y_H&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Observed&quot;</span><span class="p">,</span> <span class="s2">&quot;rec. 1-step&quot;</span><span class="p">,</span> <span class="s2">&quot;rec. 2-step&quot;</span><span class="p">,</span> <span class="s2">&quot;base 1-step&quot;</span><span class="p">,</span> <span class="s2">&quot;base 2-step&quot;</span><span class="p">])</span>
+
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Annual&quot;</span><span class="p">)</span>
+<span class="n">data_Y_top</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">Y_hat_rec</span><span class="p">[[</span><span class="s2">&quot;pred_Y_A&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">data_Y_hat</span><span class="p">[[</span><span class="s2">&quot;pred_Y_A&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">n_start</span><span class="p">:</span><span class="n">n_start</span> <span class="o">+</span> <span class="n">n_plot</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;Observed&quot;</span><span class="p">,</span> <span class="s2">&quot;rec. 2-step&quot;</span><span class="p">,</span> <span class="s2">&quot;base 2-step&quot;</span><span class="p">])</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x7102813cb860&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_hierarchy_example_20_1.png" src="../_images/examples_hierarchy_example_20_1.png" />
+</div>
+</div>
+<p>And the residuals</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py_online_forecast.prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">rmse</span>
+
+<span class="n">resid_base_bot</span> <span class="o">=</span> <span class="o">-</span><span class="n">data_Y_hat</span><span class="p">[[</span><span class="s2">&quot;pred_Y_H&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">data_Y_bot</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">resid_base_top</span> <span class="o">=</span> <span class="o">-</span><span class="n">data_Y_hat</span><span class="p">[[</span><span class="s2">&quot;pred_Y_A&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">data_Y_top</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+<span class="n">resid_rec_bot</span> <span class="o">=</span> <span class="o">-</span><span class="n">Y_hat_rec</span><span class="p">[[</span><span class="s2">&quot;pred_Y_H&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">data_Y_bot</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">resid_rec_top</span> <span class="o">=</span> <span class="o">-</span><span class="n">Y_hat_rec</span><span class="p">[[</span><span class="s2">&quot;pred_Y_A&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">fc</span><span class="o">.</span><span class="n">lag</span><span class="p">()</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">data_Y_top</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
+
+<span class="n">rmse_base_bot</span> <span class="o">=</span> <span class="n">rmse</span><span class="p">(</span><span class="n">resid_base_bot</span><span class="p">)</span>
+<span class="n">rmse_base_top</span> <span class="o">=</span> <span class="n">rmse</span><span class="p">(</span><span class="n">resid_base_top</span><span class="p">)</span>
+<span class="n">rmse_rec_bot</span> <span class="o">=</span> <span class="n">rmse</span><span class="p">(</span><span class="n">resid_rec_bot</span><span class="p">)</span>
+<span class="n">rmse_rec_top</span> <span class="o">=</span> <span class="n">rmse</span><span class="p">(</span><span class="n">resid_rec_top</span><span class="p">)</span>
+
+<span class="c1"># Make histograms</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">resid_base_bot</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;1-step&quot;</span><span class="p">,</span> <span class="s2">&quot;2-step&quot;</span><span class="p">])</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Base bottom level, rmse: </span><span class="si">{</span><span class="n">rmse_base_bot</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">resid_rec_bot</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;1-step&quot;</span><span class="p">,</span> <span class="s2">&quot;2-step&quot;</span><span class="p">])</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reconciled bottom level, rmse: </span><span class="si">{</span><span class="n">rmse_rec_bot</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Also include gaussian with unity variance (true noise distribution) for reference</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="c1"># Top level</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">resid_base_top</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Base top level, rmse: </span><span class="si">{</span><span class="n">rmse_base_top</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">resid_rec_top</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reconciled top level, rmse: </span><span class="si">{</span><span class="n">rmse_rec_top</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_hierarchy_example_22_0.png" src="../_images/examples_hierarchy_example_22_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="forecast_example.html" class="btn btn-neutral float-left" title="Forecast example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api/index.html" class="btn btn-neutral float-right" title="py_online_forecast" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, tobro.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
