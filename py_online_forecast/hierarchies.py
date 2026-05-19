@@ -521,6 +521,7 @@ class _TemporalRRRPredictor(p.RRRPredictor):
         return_var_theta=False,
     ):
         """Return the online update for the predictor, skipping duplicate data."""
+        self.offset = (self.offset + 1) % self.horizon
         update_theta = self.offset == 0
         result = super().online_update(
             x_i,
@@ -534,7 +535,6 @@ class _TemporalRRRPredictor(p.RRRPredictor):
             return_var_theta,
             update_theta,
         )
-        self.offset = (self.offset + 1) % self.horizon
         return result
 
 

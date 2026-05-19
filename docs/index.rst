@@ -13,6 +13,7 @@ PyOnlineForecast documentation
 
    introduction.md
    quickstart.md
+   citation.md
 
 .. toctree::
    :maxdepth: 1
