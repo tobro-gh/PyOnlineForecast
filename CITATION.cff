@@ -1,4 +1,4 @@
-cff-version: 1.1.0
+cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
 - family-names: Rønlev-Knudsen
@@ -9,6 +9,6 @@ authors:
   given-names: Peder
 - family-names: Møller
   given-names: Jan Kloppenborg
-title: tobro-gh/PyOnlineForecast: v0.1.0
+title: PyOnlineForecast
 version: v0.1.0
 date-released: 2026-05-19
