@@ -159,6 +159,10 @@ class ForecastMatrix:
         data.columns = pd.MultiIndex.from_tuples(new_columns, names=self.names)
 
         if isinstance(data.index, pd.DatetimeIndex) and len(data.index) >=3:
+
+            # Sort index
+            data = data.sort_index()
+
             # Infer frequency
             inferred_freq = pd.infer_freq(data.index)
             if inferred_freq is not None:

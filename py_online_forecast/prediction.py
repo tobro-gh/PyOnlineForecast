@@ -811,7 +811,7 @@ class RRRPredictor:
         \theta_t = (K_t + Q)^{-1} (L_t + Q \theta_0)
 
     where :math:`K_t = \lambda K_{t-1} + x_{train,t} x_{train,t}^T` and
-    :math:`L_t = \lambda L_{t-1} + x_{train,t} y_t^T``, with :math:``\lambda` being
+    :math:`L_t = \lambda L_{t-1} + x_{train,t} y_t^T`, with :math:`\lambda` being
     the forgetting factor (``mem``).
 
     Mean point predictions are computed as:
