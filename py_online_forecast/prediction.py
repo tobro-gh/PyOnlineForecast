@@ -1580,8 +1580,8 @@ class ARX(OnlinePrediction):
 
     def score(self, state: RRRPredictor, X, Y, prediction, **predictor_params):
         """Compute forecast score using one-step predictions."""
-        Y_hat = prediction["mean"][: -1, 0]
-        Y_ref = Y[1 :, 0]
+        Y_hat = prediction["mean"][: -1, :1]
+        Y_ref = Y.to_numpy()[1:]
 
         # Evaluate score and update prediction
         prediction["score"] = evaluate_score(
