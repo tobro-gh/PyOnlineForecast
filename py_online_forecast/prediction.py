@@ -1218,21 +1218,17 @@ class RRR(OnlinePrediction):
 
     def score(self, state: RRRPredictor, X, Y, prediction, **params):
         """Compute forecast score using lagged predictions from predictor memory.
-
-        Uses ``evaluate_score`` on aligned historical predictions stored in
-        ``state.Y_hat``, then adds the scalar score to ``prediction["score"]``.
+        
+        Uses ``evaluate_score`` on prediction mean and target and includes result in
+        ``prediction["score"]``.
         """
-        n = len(Y)
+        Y_hat = prediction["mean"][: -self.horizon]
 
-        # Get old predictions from state
-        Y_hat = state.Y_hat.get(n)
-
-        # Overwrite last n-horizon entries with new predictions (discard )
-        Y_hat[self.horizon :] = prediction["mean"][: -self.horizon]
+        Y_ref = Y[self.horizon :]
 
         # Evaluate score and update prediction
         prediction["score"] = evaluate_score(
-            Y_hat, Y, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
+            Y_hat, Y_ref, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
         )
         return prediction
 
@@ -1583,17 +1579,12 @@ class ARX(OnlinePrediction):
         return result
 
     def score(self, state: RRRPredictor, X, Y, prediction, **predictor_params):
-        """Compute forecast score using lagged predictions from predictor memory."""
-        n = len(Y)
-
-        # Get old predictions from state
-        Y_hat = state.Y_hat.get(n)
-
-        # Overwrite last n-1 entries
-        Y_hat[1 :, 0] = prediction["mean"][: -1, 0]
+        """Compute forecast score using one-step predictions."""
+        Y_hat = prediction["mean"][: -1, 0]
+        Y_ref = Y[1 :, 0]
 
         # Evaluate score and update prediction
         prediction["score"] = evaluate_score(
-            Y_hat, Y, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
+            Y_hat, Y_ref, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
         )
         return prediction
