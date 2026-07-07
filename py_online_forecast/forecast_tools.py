@@ -1285,6 +1285,16 @@ class ForecastModel(Transformation):
         """Return the current ``RRR`` predictor object if any."""
         return self.recursion_pars[self.prediction][0]
 
+    @property
+    def default_params(self):
+        """Return default parameters for the model."""
+        return self.prediction.default_params
+    
+    @default_params.setter
+    def default_params(self, params):
+        """Set default parameters for the model."""
+        self.prediction.default_params = params
+
     def set_score_mode(self):
         """Set score mode for the prediction."""
         self.prediction.set_score_mode()
@@ -1317,6 +1327,17 @@ class ForecastModel(Transformation):
         self.reset_state()
         return self.update(data, update_predictor=update_predictor, **params)
 
+
+    def apply(self, data=None, memory=None, recursion_pars=None, 
+              return_recursion_pars=False, copy_data=True, track_state=False, 
+              formatter = None, params=None, **free_params):
+        """Apply the model, remapping params to the underlying RRR predictor."""
+        params = params or {}
+        _params = params.pop(self, {})
+        _params.update(free_params)
+        params[self.prediction] = _params
+        return super().apply(data, memory, recursion_pars, return_recursion_pars, 
+                             copy_data, track_state, formatter, params) 
 
 class ForecastEnsemble(Transformation):
     """Ensemble of forecast models for multiple horizons.
@@ -1402,6 +1423,19 @@ class ForecastEnsemble(Transformation):
         """Fit the ensemble by resetting state and calling update."""
         self.reset_state()
         return self.update(data, update_predictor=update_predictor, **params)
+        
+    def apply(self, data=None, memory=None, recursion_pars=None, 
+              return_recursion_pars=False, copy_data=True, track_state=False, 
+              formatter = None, params=None, **free_params):
+        """Apply the model, remapping params to the underlying models."""
+        params = params or {}
+        _params = params.pop(self, {})
+        _params.update(free_params)
+        for m in self.models:
+            params[m] = _params
+        return super().apply(data, memory, recursion_pars, return_recursion_pars, 
+                             copy_data, track_state, formatter, params) 
+
 
 class Residuals(Transformation):
     """Compute residuals for forecast matrix data.

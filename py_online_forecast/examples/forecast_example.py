@@ -5,6 +5,7 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from py_online_forecast import *
+from py_online_forecast.core import DEFAULT_SOURCE
 
 # %%============================================================================
 # SECTION 0: DATA
@@ -200,7 +201,7 @@ ref_2h = model_2h.fit(data, mem=1)
 models = Combine(model, model_2h)
 
 # Apply the combined model
-result = models(data, mem=1)
+result = models(data, params = {model: {"mem": 1}, model_2h: {"mem": 1}})
 
 # Results are returned in a dict indexed by the individual transforms (models),
 result_model_1h = result[model]
@@ -386,4 +387,3 @@ class CustomTransform(Transformation):
 
 # In the above ...
 
-# %%

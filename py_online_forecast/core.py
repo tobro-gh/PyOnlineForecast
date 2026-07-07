@@ -338,8 +338,8 @@ class Transformation(Source):
         copy_data=True,
         track_state=False,
         formatter: Format = None,
-        targeted_params = None,
-        **params,
+        params = None,
+        **free_params,
     ):
         """Evaluate the transformation with given data.
         
@@ -365,11 +365,11 @@ class Transformation(Source):
             If True, store recursion state for future calls.
         formatter : Format, optional
             Formatter to apply to results.
-        targeted_params : dict, optional
+        params : dict, optional
             Parameters to pass to specific transformations. Keys should be
             transformations and values should be dicts mapping parameter names to
             values.
-        **params : Any
+        **free_params : Any
             Parameters to pass to the evaluate method of this transformation.
         
         Returns
@@ -393,7 +393,18 @@ class Transformation(Source):
             else:
                 recursion_pars = {}
 
-        targeted_params = targeted_params or {}
+        params = params or {}
+        
+        # Get params for self
+        _params = params.get(self, {})
+        
+        # Check for multiply specified parameters if free parameters are provided
+        for p in free_params:
+            if p in _params:
+                raise ValueError(f"Parameter {p} for {self} multiply specified.")
+
+        # Update params for self
+        _params = _params | free_params
 
         new_recursion_pars = {}
 
@@ -415,16 +426,14 @@ class Transformation(Source):
             elif val is STATE:
                 t_val = data.copy()  # Pass all data computed so far
 
-            elif val in params:
-                t_val = params[val]
-
             # Attempt to fetch transformation dependencies if not provided directly.
             elif isinstance(val, Transformation):
                 t_val, t_rec_pars = val.apply(
                     data=data,
                     recursion_pars=recursion_pars,
                     return_recursion_pars=True,
-                    copy_data=False
+                    copy_data=False,
+                    params=params
                 )
 
                 new_recursion_pars.update(t_rec_pars)
@@ -440,14 +449,8 @@ class Transformation(Source):
             else:
                 evaluate_kwargs[name] = t_val
 
-        if self in targeted_params:
-            for p_name, p_val in targeted_params[self].items():
-                if p_name in evaluate_kwargs:
-                    raise ValueError(f"Parameter {p_name} for {self} multiply specified.")
-                evaluate_kwargs[p_name] = p_val
-
-        # Update with parameters
-        evaluate_kwargs = evaluate_kwargs | params
+        # Update with all given params, overriding if multiple specified
+        evaluate_kwargs = evaluate_kwargs | _params
 
         # Evaluate
         eval_out = self.evaluate(*evaluate_args, **evaluate_kwargs)
