@@ -446,21 +446,8 @@ class Transformation(Source):
                     raise ValueError(f"Parameter {p_name} for {self} multiply specified.")
                 evaluate_kwargs[p_name] = p_val
 
-        # Check for free parameters
-        for p in self._free_params:
-            if p in params:
-                if p in evaluate_kwargs:
-                    raise ValueError(f"Parameter {p} for {self} multiply specified.")
-                evaluate_kwargs[p] = params[p]
-
-        # If evaluate accepts var kwargs, pass all params not already used for specific inputs
-        if self._accepts_var_kwargs:
-            # Update with all kwargs that do not have Source keys
-            evaluate_kwargs = evaluate_kwargs | {
-                k: v for k, v in params.items() if not isinstance(v, Source)
-            }
-
-        # TODO: consider tracking used params and warning if any are unused
+        # Update with parameters
+        evaluate_kwargs = evaluate_kwargs | params
 
         # Evaluate
         eval_out = self.evaluate(*evaluate_args, **evaluate_kwargs)

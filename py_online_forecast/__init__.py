@@ -29,7 +29,7 @@ pandas and a custom accessor for working with forecast matrix data and defines s
 convenience functions and classes for creating data pipeliens using this data.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from .core import DEFAULT_SOURCE, MEMORY, Source
 from .features import (

@@ -156,6 +156,15 @@ class Prediction(Transformation):
         """Disable score mode."""
         self._score_mode = False
 
+    @property
+    def default_params(self):
+        """Return the default parameters for update and predict methods."""
+        return self._default_params
+
+    @default_params.setter
+    def default_params(self, value: dict):
+        self._default_params = value
+
     def _get_value(self, v, data):
         if isinstance(v, Source):
             if v in data:
@@ -1580,8 +1589,8 @@ class ARX(OnlinePrediction):
         # Get old predictions from state
         Y_hat = state.Y_hat.get(n)
 
-        # Overwrite last n-horizon entries with new predictions (discard )
-        Y_hat[self.horizon :] = prediction["mean"][: -self.horizon]
+        # Overwrite last n-1 entries
+        Y_hat[1 :, 0] = prediction["mean"][: -1, 0]
 
         # Evaluate score and update prediction
         prediction["score"] = evaluate_score(

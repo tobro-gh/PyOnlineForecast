@@ -1079,9 +1079,9 @@ def _(source: WLS):
 
 @ForecastFormat.register_resolver(ARX)
 def _(source: ARX):
-    # TODO: fix
     def formatter(value_source, state, memory=None):
-        value = state[value_source]
+        result = state[value_source].copy()
+
         Y = state[source.Y]
 
         if memory is None:
@@ -1091,11 +1091,11 @@ def _(source: ARX):
                 [name], [h + 1 for h in range(source.horizon)]
             )
 
-        mean = _to_pandas(value["mean"], index=Y.index, columns=memory)
-        var = _to_pandas(value["var"], index=Y.index, columns=memory)
+        result["mean"] = _to_pandas(result["mean"], index=Y.index, columns=memory)
+        result["var"] = _to_pandas(result["var"], index=Y.index, columns=memory)
 
-        return {"mean": mean, "var": var}, memory
-    
+        return result, memory
+
     return formatter
 
 
@@ -1119,6 +1119,9 @@ def _(source: RidgeReconciliation):
             result["cov"] = _to_pandas(value["cov"], index=Y.index, columns=memory)
         else:
             result["cov"] = _to_pandas(value["cov"], index=Y.index, columns=Y.columns)
+
+        if "score" in value:
+            result["score"] = value["score"]
 
         return result, memory
 
