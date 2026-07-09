@@ -1333,7 +1333,7 @@ class ForecastModel(Transformation):
               formatter = None, params=None, **free_params):
         """Apply the model, remapping params to the underlying RRR predictor."""
         params = params or {}
-        _params = params.pop(self, {})
+        _params = params.get(self, {})
         _params.update(free_params)
         params[self.prediction] = _params
         return super().apply(data, memory, recursion_pars, return_recursion_pars, 
@@ -1429,7 +1429,7 @@ class ForecastEnsemble(Transformation):
               formatter = None, params=None, **free_params):
         """Apply the model, remapping params to the underlying models."""
         params = params or {}
-        _params = params.pop(self, {})
+        _params = params.get(self, {})
         _params.update(free_params)
         for m in self.models:
             params[m] = _params
