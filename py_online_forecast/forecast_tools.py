@@ -1303,7 +1303,7 @@ class ForecastModel(Transformation):
         """Unset score mode for the prediction."""
         self.prediction.unset_score_mode()
 
-    def evaluate(self, prediction):
+    def evaluate(self, prediction, **params):
         """Return the prediction."""
         return prediction
 
@@ -1491,7 +1491,9 @@ class Residuals(Transformation):
             indices = list(zip(y_hat_indices, y_indices))
 
             # Lag values
-            lagged = Y_hat.fc.lag()
+            all_vals = Y_hat.copy()
+            lagged = all_vals.fc.lag()
+
         else:
             # Retrieve indices and old values
             indices, old_vals = memory
@@ -1509,7 +1511,7 @@ class Residuals(Transformation):
         for (idx_y_hat, idx_y) in indices:
             result.iloc[:, idx_y_hat] = y_np[:, idx_y] - y_hat_np[:, idx_y_hat]
 
-        old_vals = Y_hat.iloc[-max(horizons):]
+        old_vals = all_vals.iloc[-max(horizons):]
 
         return result, (indices, old_vals)
 

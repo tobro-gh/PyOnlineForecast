@@ -273,7 +273,8 @@ class SRRRPredictor(p.RRRPredictor):
         combine_variance,
         full_cov,
         center_cov=False,
-        mem=0.99,
+        mem=None,
+        mem_var=None
     ):
         super().__init__(
             n,
@@ -286,6 +287,7 @@ class SRRRPredictor(p.RRRPredictor):
             full_cov,
             center_cov=center_cov,
             mem=mem,
+            mem_var=mem_var
         )
         self.S_top = S_top
         npm = n + m
@@ -387,6 +389,7 @@ class SRRRPredictor(p.RRRPredictor):
         V=None,
         update_V=True,
         mem=None,
+        mem_var=None,
         return_var_theta=False,
         update_theta=True,
         l_shrink="auto",
@@ -406,6 +409,7 @@ class SRRRPredictor(p.RRRPredictor):
             V,
             update_V,
             mem,
+            mem_var,
             return_var_theta,
             update_theta,
         )
@@ -452,7 +456,8 @@ class SRRR(p.RRR):
         x_train_i,
         V=None,
         update_V=True,
-        mem=0.99,
+        mem=None,
+        mem_var=None,
         return_var_theta=False,
         update_theta=True,
     ):
@@ -464,6 +469,7 @@ class SRRR(p.RRR):
             V=V,
             update_V=update_V,
             mem=mem,
+            mem_var=mem_var,
             return_var_theta=return_var_theta,
             update_theta=update_theta,
         )
@@ -480,6 +486,7 @@ class SRRR(p.RRR):
         full_cov,
         center_cov,
         mem,
+        mem_var
     ):
         """Create and return SRRR predictor."""
         return SRRRPredictor(
@@ -494,6 +501,7 @@ class SRRR(p.RRR):
             full_cov,
             center_cov,
             mem,
+            mem_var
         )
 
 
@@ -518,6 +526,7 @@ class _TemporalRRRPredictor(p.RRRPredictor):
         V=None,
         update_V=True,
         mem=None,
+        mem_var=None,
         return_var_theta=False,
     ):
         """Return the online update for the predictor, skipping duplicate data."""
@@ -532,6 +541,7 @@ class _TemporalRRRPredictor(p.RRRPredictor):
             V,
             update_V,
             mem,
+            mem_var,
             return_var_theta,
             update_theta,
         )
@@ -557,6 +567,7 @@ class _TemporalSRRRPredictor(SRRRPredictor):
         V=None,
         update_V=True,
         mem=None,
+        mem_var=None,
         return_var_theta=False,
         l_shrink="auto",
     ):
@@ -569,6 +580,7 @@ class _TemporalSRRRPredictor(SRRRPredictor):
             V,
             update_V,
             mem,
+            mem_var,
             return_var_theta,
             update_theta,
             l_shrink,
@@ -593,11 +605,12 @@ class _TemporalRRR(p.RRR):
         theta0=None,
         V=None,
         update_V=True,
-        mem=0.99,
+        mem=None,
+        mem_var=None,
         return_var_theta=False,
     ):
         result = state.online_update(
-            x_i, y_i, x_train_i, Q, theta0, V, update_V, mem, return_var_theta
+            x_i, y_i, x_train_i, Q, theta0, V, update_V, mem, mem_var, return_var_theta
         )
         return result, state
 
@@ -612,6 +625,7 @@ class _TemporalRRR(p.RRR):
         full_cov,
         center_cov,
         mem,
+        mem_var,
     ):
         return _TemporalRRRPredictor(
             n,
@@ -624,6 +638,7 @@ class _TemporalRRR(p.RRR):
             full_cov,
             center_cov,
             mem,
+            mem_var
         )
 
 
@@ -642,11 +657,12 @@ class _TemporalSRRR(SRRR):
         V=None,
         update_V=True,
         mem=None,
+        mem_var=None,
         return_var_theta=False,
         l_shrink="auto",
     ):
         result = state.online_update(
-            x_i, y_i, x_train_i, V, update_V, mem, return_var_theta, l_shrink
+            x_i, y_i, x_train_i, V, update_V, mem, mem_var, return_var_theta, l_shrink
         )
         return result, state
 
@@ -661,6 +677,7 @@ class _TemporalSRRR(SRRR):
         full_cov,
         center_cov,
         mem,
+        mem_var=None
     ):
         return _TemporalSRRRPredictor(
             self.S_top,
@@ -674,6 +691,7 @@ class _TemporalSRRR(SRRR):
             full_cov,
             center_cov,
             mem,
+            mem_var
         )
 
 

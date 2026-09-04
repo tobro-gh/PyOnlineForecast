@@ -782,6 +782,9 @@ class RRRPredictor:
     mem : float, default 0.99
         Forgetting factor in [0, 1] for exponential weighting. Higher values retain
         more historical data; lower values adapt faster to recent observations.
+    mem_var : float, optional
+        Forgetting factor for prediction error variance estimation. If None, uses the
+        same value as ``mem``.
 
     Attributes
     ----------
@@ -858,7 +861,11 @@ class RRRPredictor:
         full_cov=True,
         center_cov=False,
         mem=0.99,
+        mem_var=None
     ):
+
+        mem_var = mem if mem_var is None else mem_var
+        
         self.K = np.eye(n) * init_K
         self.L = np.zeros((n, m))
         self.burn_in = burn_in
@@ -873,9 +880,10 @@ class RRRPredictor:
         self._full_cov = full_cov
         self.Y_hat = CircularBuffer(horizon, m)
         self.mem = mem
+        self.mem_var = mem_var
 
         self._forgetting_var = ForgettingVariance(
-            forgetting=mem,
+            forgetting=mem_var,
             track_memory=track_memory,
             covariance=full_cov,
             center=center_cov,
@@ -891,6 +899,7 @@ class RRRPredictor:
         V: np.ndarray = None,
         update_V=True,
         mem=None,
+        mem_var=None,
         return_var_theta=False,
         update_theta=True
     ):
@@ -921,6 +930,9 @@ class RRRPredictor:
         mem : float, optional
             Forgetting factor for this update. If None, uses value from initialization.
             Must be in [0, 1]. Default is None.
+        mem_var : float, optional
+            Forgetting factor for prediction error variance estimation. If None, uses
+            value from initialization. Must be in [0, 1]. Default is None.
         return_var_theta : bool, default False
             If True, includes parameter covariance in the returned prediction dict.
         update_theta : bool, default True
@@ -942,6 +954,8 @@ class RRRPredictor:
         """
         if mem is None:
             mem = self.mem
+        if mem_var is None:
+            mem_var = self.mem_var
 
         n, m = self.n, self.m
 
@@ -999,7 +1013,7 @@ class RRRPredictor:
 
             y_i_hat = self.Y_hat.get(1)  # Get oldest prediction
             resid = np.atleast_2d(y_i - y_i_hat)
-            self.V = self._forgetting_var(resid, track_state=True, forgetting=mem)[0]
+            self.V = self._forgetting_var(resid, track_state=True, forgetting=mem_var)[0]
             if not self._forgetting_var.covariance:
                 self.V = np.diag(self.V)
 
@@ -1111,6 +1125,7 @@ class RRR(OnlinePrediction):
         center_cov=False,
         scorefun=rmse,
         mem=0.99,
+        mem_var=None,
         default_params=None
     ):
         self.horizon = horizon
@@ -1129,6 +1144,7 @@ class RRR(OnlinePrediction):
             full_cov=full_cov,
             center_cov=center_cov,
             mem=mem,
+            mem_var=mem_var,
             default_params=default_params,
         )
 
@@ -1142,7 +1158,8 @@ class RRR(OnlinePrediction):
         combine_variance,
         full_cov,
         center_cov,
-        mem
+        mem,
+        mem_var
     ):
         """Create amd return ``RRRPredictor``."""
         return RRRPredictor(
@@ -1155,7 +1172,8 @@ class RRR(OnlinePrediction):
             combine_variance,
             full_cov,
             center_cov,
-            mem
+            mem,
+            mem_var
         )
 
     def online_update(
@@ -1169,6 +1187,7 @@ class RRR(OnlinePrediction):
         V: np.ndarray = None,
         update_V=True,
         mem=0.99,
+        mem_var=None,
         return_var_theta=False,
         update_theta=True
     ):
@@ -1196,6 +1215,7 @@ class RRR(OnlinePrediction):
             V=V,
             update_V=update_V,
             mem=mem,
+            mem_var=mem_var,
             return_var_theta=return_var_theta,
             update_theta=update_theta
         )
@@ -1399,6 +1419,7 @@ class ARX(OnlinePrediction):
         full_cov=True,
         scorefun=rmse,
         mem=0.99,
+        mem_var=None,
         default_params=None,
     ):
         self.horizon = horizon
@@ -1432,6 +1453,7 @@ class ARX(OnlinePrediction):
             combine_variance=combine_variance,
             full_cov=full_cov,
             mem=mem,
+            mem_var=mem_var,
             default_params=default_params,
         )
 
@@ -1444,7 +1466,8 @@ class ARX(OnlinePrediction):
         track_memory,
         combine_variance,
         full_cov,
-        mem
+        mem,
+        mem_var
     ):
         """Initialize RRR predictor state for 1-step predictions."""
         n_lags = len(self._lag_indices)  # Number of AR lags
@@ -1463,7 +1486,8 @@ class ARX(OnlinePrediction):
             track_memory,
             combine_variance,
             full_cov,
-            mem = mem
+            mem = mem,
+            mem_var = mem_var
         )
 
     def online_update(
@@ -1478,6 +1502,7 @@ class ARX(OnlinePrediction):
         V: np.ndarray = None,
         update_V=True,
         mem=0.99,
+        mem_var=None,
         return_var_theta=False,
     ):
         """Update model and compute h-step-ahead predictions via forward recursion.
@@ -1494,6 +1519,7 @@ class ARX(OnlinePrediction):
             V=V,
             update_V=update_V,
             mem=mem,
+            mem_var=mem_var,
             return_var_theta=False,
         )
         return (
