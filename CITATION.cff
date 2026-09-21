@@ -13,3 +13,18 @@ title: PyOnlineForecast
 version: v0.1.0
 doi: 10.5281/zenodo.20287172
 date-released: 2026-05-19
+references:
+- type: article
+  scope: "Please also cite the following article."
+  authors:
+  - family-names: Rønlev-Knudsen
+    given-names: Tobias
+  - family-names: Madsen
+    given-names: Henrik
+  - family-names: Bacher
+    given-names: Peder
+  - family-names: Møller
+    given-names: Jan Kloppenborg
+  title: "Online forecast reconciliation using linear models"
+  year: 2026
+  url: "https://arxiv.org/abs/2606.23326"
