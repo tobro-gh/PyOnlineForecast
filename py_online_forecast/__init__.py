@@ -31,7 +31,7 @@ convenience functions and classes for creating data pipeliens using this data.
 
 __version__ = "0.1.1"
 
-from .core import DEFAULT_SOURCE, MEMORY, Source
+from .core import DEFAULT_SOURCE, STATE, Transformation
 from .features import (
     Combine,
     DesignMatrix,
@@ -46,17 +46,17 @@ from .features import (
 )
 from .forecast_tools import (
     Concat,
-    ForecastEnsemble,
+    ForecastCollection,
     ForecastMatrix,
     ForecastModel,
     ToExog,
 )
-from .prediction import ARX, RRR, WLS, BackShift
+from .prediction import ARX, RRR, BackShift
 
 __all__ = [
     "__version__",
-    "Source",
-    "MEMORY",
+    "Transformation",
+    "STATE",
     "DEFAULT_SOURCE",
     "DesignMatrix",
     "Combine",
@@ -69,13 +69,12 @@ __all__ = [
     "ForgettingMean",
     "ForgettingVariance",
     "Lag",
-    "WLS",
     "RRR",
     "ARX",
     # optional exports (provided lazily via __getattr__)
     "ForecastMatrix",
     "ForecastModel",
-    "ForecastEnsemble",
+    "ForecastCollection",
     "ToExog",
     "Concat",
 ]
@@ -83,7 +82,7 @@ __all__ = [
 _OPTIONAL_FORECAST_TOOLS = {
     "ForecastMatrix",
     "ForecastModel",
-    "ForecastEnsemble",
+    "ForecastCollection",
     "ToExog",
     "Concat",
 }
@@ -92,7 +91,7 @@ def __getattr__(name: str):
     if name in _OPTIONAL_FORECAST_TOOLS:
         from .forecast_tools import (
             Concat,
-            ForecastEnsemble,
+            ForecastCollection,
             ForecastMatrix,
             ForecastModel,
             ToExog,
@@ -101,7 +100,7 @@ def __getattr__(name: str):
         return {
             "ForecastMatrix": ForecastMatrix,
             "ForecastModel": ForecastModel,
-            "ForecastEnsemble": ForecastEnsemble,
+            "ForecastCollection": ForecastCollection,
             "ToExog": ToExog,
             "Concat": Concat,
         }[name]

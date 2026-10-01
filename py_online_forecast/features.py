@@ -7,7 +7,14 @@ models.
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
-from .core import DEFAULT_SOURCE, MEMORY, CircularBuffer, Dim, Transformation, Source
+from .core import DEFAULT_SOURCE, CircularBuffer, Dim, Transformation
+
+#%%
+
+
+#%%
+
+
 
 
 ### Transformations
@@ -15,20 +22,14 @@ class ToArray(Transformation):
     """Transformation that converts input data to a numpy array."""
 
     def __init__(self, data):
-        super().__init__(data = data)
-
-    def evaluate(self, data):
-        """Convert input data to a numpy array."""
-        if isinstance(data, np.ndarray):
-            return data
-        return np.asarray(data)
+        super().__init__(lambda x: np.asarray(x), data)
 
 class Combine(Transformation):
     """Transformation that combines multiple input sources into a dictionary.
     
     Parameters
     ----------
-    sources : list of Source
+    sources : list of Transformation
         The input sources to combine into a dictionary.
     names : list, optional
         The names to use for the combined features in the output dictionary. If not 
@@ -36,15 +37,15 @@ class Combine(Transformation):
     """
 
     def __init__(self, *sources, names = None):
-        super().__init__(*sources)
-        self.sources = sources
         if names is not None:
             if len(names) != len(sources):
                 raise ValueError("Length of names must match number of sources.")
         else:
-            names = self.sources
-        self.names = names
+            names = sources
 
+        self.names = names
+        super().__init__(self.evaluate, *sources)
+    
     def evaluate(self, *data):
         """Combine input data into a dictionary."""
         return {name: v for name, v in zip(self.names, data)}
@@ -54,15 +55,15 @@ class DesignMatrix(Transformation):
 
     Parameters
     ----------
-    sources : list of Source
+    sources : list of Transformation
         Input sources with array like values to combine into a design matrix.
     """
 
     def __init__(self, *data):
         data = [ToArray(d) for d in data]
-        super().__init__(*data)
+        super().__init__(self.stack, *data)
     
-    def evaluate(self, *data):
+    def stack(self, *data):
         """Reshape input data and stack horizontally.
         
         Parameters
@@ -87,8 +88,8 @@ class One(Transformation):
 
     Parameters
     ----------
-    ref : Source, optional
-        The source to use as reference for the length of the output column.
+    ref : Transformation, optional
+        The transformation to use as reference for the length of the output column.
     shape : tuple, optional
         The shape of the output array, excluding the first dimension. If None, the
         output will be a 1D array of shape (t,).
@@ -97,7 +98,7 @@ class One(Transformation):
     def __init__(self, ref = DEFAULT_SOURCE, shape = None):
         t = Dim(ref, axis = 0)
         self._shape = shape
-        super().__init__(t)
+        super().__init__(self.evaluate, t)
 
     def evaluate(self, t):
         """Return a column of ones of length t."""
@@ -122,7 +123,7 @@ class SlidingSum(Transformation):
     def __init__(self, data = DEFAULT_SOURCE, window_size = 1, *args, **kwargs):
         self.window_size = window_size
         data = ToArray(data)
-        super().__init__(data = data, old_data = MEMORY)
+        super().__init__(self.evaluate, data = data, STATE = "old_data")
         self._args = args
         self._kwargs = kwargs
 
@@ -173,7 +174,7 @@ class SlidingMean(Transformation):
         self._kwargs = kwargs
         self.window_size = window_size
         data = ToArray(data)
-        super().__init__(data = data, old_data = MEMORY)
+        super().__init__(self.evaluate, data = data, STATE = "old_data")
 
     def evaluate(self, data, old_data = None):
         """Evaluate the sliding window mean.
@@ -295,12 +296,11 @@ class ForgettingMean(Transformation):
     """
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True):
-        super().__init__(data, state = MEMORY)
-        self.forgetting = forgetting
+        super().__init__(self.evaluate, data = data, forgetting = forgetting, STATE = "state")
         self.track_memory = track_memory
         self.data = data
 
-    def evaluate(self, data, state = None):
+    def evaluate(self, data, forgetting, state = None):
         """Evaluate the running mean using ``forgetting_mean``.
         
         Parameters
@@ -309,7 +309,7 @@ class ForgettingMean(Transformation):
             The input data to compute the running mean over.
 
         """
-        return forgetting_mean(self.forgetting, data, state, self.track_memory)
+        return forgetting_mean(forgetting, data, state, self.track_memory)
 
 class ForgettingVariance(Transformation):
     """Compute the running variance with exponential forgetting.
@@ -340,15 +340,14 @@ class ForgettingVariance(Transformation):
                 mean = center
             else:
                 mean = ForgettingMean(forgetting, data = data, track_memory = track_memory)
-            super().__init__(mean = mean, data = data, state = MEMORY)
+            super().__init__(self.evaluate, data, forgetting, mean = mean, STATE = "state")
         else:
-            super().__init__(data = data, state = MEMORY)
+            super().__init__(self.evaluate, data, forgetting, STATE = "state")
 
-        self.forgetting = forgetting
         self.track_memory = track_memory
         self.covariance = covariance
 
-    def evaluate(self, data, mean = None, state = None, forgetting = None):
+    def evaluate(self, data, forgetting, mean = None, state = None):
         """Evaluate the running variance or covariance.
         
         Parameters
@@ -378,14 +377,12 @@ class ForgettingVariance(Transformation):
             return self._eval(data, mean, state, forgetting)
 
     def _eval_covariance(self, data, mean = None, state = None, forgetting = None):
-        return self._evaluate(data, mean, state, forgetting)
+        return self._evaluate(data, forgetting, mean, state)
     
     def _eval(self, data, mean = None, state = None, forgetting = None):
-        return self._evaluate(data, mean, state, forgetting)
+        return self._evaluate(data, forgetting, mean, state)
 
-    def _evaluate(self, data, mean = None, state = None, forgetting = None):
-
-        forgetting = forgetting or self.forgetting
+    def _evaluate(self, data, forgetting, mean = None, state = None):
 
         # Center estimate if mean is provided
         if mean is not None:
@@ -418,7 +415,7 @@ class LowPass(Transformation):
 
     def __init__(self, data, alpha = 0):
         data = ToArray(data)
-        super().__init__(data=data, prev_value = MEMORY)
+        super().__init__(self.evaluate, data=data, STATE = "prev_value")
         self.alpha = alpha
 
     def evaluate(self, data: np.ndarray, prev_value=None):
@@ -472,7 +469,7 @@ class FourierSeries(Transformation):
     def __init__(self, data, nharmonics = 1):
         self.nharmonics = nharmonics
         data = ToArray(data)
-        super().__init__(data = data)
+        super().__init__(self.evaluate, data = data)
 
     def evaluate(self, data: np.ndarray):
         """Evaluate the Fourier series features.
@@ -530,7 +527,7 @@ class Lag(Transformation):
                 if h > amount:
                     raise ValueError(f"Offset {h} must be less than lag amount {amount}.")
         data = ToArray(data)
-        super().__init__(data = data, prev_values = MEMORY)
+        super().__init__(self.evaluate, data = data, STATE = "prev_values")
 
 
     def evaluate(self, data, prev_values = None):
@@ -629,7 +626,7 @@ class Periodic(Transformation):
         self.horizons = horizons
         self._n = len(values)
         
-        super().__init__(index)
+        super().__init__(self.evaluate, index)
 
     def evaluate(self, index: np.ndarray) -> np.ndarray:
         """Return values mapped from reference_time.
@@ -663,7 +660,7 @@ class Difference(Transformation):
 
     def __init__(self, data):
         data = ToArray(data)
-        super().__init__(data = data, prev_value = MEMORY)
+        super().__init__(self.evaluate, data = data, STATE = "prev_value")
 
     def evaluate(self, data, prev_value = None):
         """Return the difference along the first dimension of the input data."""
@@ -700,7 +697,7 @@ class Map(Transformation):
 
         standard_mapping = []
         for m in mapping:
-            if isinstance(m, Source):
+            if isinstance(m, Transformation):
                 standard_mapping.append({DEFAULT_SOURCE: m})
             elif isinstance(m, dict):
                 standard_mapping.append(m)
@@ -713,7 +710,7 @@ class Map(Transformation):
             
         self.transform_sources = list(sources)
         self.mapping = standard_mapping
-        super().__init__(*self.transform_sources, states = MEMORY)
+        super().__init__(self.evaluate, *self.transform_sources, STATE = "states")
         self.transformation = transformation
     
     def evaluate(self, *data, states = None):

@@ -98,11 +98,11 @@ def _sim_hierarchy_sample():
     Y_H = Y_H[1:] # Align Y_{H,t} with Y_{A,t}
 
     # Model Y_H1 and Y_A as AR(1) processes
-    mH = ARX(DEFAULT_SOURCE, 2, 1, init_K=0.01, track_memory=True)
-    mA = ARX(DEFAULT_SOURCE, 2, 1, init_K=0.01, track_memory=True)
+    mH = ARX(DEFAULT_SOURCE, 2, 1, init_K=0.01, track_memory=True, memory=1)
+    mA = ARX(DEFAULT_SOURCE, 2, 1, init_K=0.01, track_memory=True, memory=1)
 
-    pH = mH(Y_H, track_state=True, mem=1)["mean"]
-    pA = mA(Y_A, track_state=True, mem=1)["mean"]
+    pH = mH(Y_H, track_states=True)["mean"]
+    pA = mA(Y_A, track_states=True)["mean"]
 
     # Stack Y_
     array = np.hstack([Y_A.reshape(-1, 1), Y_H.reshape(-1, 1), pA[:, [1]], pH])

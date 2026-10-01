@@ -5,14 +5,14 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from py_online_forecast import *
-from py_online_forecast.core import DEFAULT_SOURCE
+from py_online_forecast.core import DEFAULT_SOURCE, Param, Data
 
 # %%============================================================================
 # SECTION 0: DATA
 # %%============================================================================
 # %% 0.1 We use already prepared sample data
 from py_online_forecast.datasets import sample_data
-from py_online_forecast.forecast_tools import Subset
+from py_online_forecast.forecast_tools import Subset, ForecastModel, ForecastCollection
 
 # %%
 data = sample_data.fc.subset(horizons=(0, 1, 2, 4)).iloc[:200]
@@ -35,6 +35,28 @@ data.fc.subset("Ta", "Taobs", horizons=(0, 1, 2))
 # provides a method for converting to the correct format.
 data.fc.convert()
 
+
+#%% Use ARX model
+from py_online_forecast.prediction import ARX
+from py_online_forecast.forecast_tools import ToExog, ForecastFormat, Residuals
+
+#data["Ta",0] = data["Taobs", 0]
+
+ta_all = DEFAULT_SOURCE[["Ta"]]
+
+#%% Construct an exogenous input variable for the ARX model, using ToExog for convenience
+ta_exog = ToExog(2, ta_all)
+endog = Transformation(lambda x: np.asarray(x), DEFAULT_SOURCE[["energy"]])
+
+arx = ForecastFormat(ARX(DEFAULT_SOURCE[["energy"]], 2, 3, ta_exog, Q = 0.5, return_residuals = True))
+
+resid = Residuals(DEFAULT_SOURCE[["energy"]], arx["mean"])
+#%%
+result = arx(data)
+
+
+
+#%
 
 # %%============================================================================
 # SECTION 1: BASIC MODEL SETUP
@@ -62,8 +84,8 @@ ForecastFormat(lp_Ta)(data)
 # %%
 # We then create a Prediction for the 1-hour ahead forecast
 X = DesignMatrix(const, lp_Taobs, lp_Ta)
-pred = WLS(X, energy, horizon=1)
-
+memory = Param(0.95)
+pred = RRR(X, energy, horizon=1, memory = memory, return_residuals = True)
 
 # Note, if we do not need the prediction outside the model, we can also create the model directly,
 # model = Model.construct((const, lp_Taobs, lp_Ta), energy, ols_config, 1)
@@ -71,22 +93,23 @@ pred = WLS(X, energy, horizon=1)
 # %% 1.3 Fit Model and Make Predictions
 
 # The most direct way to apply the model is to call it on the data,
-result = pred(data, track_state=True)
-
-# This fits the model and returns predictions. If track_state is true, recursion parameters
-# such as WLS parameters are stored. The prediction allows us to fetch these,
-print(pred.predictor)
+result = pred(data, track_states=False)
 
 # %% For convenient use with forecast matrix data, we can use the ForecastFormat
-from py_online_forecast.forecast_tools import ForecastFormat
+from py_online_forecast.forecast_tools import ForecastFormat, Residuals
 
 # The ForecastFormat is a special type of transform (a Format) that converts outputs to dataframes in the forecast matrix format.
 # Formats can be used as any other transform (e.g. ForecastFormat(pred)), or be applied using
-pred.set_format(ForecastFormat)
+f_pred = ForecastFormat(pred)
 
 # The wrapped prediction acts similar to the original, but formats outputs appropriately
-result = pred(data, track_state=False)
+result = f_pred({DEFAULT_SOURCE: data}, track_states=False)
 
+resid = Residuals(DEFAULT_SOURCE[["energy"]], f_pred["mean"])
+
+tr = resid(data)
+
+#%%
 # Plot the predicted mean versus the observations
 fig, ax = plt.subplots()
 data.plot(y="energy", ax=ax)
@@ -98,17 +121,21 @@ plt.legend(["Observations", "Forecast"])
 plt.show()
 
 # Compare with least squares estimate
-beta_ols = pred.predictor
+theta_rls = f_pred.parameters["theta"]
 # %%
 pred.reset_state()
 X_data = pred.X(data)
 X_train_data = X_data[:-1]
 Y_data = pred.Y(data)
 
-beta_np = np.linalg.lstsq(X_train_data, Y_data.to_numpy()[1:], rcond=None)[0]
+theta_np = np.linalg.lstsq(X_train_data, Y_data.to_numpy()[1:], rcond=None)[0]
 
-print(f"Model parameters from OLS model: {beta_ols}")
-print(f"Model parameters from numpy lstsq: {beta_np}")
+print(f"Model parameters from RLS model: {theta_rls}")
+print(f"Model parameters from numpy lstsq: {theta_np}")
+
+# Note, the RLS model is (almost) equivalent to least squares when memory = 1.
+# A small difference is expected due to initialization of the covariance matrix,
+# required for recursive updates to be regular.
 
 # %%============================================================================
 # SECTION 3: ONLINE FORECASTING WITH RRR
@@ -123,11 +150,15 @@ print(f"Model parameters from numpy lstsq: {beta_np}")
 # - convenience methods for fitting and updating the predictor
 
 X = (const, lp_Taobs, lp_Ta)
-model = ForecastModel(X, energy, 1, track_memory=True, init_K=0.00001)
+memory = Param(1.0)
+model = ForecastModel(X, energy, 1, track_memory=True, memory = memory, return_residuals = True)
 
 # %% 3.2 Fit Model and Make Predictions
 # Fit the model and make predictions as before
-result = model.fit(data, mem=1)
+model.reset_state()
+result = model(data)
+
+#%%
 fig, ax = plt.subplots()
 data.plot(y="energy", ax=ax)
 result["mean"].shift(1).plot(ax=ax)  # Shift predictions 1 hour ahead
@@ -138,8 +169,8 @@ plt.show()
 # %% 3.3 Multivariate target
 # The RRR prediction also supports multivariate targets, e.g. energy and Taobs
 target = DEFAULT_SOURCE[["energy", "Taobs"]]
-model_multi = ForecastModel(X, target, horizon=1, track_memory=True, init_K=0.00001)
-result_multi = model_multi.fit(data, mem=1)
+model_multi = ForecastModel(X, target, horizon=1, track_memory=True)
+result_multi = model_multi(data)
 fig, ax = plt.subplots()
 data.plot(y="energy", ax=ax)
 data.plot(y="Taobs", ax=ax)
@@ -160,7 +191,7 @@ predictions = []
 
 # Update model with each data subset
 for s in subsets:
-    p = model.update(s, mem=1)["mean"]
+    p = model(s, track_states=True)["mean"]
     predictions.append(p)
 
 predictions = pd.concat(predictions)
@@ -173,7 +204,8 @@ print(
 
 # %%
 # Models can also be updated without updating predictor parameters, i.e. only predict,
-model.update(data, update_predictor=False)
+# TODO: replace update_predictor with a Param, then pass it as data
+#model.update(data, update_predictor=False)
 
 # %%============================================================================
 # SECTION 4: MULTI-HORIZON FORECASTING
@@ -189,11 +221,12 @@ lp_Ta2 = LowPass(ta2, alpha=0.8)
 X2 = (const, lp_Taobs, lp_Ta2)
 
 # We then make a prediction for the 2-hour ahead forecast
-model_2h = ForecastModel(X2, energy, horizon=2, track_memory=True, init_K=0.00001)
+model_2h = ForecastModel(X2, energy, horizon=2, track_memory=True, memory = memory)
 
 # Note, we can still run the prediction as a standalone object
-ref_1h = model.fit(data, mem=1)
-ref_2h = model_2h.fit(data, mem=1)
+model.reset_state()
+ref_1h = model(data)
+ref_2h = model_2h(data)
 
 
 # %% 4.2 Model Ensemble
@@ -201,7 +234,7 @@ ref_2h = model_2h.fit(data, mem=1)
 models = Combine(model, model_2h)
 
 # Apply the combined model
-result = models(data, params = {model: {"mem": 1}, model_2h: {"mem": 1}})
+result = models(data)
 
 # Results are returned in a dict indexed by the individual transforms (models),
 result_model_1h = result[model]
@@ -216,27 +249,32 @@ result_model_2h = result[model_2h]
 # First, get all forecasts of Ta
 ta_all = DEFAULT_SOURCE[["Ta"]]
 
+
+
+
+#%%
 # Apply low-pass filters to all forecasts of Ta.
 lp_Ta_all = LowPass(ta_all, alpha=0.8)
 Xall = (const, lp_Taobs, lp_Ta_all)
-horizon_models = ForecastEnsemble(
+horizon_models = ForecastCollection(
     Xall,
     energy,
     horizons=(1, 2),
     input_horizons="auto",
     track_memory=True,
-    init_K=0.00001,
+    memory = memory,
+    return_residuals=True
 )
 
 # Then fit the ensemble as normal
-horizon_result = horizon_models.fit(data, mem=1)
+horizon_result = horizon_models(data)
 
 # Note, the horizon ensemble concatenates results for all horizons in one dataframe
 # Ensembles can also be updated in an online fashion
 horizon_models.reset_state()
 predictions = []
 for s in subsets:
-    p = horizon_models.update(s, mem=1)["mean"]
+    p = horizon_models(s, track_states=True)["mean"]
     predictions.append(p)
 
 predictions = pd.concat(predictions, axis=0)
@@ -290,7 +328,7 @@ sum_transform(data)
 # abstract placeholders for data. Transformations use Sources as inputs, and are
 # themselves Sources for other transformations or models. A basic source can be
 # created directly using,
-raw_data = Source("Raw data")
+raw_data = Data()
 
 # Then it can be used as input for transformations, e.g.
 lp_raw = LowPass(raw_data, alpha=0.8)
@@ -316,11 +354,6 @@ DEFAULT_SOURCE
 # for the initial input and target data and DIM_X and DIM_Y correspond to Dim(X_init) and Dim(Y_init). These sources are
 # only available within scopes when creating custom predictors.
 
-from py_online_forecast.core import parse_data
-
-# The DEFAULT_SOURCE is populated with data when parse_data is called in the transformation,
-data_dict = parse_data(data)
-data_dict[DEFAULT_SOURCE]  # <- Same as data
 
 # %%============================================================================
 # SECTION 7: HYPERPARAMETER OPTIMIZATION
@@ -333,57 +366,53 @@ data_dict[DEFAULT_SOURCE]  # <- Same as data
 trend_data = data.copy()
 trend_data[("energy", 0)] += 0.1 * np.arange(len(trend_data))
 
-# Set score mode to true
-model.set_score_mode()
 
+
+# Import the RMSE transformation
+from py_online_forecast.prediction import RMSE
+
+score = RMSE(model["residuals"])
+model.reset_state()
+#%%
 
 def obj(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
     lp_Ta.alpha = alpha
-    return model.fit(trend_data, mem=mem)["score"]
+    return score({DEFAULT_SOURCE: trend_data, memory: mem})
 
 
 res = minimize(obj, x0=[0.5, 0.5], bounds=[(0, 1), (0, 1)], method="Nelder-Mead")
 print(res)
 
+#%% Run model on data and plot result
+lp_Taobs.alpha = res.x[0]
+lp_Ta.alpha = res.x[0]
+model.reset_state()
+result = model({DEFAULT_SOURCE: trend_data, memory: res.x[1]})
+# Plot the results
+plt.plot(result["mean"], label="Predicted")
+plt.plot(trend_data[("energy", 0)], label="Actual")
+plt.legend()
+plt.show()
+
 # %% 7.2 Hyperparameter Optimization for Ensembles
 # And similarly for the horizon ensemble
-horizon_models.set_score_mode()
-
-
+score_horizon = RMSE(horizon_models["residuals"])
+horizon_models.reset_state()
 def obj_horizon(x):
     alpha, mem = x
     lp_Taobs.alpha = alpha
     lp_Ta_all.alpha = alpha
-    result = horizon_models.fit(trend_data, mem=mem)
-    return np.mean(list(result["score"].values()))  # Average score across horizons
+    return score_horizon({DEFAULT_SOURCE: trend_data, memory: mem})
 
 
 res_horizon = minimize(
     obj_horizon, x0=[0.5, 0.5], bounds=[(0, 1), (0, 1)], method="Nelder-Mead"
 )
 print(res_horizon)
-# %%============================================================================
-# SECTION 8: CUSTOM TRANSFORMS AND PREDICTORS
-# %%============================================================================
-# %% 8.1 Custom Transform
-# Custom transforms can be created by inheriting from the Transformation class
-# and implementing the evaluate method.
-from py_online_forecast.core import Transformation
 
 
-class CustomTransform(Transformation):
-    def __init__(self, source, param1=0.5, param2=1.0):
-        super().__init__(data=source, old_param=MEMORY)
-        self.param1 = param1
-        self.param2 = param2
 
-    def evaluate(self, data, old_param=None):
-        old_param = old_param or 1.0
-        param = old_param * self.param1 + self.param2
-        return data * param, param
-
-
-# In the above ...
-
+# %%
+#%%

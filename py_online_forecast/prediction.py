@@ -22,375 +22,25 @@ import numpy as np
 
 from .core import (
     DEFAULT_SOURCE,
-    MEMORY,
-    Apply,
+#    MEMORY,
+#    Apply,
     CircularBuffer,
     Dim,
-    Source,
+#    Source,
     Transformation,
-    make_keyword,
+    Data,
+    Param,
 )
 from .features import (
     ForgettingVariance,
     Lag,
+    ToArray,
 )
-
-X_INIT = make_keyword("X_INIT")
-Y_INIT = make_keyword("Y_INIT")
-Z_INIT = make_keyword("Z_INIT")
-
-DIM_X = Dim(X_INIT)
-DIM_Y = Dim(Y_INIT)
-DIM_Z = Dim(Z_INIT)
-
-
-def rmse(x):
-    """Compute the root-mean-square error of x."""
-    return np.sqrt(np.mean(x**2))
-
-
-class Prediction(Transformation):
-    r"""Base class for discrete horizon forecasting transformations.
-
-    This class provides generic behavior for discrete horizon forecasting problems
-    where the model learns from lagged inputs and targets. Subclasses must implement
-    core methods for state creation, model updates, and prediction.
-
-    Parameters
-    ----------
-    X : Source
-        Input data source. Output should be compatible with the Lag transformation.
-    Y : Source
-        Target data source.
-    horizon : int
-        Forecast horizon in time steps.
-    Z : Source, optional
-        Additional exogenous features (not lagged) for use in prediction. If None,
-        exogenous features are not used. Default is None.
-    score_mode : bool, default False
-        If True, the ``score`` method is called during evaluation to compute metrics.
-    default_params : dict, optional
-        Default parameters to pass to ``update`` and ``predict`` methods. These can be
-        overridden by providing parameters in the ``apply`` method. Default is None.
-    *args, **kwargs
-        Additional arguments passed to the ``create`` method for initialization. Note,
-        Sources will be resolved and their values passed in place of the Source objects.
-
-    Attributes
-    ----------
-    predictor : object or None
-        The fitted predictor state/parameters. Populated when ``apply`` is called with
-        ``track_state`` enabled.
-
-    Methods
-    -------
-    create
-        Initialize predictor state (abstract, implemented by subclasses).
-    update
-        Update predictor state with new data and make predictions (abstract).
-    predict
-        Make predictions without updating predictor state (abstract).
-    score
-        Compute evaluation metric on predictions (optional).
-
-    Notes
-    -----
-    The forecasting model assumes a relationship between lagged inputs and targets:
-
-    .. math::
-
-        Y_t = f(X_{t-h})
-
-    where :math:`h` is the forecast horizon. Predictions are then made according to:
-
-    .. math::
-
-        \hat{Y}_{t+h} = g(\text{state}_t, Z_t)
-
-    where :math:`\text{state}_t`` contains the learned model parameters and :math:``Z_t`
-    are optional exogenous features.
-    """
-
-    def __init__(
-        self,
-        X,
-        Y,
-        horizon,
-        *args,
-        Z=None,
-        score_mode=False,
-        default_params=None,
-        **kwargs,
-    ):
-        self.X = X
-        self.Y = Y
-        self.X_train = Lag(X, amount=horizon)
-        self.args = args
-        self.kwargs = kwargs
-        self._score_mode = score_mode
-        self._default_params = default_params or {}
-
-        if Z is None:
-            Z_kwarg = {}
-            self._use_Z = False
-        else:
-            Z_kwarg = {"Z": Z}
-            self._use_Z = True
-
-        super().__init__(X, Y, state=MEMORY, **Z_kwarg)
-
-    @property
-    def score_mode(self):
-        """Return whether score mode is enabled."""
-        return self._score_mode
-
-    @score_mode.setter
-    def score_mode(self, value: bool):
-        self._score_mode = value
-
-    def set_score_mode(self):
-        """Enable score mode."""
-        self._score_mode = True
-
-    def unset_score_mode(self):
-        """Disable score mode."""
-        self._score_mode = False
-
-    @property
-    def default_params(self):
-        """Return the default parameters for update and predict methods."""
-        return self._default_params
-
-    @default_params.setter
-    def default_params(self, value: dict):
-        self._default_params = value
-
-    def _get_value(self, v, data):
-        if isinstance(v, Source):
-            if v in data:
-                return data[v]
-            elif isinstance(v, Transformation):
-                return v.apply(data)
-        else:
-            return v
-
-    def _create(self, X, Y, Z):
-        data = {X_INIT: X, Y_INIT: Y, Z_INIT: Z}
-        # Construct init params using data if required
-        args = []
-        for arg in self.args:
-            args.append(self._get_value(arg, data))
-        kwargs = {}
-        for k, v in self.kwargs.items():
-            kwargs[k] = self._get_value(v, data)
-
-        # Call create method with constructed params
-        return self.create(*args, **kwargs)
-
-    @abstractmethod
-    def create(self, *args, **kwargs):
-        """Initialize and return predictor state.
-
-        This method is called during ``evaluate`` if the ``state`` is None. Subclasses may
-        use the provided arguments to set up the predictor state based on data
-        dimensions or other parameters.
-
-        Parameters
-        ----------
-        *args
-            Positional arguments resolved from the ``args`` provided to ``__init__``.
-        **kwargs
-            Keyword arguments resolved from the ``kwargs`` provided to ``__init__``.
-
-        Returns
-        -------
-        state : object
-            The initialized predictor state to be passed to ``update`` and ``predict``
-            methods. This can be any object; subclasses define the state representation.
-
-        Notes
-        -----
-        Arguments are automatically resolved by ``_create`` so that Source objects are
-        evaluated to their values before being passed here.
-        """
-        pass
-
-    @abstractmethod
-    def update(self, state, X, Y, X_train, Z=None, **params) -> tuple:
-        r"""Update predictor state using new data and return prediction.
-
-        Subclasses should implement this to nake predictions and update the predictor
-        state based on lagged training data and targets.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state from previous evaluation or initialization.
-        X : object
-            Current input features, to be used for prediction.
-        Y : object
-            Current target data, to be used for training and evaluation.
-        X_train : object
-            Input features lagged by the forecast horizon, to be used for training the
-            model.
-        Z : object
-            Current exogenous input features, to be used for prediction and evaluation.
-        **params : object
-            Additional parameters specified via ``default_params`` or ``apply`` method.
-
-        Returns
-        -------
-        prediction : object
-            The prediction output
-        state : object
-            Updated predictor state for the next evaluation.
-
-        Notes
-        -----
-        Fitting should be performed as: :math:`Y \sim X_{train}`
-        """
-        pass
-
-    @abstractmethod
-    def predict(self, state, X, Z=None, **params):
-        """Make predictions without updating predictor state.
-
-        Subclasses should implement this to make predictions using the current state.
-        The implementation should be a pure function, and in particular leave the state
-        unchanged.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state from previous evaluation.
-        X : object
-            Current input features (lagged values also used for training).
-        Z : object
-            Current exogenous features.
-        **params : Any
-            Additional parameters specified via ``default_params`` or ``apply`` method.
-
-        Returns
-        -------
-        prediction : object
-            Prediction(s) for the current data.
-
-        Notes
-        -----
-        This method should not update internal state to enable prediction without
-        learning.
-        """
-        pass
-
-    def score(self, state, X, Y, prediction, Z=None, **params):
-        """Compute evaluation metric on predictions.
-
-        This method is optional and only called when ``score_mode`` is enabled. Subclasses
-        may override to compute custom metrics on predictions.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state.
-        X : object
-            Current input features (lagged values also used for training).
-        Y : object
-            Current target data.
-        prediction : object
-            Prediction output from ``update`` or ``predict``.
-        Z : object, optional
-            Exogenous features if prpvoded
-        **params : Any
-            Additional parameters.
-
-        Returns
-        -------
-        prediction : object
-            Updated prediction or score object
-
-        Raises
-        ------
-        NotImplementedError
-            If not implemented by a subclass and ``score_mode`` is enabled.
-        """
-        raise NotImplementedError("Score method not implemented for this predictor.")
-
-    def evaluate(self, X, Y, update_predictor=True, state=None, Z=None, **params):
-        """Evaluate the transformation with training or prediction mode.
-
-        Initializes state if needed, then calls either ``update`` or ``predict`` depending
-        on the ``update_predictor`` keyword. Optionally computes scores.
-
-        Parameters
-        ----------
-        X : object
-            Current input features.
-        Y : object
-            Target data.
-        update_predictor : bool, default True
-            If True, calls ``update`` to train and predict. If False, calls ``predict`` to
-            make predictions without training.
-        state : tuple or None, optional
-            Previous predictor and lag buffer state from a prior evaluation. If None,
-            initializes fresh.
-        Z : object, optional
-            Exogenous features.
-        **params : Any
-            Additional parameters for ``update`` or ``predict`` methods.
-
-        Returns
-        -------
-        result : object
-            Prediction output, optionally with scores if ``score_mode`` is enabled.
-        state : tuple
-            Updated (predictor_state, X_lag_state) for the next evaluation.
-        """
-        # Combine provided and default predictor parameters
-        params = self._default_params | params
-
-        if self._use_Z:
-            params["Z"] = Z
-
-        if state is None:
-            # Create predictor state
-            predictor_state = self._create(X, Y, Z)
-
-            X_state = None
-
-        else:
-            predictor_state, X_state = state
-
-        if update_predictor:
-
-            # Get training data
-            X_train, X_state = self.X_train.evaluate(X, X_state)
-            result, predictor_state = self.update(
-                predictor_state, X, Y, X_train, **params
-            )
-
-        else:
-            result = self.predict(predictor_state, X, **params)
-
-        if self.score_mode:
-            result = self.score(predictor_state, X, Y, result, **params)
-
-        # Return result and state
-        return result, (predictor_state, X_state)
-
-    @property
-    def predictor(self):
-        """Return the current predictor state if available."""
-        if self.recursion_pars is None:
-            return None
-        else:
-            return self.recursion_pars[self][0]
-
-
-def _stack_results(forecasts: list[dict] | list[np.ndarray]) -> dict | np.ndarray:
+def stack(forecasts):
+    """Stack results from multiple rows into a single output."""
 
     # Convert to dict of lists
-    if isinstance(forecasts[0], dict):
-        forecasts = {key: [r[key] for r in forecasts] for key in forecasts[0]}
+    forecasts = {key: [r[key] for r in forecasts] for key in forecasts[0]}
 
     # Stack any numpy arrays
     for key, values in forecasts.items():
@@ -415,577 +65,55 @@ def _stack_results(forecasts: list[dict] | list[np.ndarray]) -> dict | np.ndarra
 
     return forecasts
 
+class Stack(Transformation):
+    """Stack results from multiple rows into a single output."""
 
-class OnlinePrediction(Prediction):
-    """Base class for row-by-row online prediction transformations.
-
-    Extends ``Prediction`` to support incremental (row-by-row) updates for online
-    forecasting. The ``update`` and ``predict`` methods iterate over data rows,
-    calling ``online_update`` and ``online_predict`` for each observation.
-
-    Parameters
-    ----------
-    Same as ``Prediction``.
-
-    Methods
-    -------
-    online_update
-        Update model with a single row and make prediction (abstract).
-    online_predict
-        Make prediction for a single row without updating (abstract).
-
-    Notes
-    -----
-    To enable online updates, the class will treat X, Y and Z as ndarrays. Rows are
-    looped over in the ``update`` and ``predict`` methods and NaN values are ignored for
-    training. Content of the arrays is not assumed to be numeric and may in principle
-    be used for any type of data.
-
-    See Also
-    --------
-    Prediction : Parent class for batch-mode prediction.
-    """
-
-    @classmethod
-    def _convert_arrays(cls, X, Y=None, X_train=None, Z=None):
-        if not isinstance(X, np.ndarray):
-            X = np.asarray(X)
-        if not isinstance(Y, np.ndarray) and Y is not None:
-            Y = np.asarray(Y)
-        if not isinstance(X_train, np.ndarray) and X_train is not None:
-            X_train = np.asarray(X_train)
-        if not isinstance(Z, np.ndarray) and Z is not None:
-            Z = np.asarray(Z)
-
-        # Ensure 2D arrays
-        if X.ndim == 1:
-            X = X.reshape(-1, 1)
-        if Y is not None and Y.ndim == 1:
-            Y = Y.reshape(-1, 1)
-        if X_train is not None and X_train.ndim == 1:
-            X_train = X_train.reshape(-1, 1)
-        if Z is not None and Z.ndim == 1:
-            Z = Z.reshape(-1, 1)
-
-        return X, Y, X_train, Z
-
-    def update(
-        self,
-        state,
-        X: np.ndarray,
-        Y: np.ndarray,
-        X_train: np.ndarray,
-        Z: np.ndarray = None,
-        **params,
-    ):
-        """Update predictor with batch data by processing rows incrementally.
-
-        Iterates over data rows, calling ``online_update`` for each and stacks results.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state.
-        X : ndarray of shape (n_obs, ...)
-            Input features.
-        Y : ndarray of shape (n_obs, ...)
-            Target data.
-        X_train : ndarray of shape (n_obs, ...)
-            Input features lagged by the forecast horizon, used for training.
-        Z : ndarray of shape (n_obs, n_exog), optional
-            Exogenous features.
-        **params : object
-            Additional parameters provided to ``online_update`` and ``online_predict``.
-
-        Returns
-        -------
-        forecasts : dict or ndarray
-            Stacked predictions from all rows. If ``online_update`` returns dicts,
-            result is a dict of arrays; otherwise a single array.
-        state : object
-            Updated predictor state after processing all rows.
-        """
-        X, Y, X_train, Z = self._convert_arrays(X, Y, X_train, Z)
-
-        n = X.shape[0]
-        forecasts = []
-
-        # Loop over each row of data
-        for i in range(n):
-
-            x = X[i]
-            y = Y[i]
-            x_train = X_train[i]
-
-            if self._use_Z:
-                params["z_i"] = Z[i]
-
-            # Update model
-            forecast, state = self.online_update(
-                state, x, y, x_train, **params
-            )
-
-            forecasts.append(forecast)
-
-        forecasts = _stack_results(forecasts)
-
-        return forecasts, state
-
-    def predict(self, state, X: np.ndarray, Z=None, **params):
-        """Make predictions for batch data by processing rows incrementally.
-
-        Iterates over each row, calling ``online_predict`` for each without updating
-        the predictor state.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state.
-        X : ndarray of shape (n_samples, ...)
-            Input features.
-        Z : ndarray of shape (n_samples, ...), optional
-            Exogenous features.
-        **params : object
-            Additional parameters for ``online_predict``.
-
-        Returns
-        -------
-        forecasts : dict or ndarray
-            Stacked predictions from all rows.
-
-        Raises
-        ------
-        ValueError
-            If any parameter key is not recognized for prediction.
-        """
-        X, _, _, Z = self._convert_arrays(X, Z=Z)
-
-        # Predict multiple rows.
-        n = X.shape[0]
-        forecasts = []
-
-        for i in range(n):
-            x = X[i]
-            if self._use_Z:
-                params["z"] = Z[i]
-            forecast = self.online_predict(state, x, **params)
-            forecasts.append(forecast)
-
-        forecasts = _stack_results(forecasts)
-
-        return forecasts
-
-    @abstractmethod
-    def online_update(self, state, x_i, y_i, x_train_i, z_i=None, **params) -> tuple:
-        r"""Update model with a single data row and return prediction.
-
-        Subclasses must implement this method to perform incremental updates with
-        individual observations.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state.
-        x_i : object
-            Single entry of input features.
-        y_i : object
-            Single entry of target values.
-        x_train_i : object
-            Single entry of lagged training features.
-        z_i : object, optional
-            Single entry of exogenous features.
-        **params : object
-            Additional update parameters.
-
-        Returns
-        -------
-        prediction : dict or ndarray
-            Prediction for the current entry x_i.
-        state : object
-            Updated predictor state.
-
-        Notes
-        -----
-        Fitting should use the lagged features: :math:`y_i \sim x_{train,i}`
-        """
-
-    @abstractmethod
-    def online_predict(self, state, x_i, z_i=None, **params):
-        """Predict a single row.
-
-        Parameters
-        ----------
-        state : object
-            Current predictor state.
-        x_i : object
-            Single entry of input features.
-        z_i : object, optional
-            Single entry of exogenous features.
-        **params : object
-            Additional prediction parameters.
-
-        Returns
-        -------
-        prediction : dict or ndarray
-            Prediction for the current entry x_i.
-        """
-        pass
-
-
-def evaluate_score(Y_hat, Y, burn_in=0, remove_nan=True, scorefun=rmse):
-    """Evaluate a score function on the residuals between predictions and targets.
-
-    Parameters
-    ----------
-    Y_hat : ndarray
-        Predicted values.
-    Y : ndarray
-        True target values.
-    burn_in : int, default 0
-        Number of initial observations to discard from evaluation.
-    remove_nan : bool, default True
-        If True, removes any rows with NaN values from the residuals before scoring.
-    scorefun : function, default rmse
-        Function to compute the score on the residuals. Should take an array of
-        residuals and return a scalar score.
-    """
-    resid = Y - Y_hat
-
-    if burn_in > 0:
-        resid = resid[burn_in:]
-    if remove_nan:
-        mask = ~np.isnan(resid).any(axis=1)
-        resid = resid[mask]
-
-    return scorefun(resid)
-
-
-class WLS(Prediction):
-    """Weighted least squares prediction.
-
-    This predictor assumes a linear models and uses weighted least squares to fit
-    parameters and make predictions.
-
-    Parameters
-    ----------
-    X : Source
-        Input data source. Output should be compatible with the Lag transformation.
-    Y : Source
-        Target data source.
-    horizon : int
-        Forecast horizon in time steps.
-    """
-
-    def __init__(self, X, Y, horizon):
-        super().__init__(X, Y, horizon, n=DIM_X, m=DIM_Y)
-
-    def create(self, n, m):
-        """Initialise the (n, m) parameter array."""
-        # Initialize state as parameters of WLS model (theta)
-        return np.zeros((n, m))
-
-    def update(
-        self,
-        state,
-        X: np.ndarray,
-        Y: np.ndarray,
-        X_train: np.ndarray,
-        W: np.ndarray = None,
-    ):
-        r"""Fit weighted least squares model and return predictions.
-
-        Parameters
-        ----------
-        state : object
-            Not used.
-        X : ndarray of shape (n_obs, n_features)
-            Current input data for prediction.
-        Y : ndarray of shape (n_obs, n_targets)
-            Current target data for model fitting.
-        X_train : ndarray of shape (n_obs, n_features)
-            Lagged input data at the forecast horizon, used for fitting the model.
-        W : ndarray of shape (n_train, n_train), optional
-            Positive-definite weight matrix for WLS. If None, use identity matrix
-            (ordinary least squares). Default is None.
-
-        Returns
-        -------
-        prediction : dict
-            Dictionary with key "mean" containing predictions of shape
-            (n_obs, n_targets).
-        theta : ndarray of shape (n_features, n_targets)
-            Fitted model parameters (weights).
-        """
-        if not isinstance(X, np.ndarray):
-            X = np.asarray(X)
-        if not isinstance(Y, np.ndarray):
-            Y = np.asarray(Y)
-        if not isinstance(X_train, np.ndarray):
-            X_train = np.asarray(X_train)
-
-        # Fit WLS model
-        mask = ~np.isnan(X_train).any(axis=1) & ~np.isnan(Y).any(axis=1)
-        X_fit = X_train[mask]
-        Y_fit = Y[mask]
-
-        if W is None:
-            W = np.eye(
-                X_fit.shape[0]
-            )  # Default to identity weights if W is not provided
-        else:
-            W = W[np.ix_(mask, mask)]  # Subset W to match the filtered data
-
-        XtW = X_fit.T @ W
-        theta = np.linalg.solve(XtW @ X_fit, XtW @ Y_fit)
-
-        pred = self.predict(theta, X)
-
-        return pred, theta
-
-    def predict(self, state, X: np.ndarray):
-        """Apply the parameters to make predictions."""
-        # Predict
-        pred = X @ state
-        return {"mean": pred}
-
+    def __init__(self, values):
+        super().__init__(stack, values)
 
 class RRRPredictor:
-    r"""Recursive ridge regression predictor with variance estimation.
+    """A class for performing recursive ridge regression."""
 
-    Implements a recursive formulation of ridge regression with exponential
-    forgetting and optional covariance estimation for prediction uncertainty.
-
-    Parameters
-    ----------
-    n : int
-        Dimension of input features.
-    m : int
-        Dimension of target variables.
-    horizon : int
-        Forecast horizon in time steps (used for prediction error variance estimation).
-    burn_in : int, default 1
-        Number of initial observations to skip before estimating prediction error
-        variance.
-    init_K : float, default 0
-        Initial value for the diagonal of the :math:`X^T P X` accumulator matrix K.
-        Higher values add regularization at initialization.
-    track_memory : bool, default False
-        If True, tracks exact effective sample size during burn-in for variance
-        estimation. If False, assumes saturated memory.
-    combine_variance : bool, default True
-        Not currently used.
-    full_cov : bool, default True
-        If True, estimates full covariance matrix for prediction errors. If False,
-        estimates only diagonal variances.
-    center_cov : bool, default False
-        If True, centers the residuals before computing covariance.
-    mem : float, default 0.99
-        Forgetting factor in [0, 1] for exponential weighting. Higher values retain
-        more historical data; lower values adapt faster to recent observations.
-    mem_var : float, optional
-        Forgetting factor for prediction error variance estimation. If None, uses the
-        same value as ``mem``.
-
-    Attributes
-    ----------
-    K : ndarray of shape (n, n)
-        Accumulated (weighted) :math:`X_{train}^T P X_{train}` matrix.
-    L : ndarray of shape (n, m)
-        Accumulated (weighted) :math:`X_{train}^T P Y` matrix.
-    theta : ndarray of shape (n, m)
-        Current parameter estimates.
-    psi : ndarray of shape (n, n)
-        Uncertainty matrix :math:`K^{-1} H K^{-1}` for parameter variance computation.
-    V : ndarray of shape (m, m) or (m,)
-        Estimated prediction error covariance (full matrix or diagonal).
-    H : ndarray of shape (n, n)
-        Accumulated squared forgetting factor weighted :math:`X_{train}^T P X_{train}`.
-    Y_hat : CircularBuffer
-        Circular buffer storing recent predictions for residual-based variance estimation.
-
-    Methods
-    -------
-    online_update
-        Update model parameters with a single observation and return prediction.
-    online_predict
-        Make prediction for a single observation without updating.
-    get_var_vec_theta
-        Compute vectorized parameter covariance matrix.
-    get_model_params
-        Return current model parameters theta.
-
-    Notes
-    -----
-    The recursive update solves the regularized normal equations at each step:
-
-    .. math::
-
-        \theta_t = (K_t + Q)^{-1} (L_t + Q \theta_0)
-
-    where :math:`K_t = \lambda K_{t-1} + x_{train,t} x_{train,t}^T` and
-    :math:`L_t = \lambda L_{t-1} + x_{train,t} y_t^T`, with :math:`\lambda` being
-    the forgetting factor (``mem``).
-
-    Mean point predictions are computed as:
-
-        .. math::
-            
-            \hat{y} = x^T \theta
-
-    Prediction uncertainty accounts for both parameter and error variance:
-
-        .. math::
-            
-            \text{Cov}[\hat{y} - y] = V (1 + x^T \psi x)
-
-    where V is estimated from recent prediction residuals and
-    :math:`\psi_t = K_t^{-1} H_t K_t^{-1}` captures the parameter uncertainty
-    contribution to prediction error variance.
-
-    After burn-in, V is estimated from :math:`(y_t - \hat{y}_{t-h})` where
-    :math:`\hat{y}_{t-h}` is the h-step-ahead forecast made at time t-h.
-
-    The parameters posterior under the ridge model is matrix normal with mean 
-    :math:`\theta_t`` and covariance :math:``V \otimes \psi`.
-    """
-
-    def __init__(
-        self,
-        n,
-        m,
-        horizon,
-        burn_in=1,
-        init_K=0,
-        track_memory=False,
-        combine_variance=True,
-        full_cov=True,
-        center_cov=False,
-        mem=0.99,
-        mem_var=None
-    ):
-
-        mem_var = mem if mem_var is None else mem_var
-        
+    def __init__(self, n, m, init_K):
+        if init_K is None:
+            init_K = 1e-6
         self.K = np.eye(n) * init_K
         self.L = np.zeros((n, m))
-        self.burn_in = burn_in
-        self._n_updates = 0
         self.H = np.zeros((n, n))
         self.theta = np.full((n, m), np.nan)
         self.psi = np.full((n, n), np.nan)
-        self.V = np.full((m, m), np.nan)
-        self.combine_variance = combine_variance
+
         self.n, self.m = n, m
-        self._forgetting_var_state = None
-        self._full_cov = full_cov
-        self.Y_hat = CircularBuffer(horizon, m)
-        self.mem = mem
-        self.mem_var = mem_var
 
-        self._forgetting_var = ForgettingVariance(
-            forgetting=mem_var,
-            track_memory=track_memory,
-            covariance=full_cov,
-            center=center_cov,
-        )
-
-    def online_update(
-        self,
-        x_i,
-        y_i,
-        x_train_i,
-        Q: np.ndarray | float = None,
-        theta0: np.ndarray = None,
-        V: np.ndarray = None,
-        update_V=True,
-        mem=None,
-        mem_var=None,
-        return_var_theta=False,
-        update_theta=True
-    ):
-        r"""Update model with single observation and return prediction.
-        
-        Performs recursive ridge regression update with exponential forgetting and
-        updates prediction error variance estimate if enabled.
-        
-        Parameters
-        ----------
-        x_i : ndarray of shape (n_features,)
-            Current input features for prediction.
-        y_i : ndarray of shape (n_targets,)
-            Current target observation for model update.
-        x_train_i : ndarray of shape (n_features,)
-            Lagged input features at the forecast horizon for model fitting.
-        Q : ndarray of shape (n_features, n_features) or float, optional
-            Ridge regularization matrix. If float, uses :math:`Q = q I`. If None, no
-            regularization is applied. Must be symmetric if array. Default is None.
-        theta0 : ndarray of shape (n_features, n_targets), optional
-            Prior mean for parameters (regularization target). If None, uses zero.
-            Default is None.
-        V : ndarray of shape (n_targets, n_targets) or (n_targets,), optional
-            Fixed prediction error covariance. If provided, overrides internal estimate.
-            Default is None.
-        update_V : bool, default True
-            If True, updates prediction error covariance V from residuals after burn-in.
-        mem : float, optional
-            Forgetting factor for this update. If None, uses value from initialization.
-            Must be in [0, 1]. Default is None.
-        mem_var : float, optional
-            Forgetting factor for prediction error variance estimation. If None, uses
-            value from initialization. Must be in [0, 1]. Default is None.
-        return_var_theta : bool, default False
-            If True, includes parameter covariance in the returned prediction dict.
-        update_theta : bool, default True
-            If True, updates theta parameters with the new observation.
-
-        Returns
-        -------
-        result : dict
-            Prediction dictionary with keys:
-            
-            - "mean" : ndarray of shape (n_targets,) - Point prediction
-            - "cov" : ndarray - Prediction error covariance/variance
-            - "cov_theta" : ndarray (optional) - Parameter covariance if requested
-    
-        Raises
-        ------
-        ValueError
-            If mem is not in [0, 1] or if Q is not symmetric.
-        """
-        if mem is None:
-            mem = self.mem
-        if mem_var is None:
-            mem_var = self.mem_var
+    def update(self, x, y, mem, theta0, Q):
+        """Update parameters."""
 
         n, m = self.n, self.m
+        # Check inputs
+        if mem < 0 or mem > 1:
+            raise ValueError("Memory must be between 0 and 1.")
 
-        if V is not None:
-            self.V = V
+        if theta0 is None:
+            theta0 = np.zeros((n, m))
 
-        y_ready = not np.isnan(y_i).any()
-        x_train_ready = not np.isnan(x_train_i).any()
+        if Q is None:
+            Q = np.zeros((n, n))
+        elif isinstance(Q, (float, int)):
+            Q = np.eye(n) * Q
 
-        if update_theta and y_ready and x_train_ready:
+        elif not np.allclose(Q, Q.T):
+            raise ValueError("Q must be symmetric.")
 
-            # Check inputs
-            if mem < 0 or mem > 1:
-                raise ValueError("Memory must be between 0 and 1.")
+        if theta0 is None:
+            theta0 = np.zeros((n, m))
 
-            if theta0 is None:
-                theta0 = np.zeros((n, m))
+        data_ready = not np.isnan(y).any() and not np.isnan(x).any()
 
-            if Q is None:
-                Q = np.zeros((n, n))
-            elif isinstance(Q, (float, int)):
-                Q = np.eye(n) * Q
+        if data_ready:
 
-            elif not np.allclose(Q, Q.T):
-                raise ValueError("Q must be symmetric.")
+            # Perform update
 
-            if theta0 is None:
-                theta0 = np.zeros((n, m))
-
-            x_outer = np.outer(x_train_i, x_train_i)
+            x_outer = np.outer(x, x)
 
             if self.K is None:
                 self.K = x_outer
@@ -993,9 +121,9 @@ class RRRPredictor:
                 self.K = mem * self.K + x_outer
 
             if self.L is None:
-                self.L = np.outer(x_train_i, y_i)
+                self.L = np.outer(x, y)
             else:
-                self.L = mem * self.L + np.outer(x_train_i, y_i)
+                self.L = mem * self.L + np.outer(x, y)
 
             KpQ = self.K + Q
             LpQtheta = self.L + Q @ theta0
@@ -1009,248 +137,146 @@ class RRRPredictor:
 
             self.psi = np.linalg.solve(KpQ, temp1.T).T  # K^-1 H K^-1^T
 
-        if y_ready and update_V and self._n_updates >= self.burn_in:
+class RRR(Transformation):
 
-            y_i_hat = self.Y_hat.get(1)  # Get oldest prediction
-            resid = np.atleast_2d(y_i - y_i_hat)
-            self.V = self._forgetting_var(resid, track_state=True, forgetting=mem_var)[0]
-            if not self._forgetting_var.covariance:
-                self.V = np.diag(self.V)
-
-        # Make prediction
-        result = self.online_predict(x_i, V=V, return_var_theta=return_var_theta)
-
-        # Store prediction for future variance estimation
-        self.Y_hat.append(result["mean"])
-
-        self._n_updates += 1
-
-        return result
-
-        # TODO: use the Sherman-Morrison formula for more efficient updates
-
-    def online_predict(self, x: np.ndarray, V=None, return_var_theta=False):
-        r"""Make prediction without updating model state.
-
-        Computes point prediction and uncertainty for a single entry using current model
-        parameters.
-
-        Parameters
-        ----------
-        x : ndarray of shape (n_features,)
-            Input features for prediction.
-        V : ndarray of shape (n_targets, n_targets), optional
-            Prediction error covariance. If None, uses internal estimate. Default is 
-            None.
-        return_var_theta : bool, default False
-            If True, includes parameter covariance in the returned prediction dict.
-
-        Returns
-        -------
-        result : dict
-            Prediction dictionary with keys:
-            - "mean" : ndarray of shape (n_targets,) - Point mean prediction
-            - "cov" : ndarray - Prediction error covariance
-            - "cov_theta" : ndarray (optional) - Parameter covariance if requested
-        """
-        result = {}
-
-        if V is None:
-            V = self.V
-
-        result["mean"] = x.T @ self.theta
-
-        # Compute covariance of prediction error
-        var_pred_err = self.V * (1 + x.T @ self.psi @ x)
-
-        if not self._full_cov:
-            var_pred_err = np.diag(var_pred_err)
-
-        result["cov"] = var_pred_err
-
-        # Compute variance of theta
-        if return_var_theta:
-            result["cov_theta"] = self.get_var_vec_theta(V)
-
-        return result
-
-    def get_var_vec_theta(self, V: np.ndarray = None):
-        """Return the covariance of the vectorised parameters."""
-        if V is None:
-            V = self.V
-
-        # Compute the variance of theta
-        var_theta = np.kron(V, self.psi)
-
-        return var_theta
-
-class RRR(OnlinePrediction):
-    """Online recursive ridge regression transformation.
-
-    Thin wrapper around ``RRRPredictor`` that enables its use as a Prediction.
-
-    See Also
-    --------
-    RRRPredictor : Core recursive ridge implementation and uncertainty estimates.
-    OnlinePrediction : Row-wise update/predict orchestration.
-
-    Parameters
-    ----------
-    X : Source
-        Input data source. Output should be compatible with the Lag transformation.
-    Y : Source
-        Target data source.
-    horizon : int
-        Forecast horizon in time steps (used for prediction error variance estimation).
-    scorefun : function, default rmse
-        Function to compute the score on the residuals. Should take an array of
-        residuals and return a scalar score.
-    default_params : dict, optional
-        Default parameters for the predictor. Can include any parameters accepted by
-        ``RRRPredictor.online_update`` and ``RRRPredictor.online_predict``.
-    Otherwise same as ``RRRPredictor``.
-    """
-    
-    # TODO: consider including batch functionality into this class
     def __init__(
         self,
         X,
         Y,
-        horizon,
-        burn_in=1,
-        init_K=0,
-        track_memory=False,
-        combine_variance=True,
-        full_cov=True,
-        center_cov=False,
-        scorefun=rmse,
-        mem=0.99,
-        mem_var=None,
-        default_params=None
+        horizon=0,
+        Q = None,
+        theta0 = None,
+        memory=0.99,
+        init_K=None,
+        update_theta = True,
+        full_cov = True,
+        cov_memory = None,
+        track_memory = True,
+        center_cov = False,
+        return_theta = False,
+        return_psi = False,
+        return_residuals = False,
+        return_residual_cov = False,
+        return_pred_cov = True,
+        iterate_Q = False,
+        iterate_theta0 = False,
+        iterate_memory = False,
+        iterate_update_theta = False,
     ):
+
+        self._init_K = init_K
+        self.return_theta = return_theta
+        self.return_psi = return_psi
+        self.return_residuals = return_residuals
+        self.return_residual_cov = return_residual_cov
+        self.return_pred_cov = return_pred_cov
+        self._full_cov = full_cov
         self.horizon = horizon
-        self.Y_hat = Lag(self, amount=horizon)
-        self.scorefun = scorefun
-        super().__init__(
-            X,
-            Y,
-            horizon,
-            n=DIM_X,
-            m=DIM_Y,
-            burn_in=burn_in,
-            init_K=init_K,
-            track_memory=track_memory,
-            combine_variance=combine_variance,
-            full_cov=full_cov,
-            center_cov=center_cov,
-            mem=mem,
-            mem_var=mem_var,
-            default_params=default_params,
-        )
 
-    def create(
-        self,
-        n,
-        m,
-        burn_in,
-        init_K,
-        track_memory,
-        combine_variance,
-        full_cov,
-        center_cov,
-        mem,
-        mem_var
-    ):
-        """Create amd return ``RRRPredictor``."""
-        return RRRPredictor(
-            n,
-            m,
-            self.horizon,
-            burn_in,
-            init_K,
-            track_memory,
-            combine_variance,
-            full_cov,
-            center_cov,
-            mem,
-            mem_var
-        )
+        self.X = X
+        self.Y = Y
 
-    def online_update(
-        self,
-        state: RRRPredictor,
-        x_i,
-        y_i,
-        x_train_i,
-        Q: np.ndarray | float = None,
-        theta0: np.ndarray = None,
-        V: np.ndarray = None,
-        update_V=True,
-        mem=0.99,
-        mem_var=None,
-        return_var_theta=False,
-        update_theta=True
-    ):
-        """Delegate single-step update to ``RRRPredictor.online_update``.
 
-        Parameters
-        ----------
-        state : RRRPredictor
-            The recerusive ridge predictor to use and update
-        Otherwise same as ``RRRPredictor`` ``online_update``.
+        # First, ensure X and Y are numpy arrays
+        X = ToArray(X)
+        Y = ToArray(Y)
 
-        Returns
-        -------
-        result : dict
-            Prediction dictionary produced by ``RRRPredictor``.
-        state : RRRPredictor
-            Updated predictor instance.
-        """
-        result = state.online_update(
-            x_i,
-            y_i,
-            x_train_i=x_train_i,
-            Q=Q,
-            theta0=theta0,
-            V=V,
-            update_V=update_V,
-            mem=mem,
-            mem_var=mem_var,
-            return_var_theta=return_var_theta,
-            update_theta=update_theta
-        )
-        return result, state
-    
-    def online_predict(self, state: RRRPredictor, x_i, V=None, return_var_theta=False):
-        """Delegate single-step prediction to ``RRRPredictor.online_predict``.
+        X_train = Lag(X, horizon)
 
-        Parameters
-        ----------
-        state : RRRPredictor
-            The recerusive ridge predictor to use for prediction.
-        Otherwise same as ``RRRPredictor`` ``online_predict``.
+        # Compose a parameter estimation transformation
+        lm_iterate = ["x", "x_train", "y"] +  ["Q"] * iterate_Q + ["theta0"] * iterate_theta0 + ["memory"] * iterate_memory + ["update_theta"] * iterate_update_theta
+        self._lm =Transformation(self._lm_func, X, X_train, Y, Q, theta0, memory, update_theta,
+                                    STATE="state", ITERATE = lm_iterate)
 
-        Returns
-        -------
-        Same as ``RRRPredictor.online_predict``.
-        """
-        return state.online_predict(x_i, V=V, return_var_theta=return_var_theta)
+        lm_stacked = Stack(self._lm)
 
-    def score(self, state: RRRPredictor, X, Y, prediction, **params):
-        """Compute forecast score using lagged predictions from predictor memory.
+        self.theta = lm_stacked["theta"]
+        self.mean = lm_stacked["mean"]
+        self.psi = lm_stacked["psi"]
+
+        # Compute residuals in batch
+        self.residuals = Transformation(self._residuals, Y, Lag(self.mean, horizon))
+
+        # Then compute variance using ForgettingVariance
+        mem_cov = cov_memory if cov_memory is not None else memory
+        self.cov = ForgettingVariance(mem_cov, self.residuals, track_memory, center_cov, full_cov)
+
+        if return_pred_cov:
+            self.pred_cov = Stack(Transformation(self._pred_variance, X, self.cov, self.psi, ITERATE = ("x", "var", "psi")))
+        else:
+            self.pred_cov = None
+
+        super().__init__(self._finalize, self.mean, self.theta, self.psi, self.cov, self.pred_cov, self.residuals)
         
-        Uses ``evaluate_score`` on prediction mean and target and includes result in
-        ``prediction["score"]``.
-        """
-        Y_hat = prediction["mean"][: -self.horizon]
+    def _lm_func(self, x, x_train, y, Q, theta0, mem, update_theta, state = None):
+        """Compute parameters and mean forecast for a single time step."""
+        # Update state
+        if state is None:
+            state = RRRPredictor(n=x_train.shape[0], m=y.shape[0], init_K=self._init_K)
 
-        Y_ref = Y[self.horizon :]
+        if update_theta:
+            state.update(x_train, y, mem, theta0, Q)
 
-        # Evaluate score and update prediction
-        prediction["score"] = evaluate_score(
-            Y_hat, Y_ref, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
-        )
-        return prediction
+        result = {"mean": x.T @ state.theta, 
+                  "theta": state.theta, 
+                  "psi": state.psi}
+
+        return result, state
+
+    def _residuals(self, Y, mean):
+        """Compute residuals."""
+        return Y - mean
+
+    def _pred_variance(self, x, var, psi):
+        """Compute prediction variance and collect results."""
+
+        # Compute covariance of prediction error
+        var_pred_err = var * (1 + x.T @ psi @ x)
+
+        if not self._full_cov:
+            var_pred_err = np.diag(var_pred_err)
+
+        return {"cov": var_pred_err}
+
+    def _finalize(self, mean, theta, psi, cov, pred_cov, residuals):
+        """Finalize output."""
+        result = {"mean": mean}
+
+        if pred_cov is not None:
+            result["cov"] = pred_cov["cov"]
+
+        if self.return_theta:
+            result["theta"] = theta
+
+        if self.return_psi:
+            result["psi"] = psi
+
+        if self.return_residual_cov:
+            result["residual_cov"] = cov
+
+        if self.return_residuals:
+            result["residuals"] = residuals
+
+        return result
+
+    @property
+    def parameters(self):
+        """Return current parameters."""
+        state = self.states[self._lm]
+        return {"theta": state.theta, "psi": state.psi}
+
+
+
+def rmse(x):
+    """Compute the root-mean-square error of x."""
+    return np.sqrt(np.mean(x**2))
+
+class RMSE(Transformation):
+    """Compute the root-mean-square error of x."""
+
+    def __init__(self, x):
+        super().__init__(rmse, x)
+
 
 class BackShift(Transformation):
     r"""Create columns of time-lagged variables.
@@ -1300,7 +326,7 @@ class BackShift(Transformation):
         self.max_shift = max(shift[1] for shift in self.shifts)
         self.initial_value = initial_value
 
-        super().__init__(data=data, memory=MEMORY)
+        super().__init__(self.evaluate, data=data, STATE="memory")
 
     def evaluate(self, data, memory=None):
         """Return combinations of lagged input data.
@@ -1373,7 +399,7 @@ class BackShift(Transformation):
         else:
             return result, (all_data[end_idx:], None)
 
-class ARX(OnlinePrediction):
+class ARX(Transformation):
     r"""Autoregressive model with exogenous input using recursive ridge regression.
 
     Combines ``BackShift`` to construct AR lags of the endogenous variable and
@@ -1412,153 +438,94 @@ class ARX(OnlinePrediction):
         horizon: int,
         order: int | list,
         exog = None,
-        burn_in:int=1,
-        init_K=0,
-        track_memory=False,
-        combine_variance=True,
-        full_cov=True,
-        scorefun=rmse,
-        mem=0.99,
-        mem_var=None,
-        default_params=None,
+        Q = None,
+        theta0 = None,
+        memory=0.99,
+        init_K=None,
+        update_theta = True,
+        cov_memory = None,
+        track_memory = True,
+        center_cov = False,
+        return_theta = False,
+        return_psi = False,
+        return_residuals = False,
+        return_residual_cov = False
     ):
+        self._init_K = init_K
+        self.return_theta = return_theta
+        self.return_psi = return_psi
+        self.return_residuals = return_residuals
+        self.return_residual_cov = return_residual_cov
         self.horizon = horizon
+
+        self.endog = endog
+        
         self._lag_indices = np.array(order)-1 if isinstance(order, list) else np.arange(order)
         self.p = max(self._lag_indices) + 1
 
         # Ensure endog is (t, 1)
-        endog = Apply(lambda x: x.reshape(x.shape[0], 1) if x.ndim == 1 else x, endog)
+        endog = Transformation(lambda x: x.reshape(x.shape[0], 1) if x.ndim == 1 else x, endog)
 
         # Make regression model for 1-step forecasts
-        X = BackShift(
+        self.endog_all = BackShift(
             list(range(self.p)), endog
         )  # ordered as (y_t, y_t-1, ..., y_t-p+1)
 
+        self.regressor = self.endog_all[:, self._lag_indices] # We only need a subset of lags for the regression part
+
+        # If exogenous features are provided, include the 1-step-ahead forecast
         if exog is not None:
-            # Include the first horizon of exogenous features
-            X = Apply(lambda x, y: np.hstack((x, y)), X, exog[:, 0])
+            self.regressor = Transformation(
+                lambda x, y: np.hstack((x, y)), self.regressor, exog[:, 0]
+            )
 
-        self.scorefun = scorefun
+        self.regression = RRR(self.regressor, endog, 1, Q, theta0, memory, init_K, update_theta,
+                True, cov_memory, track_memory, center_cov, True, 
+                return_psi, return_residuals, True, False)
+ 
 
-        super().__init__(
-            X,
-            endog,
-            1,
-            Z=exog,
-            n=DIM_X,
-            m=DIM_Y,
-            burn_in=burn_in,
-            init_K=init_K,
-            track_memory=track_memory,
-            combine_variance=combine_variance,
-            full_cov=full_cov,
-            mem=mem,
-            mem_var=mem_var,
-            default_params=default_params,
-        )
+        super().__init__(self._loop, self.endog_all, self.regression, exog)
 
-    def create(
-        self,
-        n,
-        m,
-        burn_in,
-        init_K,
-        track_memory,
-        combine_variance,
-        full_cov,
-        mem,
-        mem_var
-    ):
-        """Initialize RRR predictor state for 1-step predictions."""
-        n_lags = len(self._lag_indices)  # Number of AR lags
-        n_feat = n-self.p # Number of exogenous features
-        n_reg = n_lags + n_feat  # Total number of regression features
+    def _loop(self, endog, rrr, exog = None):
 
-        # Build indices for selecting input features, i.e. lags and features
-        self._exog_indices = np.arange(self.p, self.p+n_feat)
-        self._indices = np.concat([self._lag_indices, self._exog_indices])
-        return RRRPredictor(
-            n_reg,
-            m,
-            1,
-            burn_in,
-            init_K,
-            track_memory,
-            combine_variance,
-            full_cov,
-            mem = mem,
-            mem_var = mem_var
-        )
+        # Manually iterate over time steps
 
-    def online_update(
-        self,
-        state: RRRPredictor,
-        x_i,
-        y_i,
-        x_train_i,
-        z_i = None,
-        Q: np.ndarray | float = None,
-        theta0: np.ndarray = None,
-        V: np.ndarray = None,
-        update_V=True,
-        mem=0.99,
-        mem_var=None,
-        return_var_theta=False,
-    ):
-        """Update model and compute h-step-ahead predictions via forward recursion.
+        n = endog.shape[0]
+        forecasts = []
 
-        Delegates one-step update to ``RRRPredictor``, then iterates forward h steps
-        using AR coefficients and updated endogenous history to forecast h horizons.
-        """
-        state.online_update(
-            x_i[self._indices],
-            y_i,
-            x_train_i=x_train_i[self._indices],
-            Q=Q,
-            theta0=theta0,
-            V=V,
-            update_V=update_V,
-            mem=mem,
-            mem_var=mem_var,
-            return_var_theta=False,
-        )
-        return (
-            self.online_predict(
-                state, x_i, z_i, V=V, return_var_theta=return_var_theta
-            ),
-            state,
-        )
+        for t in range(n):
+            # Get current endogenous and exogenous values
+            endog_t = endog[t]
+            exog_t = exog[t] if exog is not None else None
+            theta_t = rrr["theta"][t].flatten()
+            resid_cov = rrr["residual_cov"][t]
 
-    def online_predict(
-        self, state: RRRPredictor, x_i, z_i=None, V=None, return_var_theta=False
-    ):
-        """Compute h-step-ahead predictions and variances.
-        
-        Iterates through horizons, predict mean and variance using accumulated
-        weight matrices from AR coefficient propagation.
+            # Compute forecasts for this time step
+            pred_t = self._forecast(endog_t, theta_t, resid_cov, exog_t)
 
-        Parameters
-        ----------
-        state : RRRPredictor
-            The predictor state.
-        x_i : ndarray of shape (p+m,)
-            Current endogenous history for prediction (lags) and exogenous features for 
-            horizon 0. Should be ordered as (y_t-p+1, ..., y_t-1, y_t, z_1).
-        z_i : ndarray of shape (h, m) or None
-            Current exogenous variables for prediction (lags). First dimension should
-            match prediction horizon. If None, exogenous features are not used.
-        V : ndarray of shape (p, p) or None
-            Variance-covariance matrix of the prediction errors.
-        return_var_theta : bool
-            Whether to return the variance of the regression coefficients.
+            forecasts.append(pred_t)
 
+        # Stack forecasts
+        result = stack(forecasts)
 
-        """
-        result = state.online_predict(x_i[self._indices], V=V, return_var_theta=return_var_theta)
+        # Combine results with RRR outputs
+        if self.return_theta:
+            result["theta"] = rrr["theta"]
+        if self.return_psi:
+            result["psi"] = rrr["psi"]
+        if self.return_residuals:
+            result["residuals"] = rrr["residuals"]
+        if self.return_residual_cov:
+            result["residual_cov"] = rrr["cov"]
 
-        theta = state.theta.flatten()
+        return result
 
-        arx_pred = np.full(self.horizon, np.nan)
+    def _forecast(self, endog, theta, resid_cov, exog = None):
+        """Compute forecasts for a single time step."""
+
+        result = {}
+
+        arx_mean = np.full(self.horizon, np.nan)
         arx_var = np.full(
             self.horizon, np.nan
         )  # TODO: consider computing full covariance between horizons rather than just variances
@@ -1568,25 +535,20 @@ class ARX(OnlinePrediction):
 
         ar_params = theta[: len(self._lag_indices)]  # AR coefficients from theta
 
-        endog = x_i[: self.p]  # Full endogenous history
-
-        if V is None:
-            V = state.V
-
-        # Modify result to include predictions for all horizons
+        # Compute forecasts for all horizons
         for h in range(self.horizon):
 
             reg_i = endog[self._lag_indices] # Select only the lags specified by order
 
             # Combine AR with exogenous features for horizon h
-            if z_i is not None:
-                reg_i = np.hstack((reg_i, z_i[h]))
+            if exog is not None:
+                reg_i = np.hstack((reg_i, exog[h]))
 
-            # Predict next step ahead using theta and 
-            arx_pred[h] = (reg_i.T @ theta).item()
+            # Predict next step ahead using theta and current regressor
+            arx_mean[h] = (reg_i.T @ theta).item()
 
             # Compute variance, using weights so far.
-            arx_var[h] = (V * (weights @ weights)).item()
+            arx_var[h] = (resid_cov * (weights @ weights)).item()
 
             # Push weights forward for next prediction. Use only the specified lags
             new_weight = weights[self._lag_indices] @ ar_params
@@ -1597,20 +559,9 @@ class ARX(OnlinePrediction):
 
             # Update endogenous history
             endog[1:] = endog[:-1]
-            endog[0] = arx_pred[h]
+            endog[0] = arx_mean[h]
 
-        result["mean"] = arx_pred
+        result["mean"] = arx_mean
         result["var"] = arx_var
 
         return result
-
-    def score(self, state: RRRPredictor, X, Y, prediction, **predictor_params):
-        """Compute forecast score using one-step predictions."""
-        Y_hat = prediction["mean"][: -1, :1]
-        Y_ref = Y.to_numpy()[1:]
-
-        # Evaluate score and update prediction
-        prediction["score"] = evaluate_score(
-            Y_hat, Y_ref, burn_in=state.burn_in, remove_nan=True, scorefun=self.scorefun
-        )
-        return prediction

@@ -5,6 +5,8 @@ from __future__ import annotations
 import functools
 import re
 from typing import Literal
+import inspect
+import types
 
 import numpy as np
 
@@ -13,7 +15,7 @@ try:
 except ImportError:
     raise ImportError("Error importing pandas. Please make sure it is installed.")
 
-from .core import DEFAULT_SOURCE, MEMORY, Format, Transformation, register_format_like
+from .core import DEFAULT_SOURCE, Transformation
 from .features import (
     DesignMatrix,
     ForgettingMean,
@@ -23,14 +25,13 @@ from .features import (
     SlidingMean,
     SlidingSum,
     ToArray,
-    Difference
+    Difference,
+    Combine
 )
 from .hierarchies import RidgeReconciliation
-from .prediction import ARX, RRR, WLS
+from .prediction import ARX, RRR
 
 ### Numpy / Pandas conversion utilities
-
-
 def _to_pandas(val, index=None, columns=None):
 
     if isinstance(val, pd.DataFrame):
@@ -317,7 +318,7 @@ class Subset(Transformation):
     def __init__(self, data, *variables, horizons=None):
         self.horizons = horizons
         self.variables = list(variables)
-        super().__init__(data, indices=MEMORY)
+        super().__init__(self.evaluate, data, STATE="indices")
 
     def evaluate(self, data, indices=None):
         """Return subset of data matching specified variables and horizons."""
@@ -342,7 +343,7 @@ class _GetHorizons(Transformation):
 
     def __init__(self, data, *horizons):
         self.horizons = horizons
-        super().__init__(data, indices=MEMORY)
+        super().__init__(self.evaluate, data, STATE="indices")
 
     def evaluate(self, data, indices=None):
         if isinstance(data, pd.DataFrame):
@@ -378,7 +379,7 @@ class Reindexer(Transformation):
     """
 
     def __init__(self, freq, data=DEFAULT_SOURCE):
-        super().__init__(data)
+        super().__init__(self.evaluate, data)
         self.freq = freq
 
     def evaluate(self, data):
@@ -448,7 +449,7 @@ class DataCleaner(Transformation):
             covariance=False,
             data=data,
         )
-        super().__init__(data, variance=variance, mean=mean, state=MEMORY)
+        super().__init__(self.evaluate, data, variance=variance, mean=mean, STATE="state")
         self.z_thresh = z_thresh
         self.forward_fill = forward_fill
         self.freq = freq
@@ -512,7 +513,7 @@ class RenameColumns(Transformation):
     """Rename columns of a DataFrame."""
 
     def __init__(self, data, new_columns):
-        super().__init__(data=data)
+        super().__init__(self.evaluate, data=data)
         self.new_columns = new_columns
 
     def evaluate(self, data):
@@ -537,7 +538,7 @@ class Align(Transformation):
     """
 
     def __init__(self, expected_index, *data, method: str = None):
-        super().__init__(expected_index, *data)
+        super().__init__(self.evaluate, expected_index, *data)
         self.method = method
 
     def evaluate(self, expected_index, *data):
@@ -564,7 +565,7 @@ class Concat(Transformation):
     """Concatenate dataframes along specified axis."""
 
     def __init__(self, *data, axis=0):
-        super().__init__(*data)
+        super().__init__(self.evaluate, *data)
         self.axis = axis
 
     def evaluate(self, *data):
@@ -585,7 +586,7 @@ class Scaler(Transformation):
     """
 
     def __init__(self, data, var_scales: dict[str, float]):
-        super().__init__(data, state=MEMORY)
+        super().__init__(self.evaluate, data, STATE="state")
         self.var_scales = var_scales
 
     def evaluate(self, data, state=None):
@@ -655,7 +656,7 @@ class Aggregator(Transformation):
         if agg_type not in ["sum", "mean"]:
             raise ValueError("agg_type must be either 'sum' or 'mean'.")
         self.agg_type = agg_type
-        super().__init__(data)
+        super().__init__(self.evaluate, data)
 
     def evaluate(self, data):
         """Return aggregated data."""
@@ -678,7 +679,7 @@ class FillMissing(Transformation):
     """Fill missing values in data with specified value."""
 
     def __init__(self, data, fill_value=0):
-        super().__init__(data=data)
+        super().__init__(self.evaluate, data=data)
         self.fill_value = fill_value
 
     def evaluate(self, data):
@@ -704,7 +705,7 @@ class ToPandas(Transformation):
     """
 
     def __init__(self, data, columns, index):
-        super().__init__(data=data, index=index)
+        super().__init__(self.evaluate, data=data, index=index)
         self.new_columns = columns
 
     def evaluate(self, data, index=None):
@@ -745,7 +746,7 @@ class Disruption(Transformation):
         horizons: int | list = 0,
         as_dict=True,
     ):
-        super().__init__(index=index)
+        super().__init__(self.evaluate, index=index)
         self.hour = hour
         self.dayofweek = dayofweek
         self.duration = duration
@@ -813,7 +814,7 @@ class TimeOfDay(Transformation):
     """
 
     def __init__(self, t):
-        super().__init__(t=t)
+        super().__init__(self.evaluate, t=t)
 
     def evaluate(self, t):
         """Return the fraction of day passed for each timestamp in the index."""
@@ -841,7 +842,7 @@ class TimeOfYear(Transformation):
     """
 
     def __init__(self, t):
-        super().__init__(t=t)
+        super().__init__(self.evaluate, t=t)
 
     def evaluate(self, t):
         """Return the fraction of year passed for each timestamp in the index."""
@@ -873,7 +874,7 @@ class TimeOfWeek(TimeOfDay):
     """
 
     def __init__(self, t):
-        super().__init__(t=t)
+        super().__init__(self.evaluate, t=t)
 
     def evaluate(self, t):
         """Return the fraction of week passed for each timestamp in the index."""
@@ -894,7 +895,7 @@ class Index(Transformation):
     """Return the index of the data as a feature."""
 
     def __init__(self, data=DEFAULT_SOURCE):
-        super().__init__(data=data)
+        super().__init__(self.evaluate, data=data)
 
     def evaluate(self, data):
         """Return the index of the data."""
@@ -922,7 +923,7 @@ class Horizons(Transformation):
     """
 
     def __init__(self, data=DEFAULT_SOURCE):
-        super().__init__(data=data)
+        super().__init__(self.evaluate, data=data)
 
     def evaluate(self, data):
         """Return the forecast horizons."""
@@ -948,8 +949,8 @@ class ToExog(Transformation):
     """
 
     def __init__(self, horizon, data=DEFAULT_SOURCE):
-        self.horizons = np.arange(horizon)
-        super().__init__(data=data, indices=MEMORY)
+        self.horizons = np.arange(horizon)+1
+        super().__init__(self.evaluate, data=data, STATE="indices")
 
     def evaluate(self, data, indices=None):
         """Return data converted to exogenous format for ARX predictor.
@@ -1017,6 +1018,207 @@ class ToExog(Transformation):
         return result, indices
 
 
+### Output formatting functions
+_format_like_registry = {}
+
+def register_format_like(source: type, target: type):
+    """Return decorator to register a formatting function for use with 'format_like'.
+
+    Parameters
+    ----------
+    source : type
+        The source type to format.
+    target : type
+        The target type to format like.
+    
+    Returns
+    -------
+    decorator : function
+        A decorator that registers a formatting function for use with 'format_like'. The
+        registered function will be used to convert values of the source type to the
+        target type when 'format_like' is called with value as the source type and
+        reference value as the target type. The formatting function must have the 
+        signature 'format_func(value, reference_value)'.
+    """
+    def decorator(format_func):
+        sig = inspect.signature(format_func)
+        # Check that format_func has a single argument
+        if len(sig.parameters) != 2:
+            raise ValueError(
+                "Format function must have exactly two arguments: value and reference value."
+            )
+
+        @functools.wraps(format_func)
+        def wrapped_format_func(val, ref_val):
+            return format_func(val, ref_val)
+
+        _format_like_registry[(source, target)] = wrapped_format_func
+        return wrapped_format_func
+
+    return decorator
+
+def format_like(val, ref_val):
+    """Format val like ref_val using registered formatting functions.
+    
+    The function uses multiple dispatch to find a registered formatting function to
+    convert val to the type of ref_val.
+
+    Parameters
+    ----------
+    val : Any
+        The value to format.
+    ref_val : Any
+        The reference value to format like.
+    
+    Returns
+    -------
+    formatted_val : Any
+        The formatted value.
+    """
+    if val is ref_val:
+        return val
+
+    for base in val.__class__.__mro__:
+        if (base, ref_val.__class__) in _format_like_registry:
+            format_func = _format_like_registry[(base, ref_val.__class__)]
+            return format_func(val, ref_val)
+    return val
+
+
+class ForecastFormat(Transformation):
+
+    registry = {}
+    resolver_registry = {}
+
+    def __init__(self, source: Transformation):
+        self.source = source
+        self._formatter = self.get_formatter(source)
+        cache = Combine(source, *source.descendants()) # Cache all dependencies of source
+        super().__init__(self.evaluate, cache, STATE="memory")
+        # data needs to be a dependence since STATE needs to contain all dependencies
+
+    @classmethod
+    def find_formatter(cls, source):
+        """Use multiple dispatch to find a registered formatter."""
+        for base in type(source).__mro__:
+            if base in cls.registry:
+                return cls.registry[base]
+
+    @classmethod
+    def find_resolver(cls, source):
+        """Use multiple dispatch to find a registered resolver."""
+        for base in type(source).__mro__:
+            if base in cls.resolver_registry:
+                return cls.resolver_registry[base]
+
+    @classmethod
+    def get_formatter(cls, source):
+        """Find or resolve a formatter function for given source."""
+        # Check if formatter (source, state) -> formatted value is registered for the 
+        # source type
+        formatter = cls.find_formatter(source)
+
+        # If not, find a resolver that can generate a formatter based on the source
+        if formatter is None:
+            resolver = cls.find_resolver(source)
+            if resolver is not None:
+                formatter = resolver(source)
+
+        # If not, format like source if possible
+        if formatter is None:
+            # Return formatter that formats like source
+            def formatter(transform, cache, memory):
+                return format_like(cache[transform], cache[source])
+
+        return formatter
+
+    def evaluate(self, cache, memory=None):
+        """Apply resolved formatting function to source."""
+
+        result = self._formatter(self.source, cache, memory)
+
+        # Ensure result is a tuple of (formatted_value, memory)
+        if not isinstance(result, tuple) or len(result) != 2:
+            result = (result, None)
+        return result
+
+    @classmethod
+    def check_formatter(cls, formatter):
+        """Check that formatting function has correct signature."""
+        sig = inspect.signature(formatter)
+        if len(sig.parameters) != 3:
+            raise ValueError(
+                "Formatter function must have exactly three arguments: value_source, cache, and memory."
+            )
+
+    @classmethod
+    def register(cls, source_type: type):
+        """Return decorator for registering function as formatter for source_type.
+
+        The decorated function should take exactly three arguments, 
+        (value_source, state, memory), where value_source is the source instance of the
+        value to convert, state is a dict of known values of transforms and memory is 
+        the format instance memory parameter, see Transformation for details on the two 
+        latter arguments.
+
+        Parameters
+        ----------
+        source_type : type
+            The source type for which the formatting function should be registered.
+        
+        Returns
+        -------
+        decorator : function
+            A decorator that registers a formatting function for the given source type.
+        """
+        def decorator(format_func):
+            cls.check_formatter(format_func)
+            cls.registry[source_type] = format_func
+            return format_func
+
+        return decorator
+
+    @classmethod
+    def register_resolver(cls, source_type: type):
+        """Return decorator for registering function as resolver for source_type.
+
+        The decorated function should take one argument, the source instance to resolve,
+        and return a formatter function.
+
+        Parameters
+        ----------
+        source_type : type
+            The source type for which the resolver should be registered.
+
+        Returns
+        -------
+        decorator : function
+            A decorator that registers a resolver for the given source type.
+        """
+        def decorator(resolver_func):
+            # Check that resolver_func has the correct signature
+            sig = inspect.signature(resolver_func)
+            if len(sig.parameters) != 1:
+                raise ValueError(
+                    "Resolver function must have exactly one argument: the source."
+                )
+            cls.resolver_registry[source_type] = resolver_func
+            return resolver_func
+
+        return decorator
+
+    def __getattr__(self, name):
+
+        source = object.__getattribute__(self, "source")
+
+        descriptor = getattr(type(source), name, None)
+
+        if descriptor is not None and hasattr(descriptor, "__get__"):
+            return descriptor.__get__(self, type(self))
+
+        return getattr(source, name)
+
+
 # Register methods for format_like
 @register_format_like(pd.DataFrame, np.ndarray)
 def _(source: pd.DataFrame, target: np.ndarray):
@@ -1028,34 +1230,27 @@ def _(source: np.ndarray, target: pd.DataFrame):
     return _to_pandas_like(source, target)
 
 
-# Make new format
-class ForecastFormat(Format):
-    """Format for handling data stored in dataframes obeying the forecast matrix format."""
-
-    pass
-
-
 # Register some common transformations
 @ForecastFormat.register_resolver(Lag)
 def _(source: Lag):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 @ForecastFormat.register_resolver(LowPass)
 def _(source: LowPass):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 @ForecastFormat.register_resolver(ToArray)
 def _(source: ToArray):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 @ForecastFormat.register_resolver(RRR)
 def _(source: RRR):
-    def formatter(value_source, state, memory=None):
-        value = state[value_source]
-        Y = state[source.Y]
+    def formatter(value_source, cache, memory=None):
+        value = cache[value_source]
+        Y = cache[source.Y]
         formatted_value, cols = format_forecast(
             value, Y, horizon=source.horizon, cols=memory
         )
@@ -1064,25 +1259,12 @@ def _(source: RRR):
     return formatter
 
 
-@ForecastFormat.register_resolver(WLS)
-def _(source: WLS):
-    def formatter(value_source, state, memory=None):
-        value = state[value_source]
-        Y = state[source.Y]
-        formatted_value, cols = format_forecast(
-            value, Y, horizon=source.X_train.amount, cols=memory
-        )
-        return formatted_value, cols
-
-    return formatter
-
-
 @ForecastFormat.register_resolver(ARX)
 def _(source: ARX):
-    def formatter(value_source, state, memory=None):
-        result = state[value_source].copy()
+    def formatter(value_source, cache, memory=None):
+        result = cache[value_source].copy()
 
-        Y = state[source.Y]
+        Y = cache[source.endog]
 
         if memory is None:
             # Construct columns based on Y
@@ -1091,8 +1273,12 @@ def _(source: ARX):
                 [name], [h + 1 for h in range(source.horizon)]
             )
 
-        result["mean"] = _to_pandas(result["mean"], index=Y.index, columns=memory)
-        result["var"] = _to_pandas(result["var"], index=Y.index, columns=memory)
+        for key in ["mean", "var"]:
+            result[key] = _to_pandas(result[key], index=Y.index, columns=memory)
+        if "residuals" in result:
+            result["residuals"] = _to_pandas(
+                result["residuals"], index=Y.index, columns=memory[:1]
+            )
 
         return result, memory
 
@@ -1101,9 +1287,9 @@ def _(source: ARX):
 
 @ForecastFormat.register_resolver(RidgeReconciliation)
 def _(source: RidgeReconciliation):
-    def formatter(value_source, state, memory=None):
-        value = state[value_source]
-        Y = state[source.Y_hat]
+    def formatter(value_source, cache, memory=None):
+        value = cache[value_source]
+        Y = cache[source.Y_hat]
 
         result = {}
         # Format value["mean"] like Y
@@ -1130,12 +1316,12 @@ def _(source: RidgeReconciliation):
 
 @ForecastFormat.register_resolver(SlidingSum)
 def _(source: SlidingSum):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 @ForecastFormat.register_resolver(SlidingMean)
 def _(source: SlidingMean):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 @ForecastFormat.register_resolver(ForgettingMean)
@@ -1145,11 +1331,11 @@ def _(source: ForgettingMean):
 
 @ForecastFormat.register_resolver(ForgettingVariance)
 def _(source: ForgettingVariance):
-    mean_formatter = ForecastFormat.get_formatter(source.apply_args[0])
+    mean_formatter = ForecastFormat.get_formatter(source._bound.args[0])
     if source.covariance:
 
-        def formatter(value_source, state, memory=None):
-            formatted_mean = mean_formatter(source.apply_args[0], state, None)
+        def formatter(value_source, cache, memory=None):
+            formatted_mean = mean_formatter(source._bound.args[0], cache, None)
 
             if memory is None:
 
@@ -1160,7 +1346,7 @@ def _(source: ForgettingVariance):
 
             # Format using memory columns and index as mean formatter
             formatted_cov = _to_pandas(
-                state[value_source], index=formatted_mean.index, columns=memory
+                cache[value_source], index=formatted_mean.index, columns=memory
             )
 
             return formatted_cov, memory
@@ -1171,11 +1357,11 @@ def _(source: ForgettingVariance):
 
 @ForecastFormat.register_resolver(Difference)
 def _(source: Difference):
-    return ForecastFormat.get_formatter(source.apply_args[0])
+    return ForecastFormat.get_formatter(source._bound.args[0])
 
 
 def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols=None):
-    """Format forecast output from WLS and RRR to match target variable Y."""
+    """Format forecast output from RRR to match target variable Y."""
     # Fetch format if not provided
     if cols is None:
         cols = {}
@@ -1202,14 +1388,17 @@ def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols
     # Use same index as Y
     index = Y.index
 
-    result = {}
+    result = prediction.copy()
 
     result["mean"] = _to_pandas(prediction["mean"], index=index, columns=cols["mean"])
     if "cov" in prediction:
         result["cov"] = _to_pandas(prediction["cov"], index=index, columns=cols["cov"])
 
-    if "score" in prediction:
-        result["score"] = prediction["score"]
+    if "residuals" in prediction:
+        result["residuals"] = _to_pandas(
+            prediction["residuals"], index=index, columns=cols["mean"]
+        )
+
 
     return result, cols
 
@@ -1273,76 +1462,19 @@ class ForecastModel(Transformation):
         X = DesignMatrix(*X)
 
         # Make prediction
-        self.prediction = RRR(X, Y, horizon, **kwargs)
+        self.prediction = ForecastFormat(RRR(X, Y, horizon, **kwargs))
 
-        # Set format
-        self.prediction.set_format(ForecastFormat)
-
-        super().__init__(self.prediction)
+        super().__init__(lambda x: x, self.prediction)
 
     @property
     def predictor(self):
         """Return the current ``RRR`` predictor object if any."""
-        return self.recursion_pars[self.prediction][0]
+        return self.states[self.prediction][0]
 
-    @property
-    def default_params(self):
-        """Return default parameters for the model."""
-        return self.prediction.default_params
-    
-    @default_params.setter
-    def default_params(self, params):
-        """Set default parameters for the model."""
-        self.prediction.default_params = params
+class ForecastCollection(Transformation):
+    """Collection of forecast models for multiple horizons.
 
-    def set_score_mode(self):
-        """Set score mode for the prediction."""
-        self.prediction.set_score_mode()
-
-    def unset_score_mode(self):
-        """Unset score mode for the prediction."""
-        self.prediction.unset_score_mode()
-
-    def evaluate(self, prediction, **params):
-        """Return the prediction."""
-        return prediction
-
-    def update(self, data, update_predictor=True, **params):
-        """Return model outputs from applying model transformations.
-
-        Parameters
-        ----------
-        data : dict
-            Dictionary containing data to call transformations on.
-        update_predictor : bool, optional
-            Whether to update model parameters using the provided data. If ``True``
-            (default), will update the predictor.
-        **params
-            Additional parameters to pass to transformations.
-        """
-        return self(data, update_predictor=update_predictor, track_state=True, **params)
-
-    def fit(self, data, update_predictor=True, **params):
-        """Fit the model by resetting state and calling update."""
-        self.reset_state()
-        return self.update(data, update_predictor=update_predictor, **params)
-
-
-    def apply(self, data=None, memory=None, recursion_pars=None, 
-              return_recursion_pars=False, copy_data=True, track_state=False, 
-              formatter = None, params=None, **free_params):
-        """Apply the model, remapping params to the underlying RRR predictor."""
-        params = params or {}
-        _params = params.get(self, {})
-        _params.update(free_params)
-        params[self.prediction] = _params
-        return super().apply(data, memory, recursion_pars, return_recursion_pars, 
-                             copy_data, track_state, formatter, params) 
-
-class ForecastEnsemble(Transformation):
-    """Ensemble of forecast models for multiple horizons.
-
-    The ensemble consists of a separate ``ForecastModel`` for each specified horizon,
+    The collection consists of a separate ``ForecastModel`` for each specified horizon,
     which are called in parallel and their outputs are combined.
 
     Parameters
@@ -1387,54 +1519,17 @@ class ForecastEnsemble(Transformation):
             m = ForecastModel(X, Y, h, *args, input_horizons=input_horizons_h, **kwargs)
             self.models.append(m)
 
-        super().__init__(*self.models)
+        super().__init__(self.evaluate, *self.models)
 
     def evaluate(self, *predictions):
         """Return dict of combined predictions."""
         result = {}
         # Concatenate predictions
-        for key in ["mean", "cov"]:
+        for key in ["mean", "cov", "residuals"]:
             if key in predictions[0]:
                 result[key] = pd.concat([pred[key] for pred in predictions], axis=1)
 
-        # Combine scores in a dict per horizon
-        if "score" in predictions[0]:
-            result["score"] = {
-                h: pred["score"] for h, pred in zip(self.horizons, predictions)
-            }
-
         return result
-
-    def set_score_mode(self):
-        """Set score mode for all models in the ensemble."""
-        for m in self.models:
-            m.set_score_mode()
-
-    def unset_score_mode(self):
-        """Unset score mode for all models in the ensemble."""
-        for m in self.models:
-            m.unset_score_mode()
-
-    def update(self, data, update_predictor=True, **params):
-        """Return model outputs from applying model transformations for all models."""
-        return self(data, update_predictor=update_predictor, track_state=True, **params)
-
-    def fit(self, data, update_predictor=True, **params):
-        """Fit the ensemble by resetting state and calling update."""
-        self.reset_state()
-        return self.update(data, update_predictor=update_predictor, **params)
-        
-    def apply(self, data=None, memory=None, recursion_pars=None, 
-              return_recursion_pars=False, copy_data=True, track_state=False, 
-              formatter = None, params=None, **free_params):
-        """Apply the model, remapping params to the underlying models."""
-        params = params or {}
-        _params = params.get(self, {})
-        _params.update(free_params)
-        for m in self.models:
-            params[m] = _params
-        return super().apply(data, memory, recursion_pars, return_recursion_pars, 
-                             copy_data, track_state, formatter, params) 
 
 
 class Residuals(Transformation):
@@ -1452,7 +1547,7 @@ class Residuals(Transformation):
     """
 
     def __init__(self, Y, Y_hat):
-        super().__init__(Y, Y_hat, memory = MEMORY)
+        super().__init__(self.evaluate, Y, Y_hat, STATE = "memory")
 
     def evaluate(self, Y, Y_hat, memory = None):
         """Return dataframe of residuals.

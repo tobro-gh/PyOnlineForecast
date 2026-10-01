@@ -10,41 +10,192 @@ Sources and transformations can be composed to build a computational graph which
 lazily evaluating using the ``apply`` or ``__call__`` methods.
 
 """
-
+#%%
 from __future__ import annotations
 
 import functools
 import inspect
 from typing import Any
+from collections import defaultdict
 
 import numpy as np
 
 
-class Source:
-    """Base class for composable placeholders for data sources.
 
-    Supports operator overloading (+, -, *, /, **) and attribute/item access to enable
-    data transformations.
 
-    Parameters
-    ----------
-    name : str, optional
-        Name identifier for the source.
+def _iterate(*iterative_args, state_arg = None):
+    """Decorator to wrap a function to be applied iteratively over input data."""
 
-    Methods
-    -------
-    get_attr
-        Access an attribute of the source.
-    """
+    def decorator(function):
 
-    _name = None
+        # Insepct the function signature
+        sig = inspect.signature(function)
 
-    def __init__(self, name=None):
-        self._name = name
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            # Bind the arguments to the function signature
+            bound_args = sig.bind(*args, **kwargs)
 
-    def __repr__(self):
-        """Return a string representation of the source, using the name if provided."""
-        return self._name
+            # Extract the iterated arguments from the bound arguments
+            iterated_args = [bound_args.arguments[arg] for arg in iterative_args]
+
+            # Check that all iterated arguments have the same length
+            lengths = [len(arg) for arg in iterated_args]
+            if len(set(lengths)) > 1:
+                raise ValueError("All iterated arguments must have the same length.")
+
+            # Apply the function iteratively over the input data
+            results = []
+            state = None
+            for i in range(lengths[0]):
+                # Update the bound arguments with the current iteration's values
+                for j, arg in enumerate(iterative_args):
+                    bound_args.arguments[arg] = iterated_args[j][i]
+
+                # Update state if the function has a state argument
+                if state_arg is not None and state is not None:
+                    bound_args.arguments[state_arg] = state
+
+                # Call the function with the current iteration's arguments
+                if state_arg is not None:
+                    result, state = function(*bound_args.args, **bound_args.kwargs)
+                else:
+                    result = function(*bound_args.args, **bound_args.kwargs)
+
+                results.append(result)
+
+            if state_arg is not None:
+                return results, state
+            else:
+                return results
+         
+        return wrapper
+
+    return decorator
+
+class Transformation:
+    
+    def __init__(self, function, *args, STATE = None, ITERATE = None, **kwargs):
+
+        # Inspect the function signature and bind the provided arguments
+        self._sig = inspect.signature(function)
+
+        self._bound = self._sig.bind(*args, **kwargs)
+
+        dependencies = set()
+
+        # Add args
+        for arg in self._bound.args:
+            if isinstance(arg, Transformation):
+                dependencies.add(arg)
+
+        # Add kwargs
+        for arg in self._bound.kwargs.values():
+            if isinstance(arg, Transformation):
+                dependencies.add(arg)
+
+        self.dependencies = list(dependencies)
+
+        # Wrap the function if some variables are to be iterated over.
+        if ITERATE is not None:
+            if not isinstance(ITERATE, (list, tuple)):
+                ITERATE = (ITERATE,)
+            for arg in ITERATE:
+                if arg not in self._sig.parameters:
+                    raise ValueError(f"ITERATE argument '{arg}' not found in function signature.")
+
+        self._function = _iterate(*ITERATE, state_arg=STATE)(function) if ITERATE is not None else function
+        self._STATE = STATE
+
+        # Check that STATE is in signature arguments
+        if STATE is not None and STATE not in self._sig.parameters:
+            raise ValueError(f"STATE argument '{STATE}' not found in function signature.")
+
+        self.states = None
+        self._parents = defaultdict(set)
+        for parent in self.descendants():
+            for child in parent.dependencies:
+                self._parents[child].add(parent)
+
+    def descendants(self):
+        """Return a set of all descendants of this transformation."""
+        descendants = set()
+
+        stack = list(self.dependencies)
+
+        while stack:
+            node = stack.pop()
+
+            if node not in descendants:
+                descendants.add(node)
+                stack.extend(node.dependencies)
+
+        return descendants
+    
+    def _apply(self, data, parents = None):
+
+        # Evaluate all dependencies first
+        for dep in self.dependencies:
+            if dep not in data:
+                dep._apply(data)
+
+        # Bind args
+        args = [data[arg] if isinstance(arg, Transformation) else arg for arg in self._bound.args]
+
+        # Bind kwargs
+        kwargs = {k: (data[v] if isinstance(v, Transformation) else v) for k, v in self._bound.kwargs.items()}
+
+        # Replace STATE argument with current state if it is in the signature
+        if self._STATE is not None:
+            kwargs[self._STATE] = data[STATE][self]
+
+        # Then evaluate this transformation and update data and state
+        result = self._function(*args, **kwargs)
+        if self._STATE is not None:
+                data[self], data[STATE][self] = result
+        else:
+            data[self] = result
+
+        # Remove data for dependencies if parents is not None
+        if parents is not None:
+            for dep in self.dependencies:
+                # If all parents of dep have been evaluated, remove dep from data
+                if all(parent in data for parent in parents[dep]):
+                    del data[dep]
+
+    def __call__(self, data, track_states = False, clean_memory = True):
+        """Apply the transformation to the input data."""
+
+        # Parse data
+        if not isinstance(data, dict):
+            data = {DEFAULT_SOURCE: data}
+
+        else:
+            data = data.copy()
+
+        if DEFAULT_SOURCE not in data:
+            data[DEFAULT_SOURCE] = data
+
+        if self in data:
+            return data[self]
+
+        data[STATE] = defaultdict(lambda: None)
+
+        # Update state with existing state if tracking
+        if track_states:
+            data[STATE].update(self.states or {})
+
+        self._apply(data, self._parents if clean_memory else None)
+
+        # Update own state if tracking
+        if track_states:
+            self.states = data[STATE]
+
+        return data[self]
+
+    def reset_state(self):
+        """Reset the state of the transformation."""
+        self.states = None
 
     def __add__(self, other):
         """Return self + other as a _SumTransformation."""
@@ -112,501 +263,74 @@ class Source:
             Transformation accessing self.name.
         """
         return GetAttr(self, name)
-
-class KeywordSource(Source):
-    """Singleton keyword placeholder for special data sources.
     
-    KeywordSource instances are cached in a registry and support pickle serialization.
-    Use module-level keywords like MEMORY, DEFAULT_SOURCE, and STATE instead of
-    creating new instances.
-    
-    Methods
-    -------
-    list_keywords
-        Return all registered keyword names.
-    
-    See Also
-    --------
-    make_keyword : Factory function to access or create keywords.
-    """
-    
-    _registry = {}
-
-    def __reduce__(self):
-        """Return a tuple for pickling the KeyWordSource ensuring singleton behavior."""
-        return make_keyword, (self._name,)
-
-    @classmethod
-    def list_keywords(cls):
-        """Return a list of all registered keyword names."""
-        return list(cls._registry.keys())
-
-
-def make_keyword(name: str) -> Source:
-    """Create or retrieve a singleton KeywordSource with the given name."""
-    if name not in KeywordSource._registry:
-        KeywordSource._registry[name] = KeywordSource(name)
-    return KeywordSource._registry[name]
-
-# Create module-level keywords
-MEMORY = make_keyword("MEMORY")
-"""Special source for memory parameters of transformations."""
-DEFAULT_SOURCE = make_keyword("DEFAULT_SOURCE")
-"""Default source for data.
-``parse_data`` will map unnamed data to this source for use in transformations."""
-STATE = make_keyword("STATE")
-"""Source for intermediate data when applying transformations."""
-
-class Transformation(Source):
-    """Base class for data transformations.
-    
-    Transforms combine sources and data via an ``evaluate`` method. Subclasses specify 
-    input sources as arguments to ``__init__``, which are matched to ``evaluate`` method
-    parameters when called via ``apply``. Matching is done by name for keyword sources 
-    and by position for positional sources by inspecting the ``evaluate`` method 
-    signature.
-    
-    Subclasses should override the ``evaluate`` method to implement the transformation
-    logic and extend the '__init__' method to initialise fixed parameters and specify
-    external Source inputs for use with the ``apply`` method. When the ``apply`` method 
-    is called, sources specified in ``__init__`` will be matched to values, either as 
-    direct inputs if specified in the input data of ``apply``, or by recursively calling
-    the ``apply`` method on the sources that are transforms. Once dependencies are 
-    resolved, the ``evaluate`` method is called with the resolved arguments to compute
-    the output.
-    
-    The special keyword source MEMORY can be used to access outputs from previous
-    evaluations of the transformation, see also the ``evaluate`` method. The STATE
-    source can be used to access all intermediate results computed by the ``apply``
-    method.
-        
-    Parameters
-    ----------
-    *apply_args : Source
-        Positional sources passed to ``evaluate`` in order.
-    **apply_kwargs : Source
-        Keyword sources mapped to ``evaluate`` method parameters.
-        Keys must match parameter names in the ``evaluate`` signature.
-    
-    Raises
-    ------
-    KeyError
-        If a keyword argument name does not match an ``evaluate`` parameter.
-    ValueError
-        If any input is not a Source instance.
-
-    Attributes
-    ----------
-    sources : list[Source]
-        List of input sources for the transformation.
-    formatter : Format or None
-        Optional formatter to apply to the output of the transformation.
-    recursion_pars : dict or None
-        Cached state of transformation and nested transformations.
-
-    Methods
-    -------
-    evaluate
-        Compute the transformation output given input data.
-    apply
-        Match sources to data and evaluate the transformation.
-    """
-
-    # TODO: consider making an "online" flag, and an "apply_online" method
-    # that retrieves the most recent input data only, and iteratively updates
-    # outputs. Transforms with online flags should be evaluated using apply_online,
-    # whilst other transforms can be evaluated normally. The data
-    # dict should be updated incrementally for transforms with the online flag.
-
-    # Superclass for transformations
-    def __init__(self, *apply_args, **apply_kwargs):
-        # Use inspect to bind *apply_args and **apply_kwargs
-        sig = inspect.signature(self.evaluate)
-        bound_args = sig.bind(*apply_args, **apply_kwargs)
-        self.apply_kwargs = bound_args.kwargs
-        self.apply_args = bound_args.args
-
-        # Check that args and kwargs refer to valid inputs
-        for val in list(apply_kwargs.values()) + list(apply_args):
-            if not isinstance(val, Source):
-                raise ValueError(f"{self}: Input {val} must be a Source instance.")
-
-        # Build pairs of (name, value) for args and kwargs combined
-        self._apply_pairs = [(None, val) for val in apply_args] + list(
-            apply_kwargs.items()
-        )
-
-        # Determine all sources
-        self.sources = list(self.apply_kwargs.values()) + list(self.apply_args)
-        self.dependencies = [v for v in self.sources if isinstance(v, Transformation)]
-
-        # Check if MEMORY is used
-        self._use_memory = MEMORY in self.sources
-
-        # Fetch evaluate signature
-        self._eval_sig = inspect.signature(self.evaluate)
-
-        # Initialise memory state
-        self.recursion_pars = None
-
-        # Set formatter
-        self.formatter = None
-
-        # Determine free parameters (keyword inputs that are not in apply_kwargs)
-        self._free_params = [
-            p
-            for p in self._eval_sig.parameters
-            if p not in self.apply_kwargs and p != "self"
-        ]
-
-        super().__init__()
-
-    def __init_subclass__(cls):
-        """
-        Process ``evaluate`` signature and modify ``__init__`` to capture sources.
-
-        Process the evaluate method signature and modify the __init__ method to capture
-        parameters for tracking the computational graph.
-        """
-        if hasattr(cls, "evaluate"):
-            sig = inspect.signature(cls.evaluate)
-            cls.evaluate_kwargs = list(sig.parameters.keys())[1:]
-
-            cls._accepts_var_kwargs = any(
-                param.kind == inspect.Parameter.VAR_KEYWORD
-                for param in sig.parameters.values()
-            )
-
-            cls._inputs = [
-                n
-                for n, p in inspect.signature(cls.evaluate).parameters.items()
-                if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
-            ][1:]
-
-        else:
-            raise ValueError("No evaluate method found.")
-
-        # Overwrite init to capture parameters
-        original_init = cls.__init__
-
-        @functools.wraps(original_init)
-        def new_init(self, *args, **kwargs):
-            original_init(self, *args, **kwargs)
-            self._init_params = (
-                inspect.signature(original_init).bind(self, *args, **kwargs).arguments
-            )
-            del self._init_params["self"]
-
-        cls.__init__ = new_init
-
-    def __repr__(self):
-        """Return a string representation of the transformation."""
-        return f"{self.__class__.__name__}"
-
-    def set_formatter(self, formatter: Format):
-        """Set the formatter for the transformation.
-
-        Set a formatter transformation which will be applied to the output of the
-        transformation.
-
-        Parameters
-        ----------        
-            formatter (Format): The formatter to use.
-        """
-        self.formatter = formatter
-
-    def set_format(self, data_format: type[Format]):
-        """Set a format for the transformation.
-
-        This is the same as calling ``set_formatter`` with formatter instantiated on 
-        self.
-        """
-        self.formatter = data_format(self)
-
-    def clear_formatter(self):
-        """Clear the formatter."""
-        self.formatter = None
-
-    # TODO: add check for circular dependencies
-
-    def apply(
-        self,
-        data=None,
-        memory=None,
-        recursion_pars=None,
-        return_recursion_pars=False,
-        copy_data=True,
-        track_state=False,
-        formatter: Format = None,
-        params = None,
-        **free_params,
-    ):
-        """Evaluate the transformation with given data.
-        
-        Matches input sources to data, evaluates dependencies recursively, then calls
-        ``evaluate`` with resolved arguments.
-        
-        Parameters
-        ----------
-        data : dict, optional
-            Data mapping sources to values.
-        memory : Any, optional
-            Cached state of the current transformation for use in evaluation.
-        recursion_pars : dict, optional
-            Memory states of nested transformations for recursive evaluation, stored in
-            a flat dict mapping transformations to their memory states
-        return_recursion_pars : bool, default False
-            If True, return (result, recursion_pars) tuple.
-        ref : object, optional
-            Reference object for data parsing.
-        copy_data : bool, default True
-            If True, copy input data to avoid modification.
-        track_state : bool, default False
-            If True, store recursion state for future calls.
-        formatter : Format, optional
-            Formatter to apply to results.
-        params : dict, optional
-            Parameters to pass to specific transformations. Keys should be
-            transformations and values should be dicts mapping parameter names to
-            values.
-        **free_params : Any
-            Parameters to pass to the evaluate method of this transformation.
-        
-        Returns
-        -------
-        result : Any
-            The transformation output.
-        recursion_pars : dict
-            (Only if ``return_recursion_pars=True``)
-        """
-        # NOTE: copy_data is used to avoid modifying input data (unless requested). When applied recursively, copy_data should be False, as we do want to update the data with intermediate results.
-        data = parse_data(data, copy=copy_data)
-
-        evaluate_kwargs = {}
-        evaluate_args = []
-
-        if recursion_pars is None:
-            if track_state:
-                recursion_pars = (
-                    self.recursion_pars or {}
-                )  # Only loads stored state if not provided. Nested calls of apply should never load own state.
-            else:
-                recursion_pars = {}
-
-        params = params or {}
-        
-        # Get params for self
-        _params = params.get(self, {})
-        
-        # Check for multiply specified parameters if free parameters are provided
-        for p in free_params:
-            if p in _params:
-                raise ValueError(f"Parameter {p} for {self} multiply specified.")
-
-        # Update params for self
-        _params = _params | free_params
-
-        new_recursion_pars = {}
-
-        # Load memory from provided recursion pars
-        if memory is None:
-            memory = recursion_pars.get(self, None)
-
-        # Check inputs
-        for name, val in self._apply_pairs:
-
-            # Already in data?
-            if val in data:
-                t_val = data[val]
-
-            elif val is MEMORY:
-                # TODO: consider fetching default from evaluate signature
-                t_val = memory
-
-            elif val is STATE:
-                t_val = data.copy()  # Pass all data computed so far
-
-            # Attempt to fetch transformation dependencies if not provided directly.
-            elif isinstance(val, Transformation):
-                t_val, t_rec_pars = val.apply(
-                    data=data,
-                    recursion_pars=recursion_pars,
-                    return_recursion_pars=True,
-                    copy_data=False,
-                    params=params
-                )
-
-                new_recursion_pars.update(t_rec_pars)
-
-                data[val] = t_val  # Store in data for potential reuse
-
-            else:
-                raise ValueError(f"Missing data for input: {val} in {self}.")
-
-            # Store transformed value in evaluate args
-            if name is None:
-                evaluate_args.append(t_val)
-            else:
-                evaluate_kwargs[name] = t_val
-
-        # Update with all given params, overriding if multiple specified
-        evaluate_kwargs = evaluate_kwargs | _params
-
-        # Evaluate
-        eval_out = self.evaluate(*evaluate_args, **evaluate_kwargs)
-
-        if self._use_memory and isinstance(eval_out, tuple):
-            result, memory = eval_out
-        else:
-            result = eval_out
-            memory = None
-
-        new_recursion_pars[self] = memory
-
-        # Store recursion pars if tracking enabled
-        if track_state:
-            self.recursion_pars = new_recursion_pars.copy()
-
-        # If format is specified, apply it
-        formatter = formatter or self.formatter
-        if formatter is not None:
-            result = formatter(data | {self: result})
-
-        if return_recursion_pars:
-            return result, new_recursion_pars
-        else:
-            return result
-
-    def ancestors(self) -> list[Source]:
-        """Get ancestor nodes."""
-        # Recursively get the top most dependencies (sources)
-        result = set()
-        for dep in self.sources:
-            if isinstance(dep, Transformation):
-                for anc in dep.ancestors():
-                    result.add(anc)
-            elif dep not in KeywordSource.list_keywords():
-                result.add(dep)
-        return list(result)
-
-    def evaluate(self) -> tuple[Any, Any] | Any:
-        """Compute the transformation output.
-    
-        Subclasses should override this method with a custom signature
-        matching the input sources specified in ``__init__``.
-        
-        Returns
-        -------
-        result : Any
-            Transformation output or a tuple of (result, memory).
-        memory : Any, optional
-            Cached state for subsequent calls (if returning tuple).
-        
-        Raises
-        ------
-        NotImplementedError
-            This method must be overridden by subclasses.
-        
-        Notes
-        -----
-        This method signature can be freely defined by subclasses.
-        Parameters will be matched to input sources by name.
-        """
-        # In: signature can be freely defined by subclasses.
-        # Out: result or tuple of (result, memory), where memory
-        # should be passed to subsequent calls.
-
-        raise NotImplementedError("This method should be overridden by subclasses")
-
     def print_dependency_tree(self, level=0):
         """Print the transformation dependency tree to stdout."""
         indent = "  " * level
         print(f"{indent}- {self}")
         for dep in self.dependencies:
-            if isinstance(dep, Transformation):
-                dep.print_dependency_tree(level + 1)
-            else:
-                print(f"{indent}  - {dep}")
-
-    def get_all_dependencies(self) -> list[Transformation]:
-        """Return all recursive transformation dependencies as a deduplicated list."""
-        result = set()
-        for dep in self.dependencies:
-            result.add(dep)
-            if isinstance(dep, Transformation):
-                for sub_dep in dep.get_all_dependencies():
-                    result.add(sub_dep)
-        return list(result)
+            dep.print_dependency_tree(level + 1)
 
 
-    def get_graph(self) -> dict:
-        """Return a dict with nodes and edges rooted at this transformation."""
-        result = {}
+class Data(Transformation):
 
-        result[self] = set(self.sources)
+    def __init__(self):
+        super().__init__(lambda: None)
 
-        for dep in self.dependencies:
-            if isinstance(dep, Transformation):
-                result = result | dep.get_graph()
-        
-        return result
+class Param(Transformation):
+    
+    def __init__(self, value):
+        self.value = value
+        super().__init__(lambda: self.value)
 
-    def get_summary(self, names = None):
-        """Return a summary of the transformation graph and parameters."""
-        graph = self.get_graph()
-
-        # Make unique names for each node
-        names = names or {}
-        counts = {}
-        missing = set()
-        sources = set(graph.keys()) | set().union(*graph.values())
-        for node in sources:
-            if node not in names:
-                if node._name is not None:
-                    names[node] = node._name
-                else:
-                    counts[node.__class__] = counts.get(node.__class__, 0) + 1
-                    missing.add(node)
-
-        used_names = {}        
-        for node in missing:
-            if counts[node.__class__] > 1:
-                used_names[node.__class__] = used_names.get(node.__class__, 0) + 1
-                names[node] = f"{node.__class__.__name__}_{used_names[node.__class__]}"
-            else:
-                names[node] = node.__class__.__name__
-
-        summary = {}
-        for node, deps in graph.items():
-            summary[names[node]] = {
-                "class": node.__class__.__name__,
-                "params": node._init_params,
-                "sources": [names[dep] for dep in deps],
-            }
-
-        return summary
-
-    def reset_state(self):
-        """Clear cached recursion state stored on this transformation."""
-        self.recursion_pars = None
-
-    def __call__(self, *args, **kwargs):
-        """Alias for :meth:`apply."""
-        return self.apply(*args, **kwargs)
+DEFAULT_SOURCE = Data()
+STATE = Data()
 
 
-def parse_data(data: dict, copy=True):
-    """Normalize input into a source-value dict and ensure DEFAULT_SOURCE is present."""
-    if not isinstance(data, dict):
-        data = {DEFAULT_SOURCE: data}
-    elif copy:
-        data = data.copy()
+DEFAULT_SOURCE({})
+class _SumTransformation(Transformation):
+    
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x + y, a, b)
 
-    if DEFAULT_SOURCE not in data:
-        data[DEFAULT_SOURCE] = data
+class _SubTransformation(Transformation):
+    
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x - y, a, b)
 
-    return data
+class _MulTransformation(Transformation):
+    
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x * y, a, b)
 
+class _DivTransformation(Transformation):
+    
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x / y, a, b)
+
+class _PowTransformation(Transformation):
+    
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x ** y, a, b)
+
+class _MatmulTransformation(Transformation):
+
+    def __init__(self, a, b):
+        super().__init__(lambda x, y: x @ y, a, b)
+
+class GetItem(Transformation):
+    
+    def __init__(self, a, key):
+        super().__init__(lambda x: x[key], a)
+        self.key = key
+
+class GetAttr(Transformation):
+    
+    def __init__(self, a, name):
+        super().__init__(lambda x: getattr(x, name), a)
+        self.name = name
+
+#%%
 
 class Dim(Transformation):
     """Transformation that returns the size of a selected axis of the input."""
@@ -620,160 +344,7 @@ class Dim(Transformation):
         axis : int, default=1
             The axis along which to get the size.
         """
-        self.axis = axis
-        super().__init__(data=data)
-
-    def evaluate(self, data):
-        """Return the value of the data shape at the specified axis."""
-        return data.shape[self.axis]
-
-class GetItem(Transformation):
-    """Transformation that returns ``data[key]`` from an input source."""
-    
-    def __init__(self, data: Source, key):
-        """Initialize GetItem with input data and key."""
-        super().__init__(data=data)
-        self.key = key
-
-    def evaluate(self, data):
-        """Return the item from data corresponding to the key."""
-        return data[self.key]
-
-
-class GetAttr(Transformation):
-    """Transformation that returns ``data.attr`` from an input source."""
-
-    def __init__(self, data: Source, attr):
-        """Initialize GetAttr with input data and attribute."""
-        super().__init__(data=data)
-        self.attr = attr
-
-    def evaluate(self, data):
-        """Return the attribute from data corresponding to the attribute name."""
-        return getattr(data, self.attr)
-
-class Apply(Transformation):
-    """Transformation that applies a callable to source inputs."""
-
-    def __init__(self, func, *args, **kwargs):
-        """Initialize Apply transformation with a callable and its arguments.
-        
-        Parameters
-        ----------
-        func : callable
-            The function to apply to the input sources.
-        *args : Source or otherwise
-            Positional arguments for the function, which can be Sources or fixed values.
-        **kwargs : Source or otherwise
-            Keyword arguments for the function, which can be Sources or fixed values.
-        """
-        self.func = func
-        # Get args and kwargs that have Source values
-        self.fixed_args = {
-            i: arg for i, arg in enumerate(args) if not isinstance(arg, Source)
-        }
-        self.source_args = {
-            i: arg for i, arg in enumerate(args) if isinstance(arg, Source)
-        }
-        self.n_args = len(args)
-        self.fixed_kwargs = {
-            k: arg for k, arg in kwargs.items() if not isinstance(arg, Source)
-        }
-        self.source_kwargs = {
-            k: arg for k, arg in kwargs.items() if isinstance(arg, Source)
-        }
-
-        sources = list(self.source_args.values()) + list(self.source_kwargs.values())
-
-        super().__init__(*sources)
-
-    def evaluate(self, *sources):
-        """Apply the callable to fixed inputs and Source values."""
-
-        args = list(sources[: len(self.source_args)])
-        kwargs = dict(zip(self.source_kwargs.keys(), sources[len(self.source_args) :]))
-
-        # Combine fixed and source args and kwargs
-
-        # Build args list by sorting the combined keys of fixed and source args
-        all_args = [
-            self.fixed_args[i] if i in self.fixed_args else args[i]
-            for i in range(self.n_args)
-        ]
-
-        all_kwargs = kwargs | self.fixed_kwargs
-
-        return self.func(*all_args, **all_kwargs)
-
-def transform_wrapper(func):
-    """Return a wrapper that makes Apply transformations."""
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        return Apply(func, self, *args, **kwargs)
-
-    return wrapper
-
-class _PrimitiveTransformation(Transformation):
-    """Base class for primitive transformations supporting operator overloading."""
-
-    def __init__(self, a, b):
-
-        if not isinstance(a, Source):
-            a = Param(a)
-
-        if not isinstance(b, Source):
-            b = Param(b)
-
-        self.a, self.b = a, b
-
-        super().__init__(a=a, b=b)
-
-class _SumTransformation(_PrimitiveTransformation):
-    
-
-    def evaluate(self, a, b):
-        return a + b
-
-
-class _MulTransformation(_PrimitiveTransformation):
-
-    def evaluate(self, a, b):
-        return a * b
-
-
-class _DivTransformation(_PrimitiveTransformation):
-
-    def evaluate(self, a, b):
-        return a / b
-
-
-class _SubTransformation(_PrimitiveTransformation):
-
-    def evaluate(self, a, b):
-        return a - b
-
-
-class _PowTransformation(_PrimitiveTransformation):
-
-    def evaluate(self, a, b):
-        return a**b
-
-class _MatmulTransformation(_PrimitiveTransformation):
-
-    def evaluate(self, a, b):
-        return a @ b
-
-
-class Param(Transformation):
-    """Transformation that wraps a fixed parameter value as a Source."""
-
-    def __init__(self, value):
-        super().__init__()
-        self.value = value
-
-    def evaluate(self):
-        """Return the parameter value."""
-        return self.value
+        super().__init__(lambda x: x.shape[axis], data)
 
 class CircularBuffer:
     """Circular buffer for storage and retrieval of fixed-length 2D arrays.
@@ -900,226 +471,3 @@ class CircularBuffer:
         self.offset = 0
 
 
-_format_like_registry = {}
-
-def register_format_like(source: type, target: type):
-    """Return decorator to register a formatting function for use with 'format_like'.
-
-    Parameters
-    ----------
-    source : type
-        The source type to format.
-    target : type
-        The target type to format like.
-    
-    Returns
-    -------
-    decorator : function
-        A decorator that registers a formatting function for use with 'format_like'. The
-        registered function will be used to convert values of the source type to the
-        target type when 'format_like' is called with value as the source type and
-        reference value as the target type. The formatting function must have the 
-        signature 'format_func(value, reference_value)'.
-    """
-    def decorator(format_func):
-        sig = inspect.signature(format_func)
-        # Check that format_func has a single argument
-        if len(sig.parameters) != 2:
-            raise ValueError(
-                "Format function must have exactly two arguments: value and reference value."
-            )
-
-        @functools.wraps(format_func)
-        def wrapped_format_func(val, ref_val):
-            return format_func(val, ref_val)
-
-        _format_like_registry[(source, target)] = wrapped_format_func
-        return wrapped_format_func
-
-    return decorator
-
-def format_like(val, ref_val):
-    """Format val like ref_val using registered formatting functions.
-    
-    The function uses multiple dispatch to find a registered formatting function to
-    convert val to the type of ref_val.
-
-    Parameters
-    ----------
-    val : Any
-        The value to format.
-    ref_val : Any
-        The reference value to format like.
-    
-    Returns
-    -------
-    formatted_val : Any
-        The formatted value.
-    """
-    if val is ref_val:
-        return val
-
-    for base in val.__class__.__mro__:
-        if (base, ref_val.__class__) in _format_like_registry:
-            format_func = _format_like_registry[(base, ref_val.__class__)]
-            return format_func(val, ref_val)
-    return val
-
-@register_format_like(object, np.ndarray)
-def _(val, ref_val):
-    return np.asarray(val)
-
-
-@register_format_like(np.ndarray, np.ndarray)
-def _(val, ref_val):
-    return val.reshape(ref_val.shape)
-
-
-class Format(Transformation):
-    """Base class for formatting transformation outputs.
-    
-    Formats are transformations that modify values according to a set of rules specified
-    using formatting functions and resolvers. Each subclass of Format maintains a
-    registry of such rules and uses multiple dispatch to find the appropriate formatting
-    function.
-
-    Subclasses can register formatting functions or resolvers. Formatting functions
-    directly specify how the output of a given source type should be formatted for that
-    given Format subclass. Resolvers enable more control, by instating an intermediate
-    function that generates a formatting function based on the specific source instance,
-    allowing instance specific formatting rules.
-
-    Parameters
-    ----------
-    source : Source
-        The input source (instance) to format.
-    
-    Methods
-    -------
-    get_formatter
-        Get a formatter for given source instance using either registered formatting
-        functions or resolvers.
-    register
-        Decorator to register a formatting function for a given source type.
-    register_resolver
-        Decorator to register a resolver function for a given source type.
-    """
-
-    def __init_subclass__(cls):
-        """Initialise registries for the subclass."""
-        # Make empty subclass registry
-        cls.registry = {}
-        cls.resolver_registry = {}
-        super().__init_subclass__()
-
-    def __init__(self, source: Source):
-        self.source = source
-        self._formatter = self.get_formatter(source)
-        super().__init__(source, STATE, memory=MEMORY)
-        # data needs to be a dependence since STATE needs to contain all dependencies
-
-    @classmethod
-    def find_formatter(cls, source):
-        """Use multiple dispatch to find a registered formatter."""
-        for base in type(source).__mro__:
-            if base in cls.registry:
-                return cls.registry[base]
-
-    @classmethod
-    def find_resolver(cls, source):
-        """Use multiple dispatch to find a registered resolver."""
-        for base in type(source).__mro__:
-            if base in cls.resolver_registry:
-                return cls.resolver_registry[base]
-
-    @classmethod
-    def get_formatter(cls, source):
-        """Find or resolve a formatter function for given source."""
-        # Check if formatter (source, state) -> formatted value is registered for the 
-        # source type
-        formatter = cls.find_formatter(source)
-
-        # If not, find a resolver that can generate a formatter based on the source
-        if formatter is None:
-            resolver = cls.find_resolver(source)
-            if resolver is not None:
-                formatter = resolver(source)
-
-        # If not, format like source if possible
-        if formatter is None:
-            # Return formatter that formats like source
-            def formatter(transform, state, memory):
-                return format_like(state[transform], state[source])
-
-        return formatter
-
-    def evaluate(self, source, state, memory=None):
-        """Apply resolved formatting function to source."""
-        # Note, source should stay in the evaluate method to ensure transformation 
-        # treats it as a dependency
-        return self._formatter(self.source, state, memory)
-
-    @classmethod
-    def check_formatter(cls, formatter):
-        """Check that formatting function has correct signature."""
-        sig = inspect.signature(formatter)
-        if len(sig.parameters) != 3:
-            raise ValueError(
-                "Formatter function must have exactly three arguments: value_source, state, and memory."
-            )
-
-    @classmethod
-    def register(cls, source_type: type):
-        """Return decorator for registering function as formatter for source_type.
-
-        The decorated function should take exactly three arguments, 
-        (value_source, state, memory), where value_source is the source instance of the
-        value to convert, state is a dict of known values of transforms and memory is 
-        the format instance memory parameter, see Transformation for details on the two 
-        latter arguments.
-
-        Parameters
-        ----------
-        source_type : type
-            The source type for which the formatting function should be registered.
-        
-        Returns
-        -------
-        decorator : function
-            A decorator that registers a formatting function for the given source type.
-        """
-        def decorator(format_func):
-            cls.check_formatter(format_func)
-            cls.registry[source_type] = format_func
-            return format_func
-
-        return decorator
-
-    @classmethod
-    def register_resolver(cls, source_type: type):
-        """Return decorator for registering function as resolver for source_type.
-
-        The decorated function should take one argument, the source instance to resolve,
-        and return a formatter function.
-
-        Parameters
-        ----------
-        source_type : type
-            The source type for which the resolver should be registered.
-
-        Returns
-        -------
-        decorator : function
-            A decorator that registers a resolver for the given source type.
-        """
-        def decorator(resolver_func):
-            # Check that resolver_func has the correct signature
-            sig = inspect.signature(resolver_func)
-            if len(sig.parameters) != 1:
-                raise ValueError(
-                    "Resolver function must have exactly one argument: the source."
-                )
-            cls.resolver_registry[source_type] = resolver_func
-            return resolver_func
-
-        return decorator
