@@ -15,7 +15,7 @@ try:
 except ImportError:
     raise ImportError("Error importing pandas. Please make sure it is installed.")
 
-from .core import DEFAULT_SOURCE, Transformation
+from .core import DEFAULT_SOURCE, Transformation, Data, GetItem
 from .features import (
     DesignMatrix,
     ForgettingMean,
@@ -210,7 +210,6 @@ def read_forecast_csv(*args, horizon_pattern=None, **kwargs) -> pd.DataFrame:
     df.index.name = None
     return df
 
-
 def subset_columns(columns, *variables, horizons=None, return_index=False):
     """Return index or columns matching variables and horizons.
 
@@ -248,7 +247,6 @@ def subset_columns(columns, *variables, horizons=None, return_index=False):
         return index
 
     return columns[index]
-
 
 def fc_columns_from_tuples(tuples: list | tuple) -> pd.MultiIndex:
     """Return forecast matrix columns from list of (variable, horizon) tuples."""
@@ -365,7 +363,6 @@ class _GetHorizons(Transformation):
         else:
             return data, indices
 
-
 class Reindexer(Transformation):
     """Reindex data to specified frequency, filling missing values with NaN.
 
@@ -394,7 +391,6 @@ class Reindexer(Transformation):
             data = data.reindex(expected_index)
 
         return data
-
 
 class DataCleaner(Transformation):
     """Clean data by removing outliers and filling missing values.
@@ -553,7 +549,8 @@ class Align(Transformation):
             aligned_data.append(aligned_df)
         if len(aligned_data) == 1:
             result = aligned_data[0]
-        result = aligned_data
+        else:
+            result = aligned_data
 
         # Concatenate if multiple dataframes
         result = pd.concat(result, axis=1)
@@ -831,7 +828,6 @@ class TimeOfDay(Transformation):
 
         return time_of_day_float
 
-
 class TimeOfYear(Transformation):
     """Time of year feature, expressed as the fraction of the year passed.
 
@@ -1084,132 +1080,26 @@ def format_like(val, ref_val):
             return format_func(val, ref_val)
     return val
 
+registry = {}
+
+def find_format(source):
+    base = next((base for base in type(source).__mro__ if base in registry))
+    return registry[base](source)
+
+
 
 class ForecastFormat(Transformation):
 
-    registry = {}
-    resolver_registry = {}
+    def __init__(self, source):
+        func, args, kwargs = find_format(source)
+        self._source = source
+        super().__init__(func, source, *args, **kwargs)
 
-    def __init__(self, source: Transformation):
-        self.source = source
-        self._formatter = self.get_formatter(source)
-        cache = Combine(source, *source.descendants()) # Cache all dependencies of source
-        super().__init__(self.evaluate, cache, STATE="memory")
-        # data needs to be a dependence since STATE needs to contain all dependencies
 
-    @classmethod
-    def find_formatter(cls, source):
-        """Use multiple dispatch to find a registered formatter."""
-        for base in type(source).__mro__:
-            if base in cls.registry:
-                return cls.registry[base]
-
-    @classmethod
-    def find_resolver(cls, source):
-        """Use multiple dispatch to find a registered resolver."""
-        for base in type(source).__mro__:
-            if base in cls.resolver_registry:
-                return cls.resolver_registry[base]
-
-    @classmethod
-    def get_formatter(cls, source):
-        """Find or resolve a formatter function for given source."""
-        # Check if formatter (source, state) -> formatted value is registered for the 
-        # source type
-        formatter = cls.find_formatter(source)
-
-        # If not, find a resolver that can generate a formatter based on the source
-        if formatter is None:
-            resolver = cls.find_resolver(source)
-            if resolver is not None:
-                formatter = resolver(source)
-
-        # If not, format like source if possible
-        if formatter is None:
-            # Return formatter that formats like source
-            def formatter(transform, cache, memory):
-                return format_like(cache[transform], cache[source])
-
-        return formatter
-
-    def evaluate(self, cache, memory=None):
-        """Apply resolved formatting function to source."""
-
-        result = self._formatter(self.source, cache, memory)
-
-        # Ensure result is a tuple of (formatted_value, memory)
-        if not isinstance(result, tuple) or len(result) != 2:
-            result = (result, None)
-        return result
-
-    @classmethod
-    def check_formatter(cls, formatter):
-        """Check that formatting function has correct signature."""
-        sig = inspect.signature(formatter)
-        if len(sig.parameters) != 3:
-            raise ValueError(
-                "Formatter function must have exactly three arguments: value_source, cache, and memory."
-            )
-
-    @classmethod
-    def register(cls, source_type: type):
-        """Return decorator for registering function as formatter for source_type.
-
-        The decorated function should take exactly three arguments, 
-        (value_source, state, memory), where value_source is the source instance of the
-        value to convert, state is a dict of known values of transforms and memory is 
-        the format instance memory parameter, see Transformation for details on the two 
-        latter arguments.
-
-        Parameters
-        ----------
-        source_type : type
-            The source type for which the formatting function should be registered.
-        
-        Returns
-        -------
-        decorator : function
-            A decorator that registers a formatting function for the given source type.
-        """
-        def decorator(format_func):
-            cls.check_formatter(format_func)
-            cls.registry[source_type] = format_func
-            return format_func
-
-        return decorator
-
-    @classmethod
-    def register_resolver(cls, source_type: type):
-        """Return decorator for registering function as resolver for source_type.
-
-        The decorated function should take one argument, the source instance to resolve,
-        and return a formatter function.
-
-        Parameters
-        ----------
-        source_type : type
-            The source type for which the resolver should be registered.
-
-        Returns
-        -------
-        decorator : function
-            A decorator that registers a resolver for the given source type.
-        """
-        def decorator(resolver_func):
-            # Check that resolver_func has the correct signature
-            sig = inspect.signature(resolver_func)
-            if len(sig.parameters) != 1:
-                raise ValueError(
-                    "Resolver function must have exactly one argument: the source."
-                )
-            cls.resolver_registry[source_type] = resolver_func
-            return resolver_func
-
-        return decorator
 
     def __getattr__(self, name):
 
-        source = object.__getattribute__(self, "source")
+        source = object.__getattribute__(self, "_source")
 
         descriptor = getattr(type(source), name, None)
 
@@ -1219,145 +1109,10 @@ class ForecastFormat(Transformation):
         return getattr(source, name)
 
 
-# Register methods for format_like
-@register_format_like(pd.DataFrame, np.ndarray)
-def _(source: pd.DataFrame, target: np.ndarray):
-    return source.to_numpy()
-
-
-@register_format_like(np.ndarray, pd.DataFrame)
-def _(source: np.ndarray, target: pd.DataFrame):
-    return _to_pandas_like(source, target)
-
-
-# Register some common transformations
-@ForecastFormat.register_resolver(Lag)
-def _(source: Lag):
-    return ForecastFormat.get_formatter(source._bound.args[0])
-
-
-@ForecastFormat.register_resolver(LowPass)
-def _(source: LowPass):
-    return ForecastFormat.get_formatter(source._bound.args[0])
-
-
-@ForecastFormat.register_resolver(ToArray)
-def _(source: ToArray):
-    return ForecastFormat.get_formatter(source._bound.args[0])
-
-
-@ForecastFormat.register_resolver(RRR)
-def _(source: RRR):
-    def formatter(value_source, cache, memory=None):
-        value = cache[value_source]
-        Y = cache[source.Y]
-        formatted_value, cols = format_forecast(
-            value, Y, horizon=source.horizon, cols=memory
-        )
-        return formatted_value, cols
-
-    return formatter
-
-
-@ForecastFormat.register_resolver(ARX)
-def _(source: ARX):
-    def formatter(value_source, cache, memory=None):
-        result = cache[value_source].copy()
-
-        Y = cache[source.endog]
-
-        if memory is None:
-            # Construct columns based on Y
-            name = Y.fc.variables[0]
-            memory = fc_columns_from_product(
-                [name], [h + 1 for h in range(source.horizon)]
-            )
-
-        for key in ["mean", "var"]:
-            result[key] = _to_pandas(result[key], index=Y.index, columns=memory)
-        if "residuals" in result:
-            result["residuals"] = _to_pandas(
-                result["residuals"], index=Y.index, columns=memory[:1]
-            )
-
-        return result, memory
-
-    return formatter
-
-
-@ForecastFormat.register_resolver(RidgeReconciliation)
-def _(source: RidgeReconciliation):
-    def formatter(value_source, cache, memory=None):
-        value = cache[value_source]
-        Y = cache[source.Y_hat]
-
-        result = {}
-        # Format value["mean"] like Y
-        result["mean"] = _to_pandas(value["mean"], index=Y.index, columns=Y.columns)
-
-        # Format value["cov"] like Y, but with outer product of columns if cov is 3D
-        outer_prod = value["cov"].ndim == 3
-
-        if outer_prod:
-            if memory is None:
-                horizons = Y.columns.get_level_values(1).to_list()
-                memory = _make_fc_columns(Y.columns, horizons, outer_prod=True)
-            result["cov"] = _to_pandas(value["cov"], index=Y.index, columns=memory)
-        else:
-            result["cov"] = _to_pandas(value["cov"], index=Y.index, columns=Y.columns)
-
-        if "score" in value:
-            result["score"] = value["score"]
-
-        return result, memory
-
-    return formatter
-
-
-@ForecastFormat.register_resolver(SlidingSum)
-def _(source: SlidingSum):
-    return ForecastFormat.get_formatter(source._bound.args[0])
-
-
-@ForecastFormat.register_resolver(SlidingMean)
-def _(source: SlidingMean):
-    return ForecastFormat.get_formatter(source._bound.args[0])
-
-
-@ForecastFormat.register_resolver(ForgettingMean)
-def _(source: ForgettingMean):
-    return ForecastFormat.get_formatter(source.data)
-
-
-@ForecastFormat.register_resolver(ForgettingVariance)
-def _(source: ForgettingVariance):
-    mean_formatter = ForecastFormat.get_formatter(source._bound.args[0])
-    if source.covariance:
-
-        def formatter(value_source, cache, memory=None):
-            formatted_mean = mean_formatter(source._bound.args[0], cache, None)
-
-            if memory is None:
-
-                # Construct outer product format
-                names = formatted_mean.columns.to_list()
-                horizons = formatted_mean.columns.get_level_values(1).to_list()
-                memory = _make_fc_columns(names, horizons, outer_prod=True)
-
-            # Format using memory columns and index as mean formatter
-            formatted_cov = _to_pandas(
-                cache[value_source], index=formatted_mean.index, columns=memory
-            )
-
-            return formatted_cov, memory
-
-        return formatter
-    else:
-        return mean_formatter
-
-@ForecastFormat.register_resolver(Difference)
-def _(source: Difference):
-    return ForecastFormat.get_formatter(source._bound.args[0])
+registry[Transformation] = lambda source: (format_like, (source,), {})
+registry[Lag] = lambda source: find_format(source._bound.args[0])
+registry[LowPass] = lambda source: find_format(source._bound.args[0])
+registry[ToArray] = lambda source: find_format(source._bound.args[0])
 
 
 def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols=None):
@@ -1402,6 +1157,93 @@ def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols
 
     return result, cols
 
+registry[RRR] = lambda source: (format_forecast, (source.Y, source.horizon), {"STATE": "cols"})
+
+def format_arx(prediction: dict, Y: pd.DataFrame, horizon, memory=None):
+    prediction = prediction.copy()
+    if memory is None:
+        # Construct columns based on Y
+        name = Y.fc.variables[0]
+        memory = fc_columns_from_product(
+            [name], [h + 1 for h in range(horizon)]
+        )
+
+    for key in ["mean", "var"]:
+        prediction[key] = _to_pandas(prediction[key], index=Y.index, columns=memory)
+    if "residuals" in prediction:
+        prediction["residuals"] = _to_pandas(
+            prediction["residuals"], index=Y.index, columns=memory[:1]
+        )
+
+    return prediction, memory
+
+registry[ARX] = lambda source: (format_arx, (source.endog, source.horizon), {"STATE": "memory"})
+
+def format_ridge_reconciliation(prediction: dict, Y: pd.DataFrame, memory=None):
+    result = prediction.copy()
+
+    # Format value["mean"] like Y
+    result["mean"] = _to_pandas(prediction["mean"], index=Y.index, columns=Y.columns)
+
+    # Format value["cov"] like Y, but with outer product of columns if cov is 3D
+    outer_prod = prediction["cov"].ndim == 3
+
+    if outer_prod:
+        if memory is None:
+            horizons = Y.columns.get_level_values(1).to_list()
+            memory = _make_fc_columns(Y.columns, horizons, outer_prod=True)
+        result["cov"] = _to_pandas(prediction["cov"], index=Y.index, columns=memory)
+    else:
+        result["cov"] = _to_pandas(prediction["cov"], index=Y.index, columns=Y.columns)
+
+    if "residuals" in prediction:
+        result["residuals"] = _to_pandas(
+            prediction["residuals"], index=Y.index, columns=Y.columns
+        )
+    return result, memory
+
+registry[RidgeReconciliation] = lambda source: (format_ridge_reconciliation, (source.Y_hat,), {"STATE": "memory"})
+
+registry[SlidingSum] = lambda source: find_format(source._bound.args[0])
+registry[SlidingMean] = lambda source: find_format(source._bound.args[0])
+registry[ForgettingMean] = lambda source: find_format(source.data)
+
+def forgetting_variance_resolver(source: ForgettingVariance):
+    if source.covariance:
+        return (format_forgetting_covariance, (source.data,), {"STATE": "memory"})
+    else:
+        return find_format(source.data)
+    
+
+def format_forgetting_covariance(value, data, memory = None):
+
+    if memory is None:
+
+        # Construct outer product format
+        names = data.columns.to_list()
+        horizons = data.columns.get_level_values(1).to_list()
+        memory = _make_fc_columns(names, horizons, outer_prod=True)
+
+    # Format using memory columns and index as mean formatter
+    formatted_cov = _to_pandas(
+        value, index=data.index, columns=memory
+    )
+
+    return formatted_cov, memory
+
+registry[ForgettingVariance] = forgetting_variance_resolver
+
+registry[Difference] = lambda source: find_format(source._bound.args[0])
+
+# Register methods for format_like
+@register_format_like(pd.DataFrame, np.ndarray)
+def _(source: pd.DataFrame, target: np.ndarray):
+    return source.to_numpy()
+
+
+@register_format_like(np.ndarray, pd.DataFrame)
+def _(source: np.ndarray, target: pd.DataFrame):
+    return _to_pandas_like(source, target)
 
 class ForecastModel(Transformation):
     """Linear forecast model using ridge regression.
@@ -1609,5 +1451,3 @@ class Residuals(Transformation):
         old_vals = all_vals.iloc[-max(horizons):]
 
         return result, (indices, old_vals)
-
-

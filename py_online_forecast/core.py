@@ -82,17 +82,17 @@ class Transformation:
 
         self._bound = self._sig.bind(*args, **kwargs)
 
-        dependencies = set()
+        dependencies = []
 
         # Add args
         for arg in self._bound.args:
-            if isinstance(arg, Transformation):
-                dependencies.add(arg)
+            if isinstance(arg, Transformation) and arg not in dependencies:
+                dependencies.append(arg)
 
         # Add kwargs
         for arg in self._bound.kwargs.values():
-            if isinstance(arg, Transformation):
-                dependencies.add(arg)
+            if isinstance(arg, Transformation) and arg not in dependencies:
+                dependencies.append(arg)
 
         self.dependencies = list(dependencies)
 
@@ -113,7 +113,7 @@ class Transformation:
 
         self.states = None
         self._parents = defaultdict(set)
-        for parent in self.descendants():
+        for parent in self.descendants() | {self}:
             for child in parent.dependencies:
                 self._parents[child].add(parent)
 
@@ -137,7 +137,7 @@ class Transformation:
         # Evaluate all dependencies first
         for dep in self.dependencies:
             if dep not in data:
-                dep._apply(data)
+                dep._apply(data, parents)
 
         # Bind args
         args = [data[arg] if isinstance(arg, Transformation) else arg for arg in self._bound.args]

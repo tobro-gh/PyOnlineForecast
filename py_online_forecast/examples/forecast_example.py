@@ -84,7 +84,7 @@ ForecastFormat(lp_Ta)(data)
 # %%
 # We then create a Prediction for the 1-hour ahead forecast
 X = DesignMatrix(const, lp_Taobs, lp_Ta)
-memory = Param(0.95)
+memory = Param(1.0)
 pred = RRR(X, energy, horizon=1, memory = memory, return_residuals = True)
 
 # Note, if we do not need the prediction outside the model, we can also create the model directly,
@@ -103,7 +103,7 @@ from py_online_forecast.forecast_tools import ForecastFormat, Residuals
 f_pred = ForecastFormat(pred)
 
 # The wrapped prediction acts similar to the original, but formats outputs appropriately
-result = f_pred({DEFAULT_SOURCE: data}, track_states=False)
+result = f_pred({DEFAULT_SOURCE: data}, track_states=True)
 
 resid = Residuals(DEFAULT_SOURCE[["energy"]], f_pred["mean"])
 

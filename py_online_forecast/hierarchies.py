@@ -155,7 +155,7 @@ class RidgeReconciliation(c.Transformation):
             )
 
         # Construct prediction of bottom level errors
-        self.prediction = p.RRR(X, Y, horizon, full_cov=full_cov, **kwargs)
+        self.prediction = p.RRR(X, Y, horizon, full_cov=full_cov, memory = memory, **kwargs)
 
         # Get the predicted bottom level errors
         err_bot_hat = self.prediction["mean"]
