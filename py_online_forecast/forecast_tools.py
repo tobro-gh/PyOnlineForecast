@@ -1015,50 +1015,9 @@ class ToExog(Transformation):
 
 
 ### Output formatting functions
-_format_like_registry = {}
-
-def register_format_like(source: type, target: type):
-    """Return decorator to register a formatting function for use with 'format_like'.
-
-    Parameters
-    ----------
-    source : type
-        The source type to format.
-    target : type
-        The target type to format like.
-    
-    Returns
-    -------
-    decorator : function
-        A decorator that registers a formatting function for use with 'format_like'. The
-        registered function will be used to convert values of the source type to the
-        target type when 'format_like' is called with value as the source type and
-        reference value as the target type. The formatting function must have the 
-        signature 'format_func(value, reference_value)'.
-    """
-    def decorator(format_func):
-        sig = inspect.signature(format_func)
-        # Check that format_func has a single argument
-        if len(sig.parameters) != 2:
-            raise ValueError(
-                "Format function must have exactly two arguments: value and reference value."
-            )
-
-        @functools.wraps(format_func)
-        def wrapped_format_func(val, ref_val):
-            return format_func(val, ref_val)
-
-        _format_like_registry[(source, target)] = wrapped_format_func
-        return wrapped_format_func
-
-    return decorator
-
 def format_like(val, ref_val):
-    """Format val like ref_val using registered formatting functions.
+    """Format val like ref_val.
     
-    The function uses multiple dispatch to find a registered formatting function to
-    convert val to the type of ref_val.
-
     Parameters
     ----------
     val : Any
@@ -1074,12 +1033,18 @@ def format_like(val, ref_val):
     if val is ref_val:
         return val
 
-    for base in val.__class__.__mro__:
-        if (base, ref_val.__class__) in _format_like_registry:
-            format_func = _format_like_registry[(base, ref_val.__class__)]
-            return format_func(val, ref_val)
-    return val
+    elif isinstance(val, type(ref_val)):
+        return val
 
+    elif isinstance(val, pd.DataFrame) and isinstance(ref_val, np.ndarray):
+        return val.to_numpy()
+
+    elif isinstance(val, np.ndarray) and isinstance(ref_val, pd.DataFrame):
+        return _to_pandas_like(val, ref_val)
+
+    else:
+        return val
+    
 registry = {}
 
 def find_format(source):
@@ -1235,15 +1200,6 @@ registry[ForgettingVariance] = forgetting_variance_resolver
 
 registry[Difference] = lambda source: find_format(source._bound.args[0])
 
-# Register methods for format_like
-@register_format_like(pd.DataFrame, np.ndarray)
-def _(source: pd.DataFrame, target: np.ndarray):
-    return source.to_numpy()
-
-
-@register_format_like(np.ndarray, pd.DataFrame)
-def _(source: np.ndarray, target: pd.DataFrame):
-    return _to_pandas_like(source, target)
 
 class ForecastModel(Transformation):
     """Linear forecast model using ridge regression.

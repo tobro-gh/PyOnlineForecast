@@ -721,7 +721,7 @@ class Map(Transformation):
 
         for i, m in enumerate(self.mapping):
             mapped_data = {dep: data[self.transform_sources.index(src)] for dep, src in m.items()}
-            result, state = self.transformation(mapped_data, recursion_pars = states[i], return_recursion_pars = True)
+            result, state = self.transformation(mapped_data, states = states[i], return_states=True)
             results.append(result)
             states[i] = state
         

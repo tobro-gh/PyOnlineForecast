@@ -111,14 +111,6 @@ class Transformation:
         if STATE is not None and STATE not in self._sig.parameters:
             raise ValueError(f"STATE argument '{STATE}' not found in function signature.")
 
-        self.states = None
-        self._parents = defaultdict(set)
-        for parent in self.descendants() | {self}:
-            for child in parent.dependencies:
-                self._parents[child].add(parent)
-
-    def descendants(self):
-        """Return a set of all descendants of this transformation."""
         descendants = set()
 
         stack = list(self.dependencies)
@@ -130,7 +122,15 @@ class Transformation:
                 descendants.add(node)
                 stack.extend(node.dependencies)
 
-        return descendants
+        self._descendants = descendants
+
+        self._parents = defaultdict(set)
+        for parent in self._descendants | {self}:
+            for child in parent.dependencies:
+                self._parents[child].add(parent)
+
+        self.states = None
+
     
     def _apply(self, data, parents = None):
 
@@ -163,7 +163,7 @@ class Transformation:
                 if all(parent in data for parent in parents[dep]):
                     del data[dep]
 
-    def __call__(self, data, track_states = False, clean_memory = True):
+    def __call__(self, data, track_states = False, states = None, return_states = False):
         """Apply the transformation to the input data."""
 
         # Parse data
@@ -182,14 +182,19 @@ class Transformation:
         data[STATE] = defaultdict(lambda: None)
 
         # Update state with existing state if tracking
-        if track_states:
+        if states is not None:
+            data[STATE].update(states)
+        elif track_states:
             data[STATE].update(self.states or {})
 
-        self._apply(data, self._parents if clean_memory else None)
+        self._apply(data, self._parents)
 
         # Update own state if tracking
         if track_states:
             self.states = data[STATE]
+
+        if return_states:
+            return data[self], data[STATE]
 
         return data[self]
 
@@ -283,11 +288,28 @@ class Param(Transformation):
         self.value = value
         super().__init__(lambda: self.value)
 
-DEFAULT_SOURCE = Data()
-STATE = Data()
+
+def _get_default_source():
+    return DEFAULT_SOURCE
 
 
-DEFAULT_SOURCE({})
+def _get_state():
+    return STATE
+
+
+class _DefaultSource(Data):
+    def __reduce__(self):
+        return _get_default_source, ()
+
+
+class _State(Data):
+    def __reduce__(self):
+        return _get_state, ()
+
+
+DEFAULT_SOURCE = _DefaultSource()
+STATE = _State()
+
 class _SumTransformation(Transformation):
     
     def __init__(self, a, b):

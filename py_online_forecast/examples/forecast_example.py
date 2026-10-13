@@ -55,8 +55,14 @@ resid = Residuals(DEFAULT_SOURCE[["energy"]], arx["mean"])
 result = arx(data)
 
 
+#%%
+from py_online_forecast.features import Map
+test = Map(arx, DEFAULT_SOURCE, DEFAULT_SOURCE + 1, names = ["res", "res+1"])
 
-#%
+res = test(data)
+
+
+#%%%
 
 # %%============================================================================
 # SECTION 1: BASIC MODEL SETUP

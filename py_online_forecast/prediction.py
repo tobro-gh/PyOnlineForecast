@@ -14,10 +14,6 @@ The module further contains some ready to use prediction subclasses,
 - RRR: an online multivariate linear model using recursive ridge regression
 - ARX: autoregressive model with exogenous input using recursive ridge regression
 """
-
-import inspect
-from abc import abstractmethod
-
 import numpy as np
 
 from .core import (
