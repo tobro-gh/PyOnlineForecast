@@ -1,12 +1,16 @@
-"""Utilities for working with forecast data and creating forecast models."""
+"""Utilities for forecast-matrix data and forecast models.
+
+The module provides a pandas accessor for forecast matrices, conversions between pandas
+and NumPy representations, and transformations for cleaning, aligning, aggregating, and
+formatting forecast data. It also provides callable transformations for constructing
+forecast models over multiple horizons.
+"""
 
 from __future__ import annotations
 
 import functools
 import re
 from typing import Literal
-import inspect
-import types
 
 import numpy as np
 
@@ -15,9 +19,10 @@ try:
 except ImportError:
     raise ImportError("Error importing pandas. Please make sure it is installed.")
 
-from .core import DEFAULT_SOURCE, Transformation, Data, GetItem
+from .core import DEFAULT_SOURCE, Transformation
 from .features import (
     DesignMatrix,
+    Difference,
     ForgettingMean,
     ForgettingVariance,
     Lag,
@@ -25,11 +30,10 @@ from .features import (
     SlidingMean,
     SlidingSum,
     ToArray,
-    Difference,
-    Combine
 )
 from .hierarchies import RidgeReconciliation
 from .prediction import ARX, RRR
+
 
 ### Numpy / Pandas conversion utilities
 def _to_pandas(val, index=None, columns=None):
@@ -79,13 +83,17 @@ def assert_fc_index(index: pd.Index):
 
 @pd.api.extensions.register_dataframe_accessor("fc")
 class ForecastMatrix:
-    r"""Acessor with utilities for working with forecast data.
+    r"""Pandas accessor for working with forecast-matrix data.
 
-    The accessor provides methods for checking, subsetting and manipulating data obeying
-    a \"forecast matrix\" structure. Any such data should be stored as a pandas
-    DataFrame with a two level MultiIndex for columns, where the first level contains
-    variable names and the second level contains integer forecast horizons. Dataframes
-    can be converted to this format using the ``convert`` method.
+    A forecast matrix is a DataFrame whose columns are a two-level MultiIndex.
+    The first level contains variable names and the second level contains
+    integer forecast horizons.
+
+    Notes
+    -----
+    The accessor is available through the ``.fc`` attribute of a pandas
+    DataFrame. It provides validation, conversion, subsetting, and horizon
+    shifting operations.
     """
 
     names = ["Variable", "Horizon"]
@@ -159,7 +167,7 @@ class ForecastMatrix:
 
         data.columns = pd.MultiIndex.from_tuples(new_columns, names=self.names)
 
-        if isinstance(data.index, pd.DatetimeIndex) and len(data.index) >=3:
+        if isinstance(data.index, pd.DatetimeIndex) and len(data.index) >= 3:
 
             # Sort index
             data = data.sort_index()
@@ -183,8 +191,21 @@ class ForecastMatrix:
         return tuple(res)
 
     def lag(self, reverse=False) -> pd.DataFrame:
-        """Return a copy of the data with columns shifted accoring to horizons."""
+        """Return a copy with columns shifted according to their horizons.
+
+        Parameters
+        ----------
+        reverse : bool, default=False
+            If True, shift columns backward instead of forward.
+
+        Returns
+        -------
+        pd.DataFrame
+            Data with each horizon column shifted by its horizon value.
+        """
         result = self._obj.copy()
+        if any(col[1] not in [None, "", 0] for col in result.columns):
+            result = result.astype(float)
         for i, col in enumerate(result.columns):
             if col[1] not in [None, ""]:
                 k = -col[1] if reverse else col[1]
@@ -209,6 +230,7 @@ def read_forecast_csv(*args, horizon_pattern=None, **kwargs) -> pd.DataFrame:
     # TODO: add check that columns are correctly loaded
     df.index.name = None
     return df
+
 
 def subset_columns(columns, *variables, horizons=None, return_index=False):
     """Return index or columns matching variables and horizons.
@@ -247,6 +269,7 @@ def subset_columns(columns, *variables, horizons=None, return_index=False):
         return index
 
     return columns[index]
+
 
 def fc_columns_from_tuples(tuples: list | tuple) -> pd.MultiIndex:
     """Return forecast matrix columns from list of (variable, horizon) tuples."""
@@ -298,19 +321,26 @@ def _get_forecast_columns(names, horizon, outer_prod=False):
     horizons = [horizon] * len(names)
     return _make_fc_columns(names, horizons, outer_prod=outer_prod)
 
+
 class Subset(Transformation):
     """Subset data by variable names and horizons.
 
     Parameters
     ----------
-    data : Source
-        Source providing data to subset. Output should be a pandas DataFrame conforming
-        to the forecast matrix format (see ``ForecastMatrix``).
+    data : Transformation
+        Input transformation providing a pandas DataFrame conforming to the
+        forecast-matrix format.
     *variables : object
         Variable names to include in the subset.
     horizons : list of int, optional
         Forecast horizons to include in the subset. If ``None``, all horizons are
         included.
+
+    Notes
+    -----
+    Calling an instance returns the selected data. The selected column indices are used
+    as state so that repeated evaluations reuse the same selection when the input
+    columns are unchanged.
     """
 
     def __init__(self, data, *variables, horizons=None):
@@ -363,16 +393,22 @@ class _GetHorizons(Transformation):
         else:
             return data, indices
 
+
 class Reindexer(Transformation):
-    """Reindex data to specified frequency, filling missing values with NaN.
+    """Transformation that reindexes a DataFrame to a specified frequency.
 
     Parameters
     ----------
     freq : str
         Pandas frequency string to reindex data, e.g. "h" for hourly.
-    data : Source, optional
-        Source providing data to reindex. Output should be a pandas DataFrame with a
-        DatetimeIndex. If ``None`` (default) use ``DEFAULT_SOURCE``.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a pandas DataFrame with a
+        ``DatetimeIndex``.
+
+    Notes
+    -----
+    Calling an instance returns a DataFrame reindexed to ``freq``. Missing
+    timestamps are filled with NaN.
     """
 
     def __init__(self, freq, data=DEFAULT_SOURCE):
@@ -392,17 +428,17 @@ class Reindexer(Transformation):
 
         return data
 
+
 class DataCleaner(Transformation):
-    """Clean data by removing outliers and filling missing values.
+    """Transformation that removes outliers and fills missing values.
 
     Parameters
     ----------
     forgetting : float
         Forgetting factor for estimating mean and variance of the data, see
         ``ForgettingMean`` and ``ForgettingVariance``.
-    data : Source, optional
-        Source providing data to clean. Output should be a pandas DataFrame. If ``None``
-        (default) use ``DEFAULT_SOURCE``.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a pandas DataFrame to clean.
     z_thresh : float, optional
         Z-score threshold for identifying outliers. Default is 3.
     forward_fill : bool, optional
@@ -415,8 +451,17 @@ class DataCleaner(Transformation):
         If specified, reindex data to this frequency before cleaning, using
         ``Reindexer``.
     var_forgetting : float, optional
-        Forgetting factor for variance estimation. If ``None``, use same forgetting as 
+        Forgetting factor for variance estimation. If ``None``, use same forgetting as
         mean estimation.
+    sort_columns : bool, default=False
+        Whether to sort columns before filling values.
+    check_columns : bool, default=True
+        Whether to require the columns to remain unchanged between batches.
+
+    Notes
+    -----
+    Calling an instance returns a cleaned DataFrame. The transformation uses
+    state to continue filling the first row of each input batch.
     """
 
     def __init__(
@@ -429,7 +474,7 @@ class DataCleaner(Transformation):
         freq: str = None,
         var_forgetting: float = None,
         sort_columns=False,
-        check_columns=True
+        check_columns=True,
     ):
         if freq is not None:
             data = Reindexer(freq, data)
@@ -445,7 +490,9 @@ class DataCleaner(Transformation):
             covariance=False,
             data=data,
         )
-        super().__init__(self.evaluate, data, variance=variance, mean=mean, STATE="state")
+        super().__init__(
+            self.evaluate, data, variance=variance, mean=mean, STATE="state"
+        )
         self.z_thresh = z_thresh
         self.forward_fill = forward_fill
         self.freq = freq
@@ -488,14 +535,12 @@ class DataCleaner(Transformation):
 
             # Check columns
             if self.check_columns and not data_cleaned.columns.equals(last_columns):
-                raise ValueError(
-                    "Columns of data have changed since last step."
-                )
+                raise ValueError("Columns of data have changed since last step.")
 
             # Fill first row with last state
             filled_first_row = data_cleaned.iloc[[0]].fillna(value=last_row)
             data_cleaned.iloc[0] = filled_first_row.iloc[0]
-    
+
         if self.forward_fill:
             data_cleaned = data_cleaned.ffill()
 
@@ -506,7 +551,15 @@ class DataCleaner(Transformation):
 
 
 class RenameColumns(Transformation):
-    """Rename columns of a DataFrame."""
+    """Transformation that renames the columns of a DataFrame.
+
+    Parameters
+    ----------
+    data : Transformation
+        Input transformation providing a pandas DataFrame.
+    new_columns : sequence
+        New column labels.
+    """
 
     def __init__(self, data, new_columns):
         super().__init__(self.evaluate, data=data)
@@ -519,18 +572,23 @@ class RenameColumns(Transformation):
 
 
 class Align(Transformation):
-    """Align dataframes to expected index and concatenate.
+    """Transformation that aligns and concatenates DataFrames.
 
     Parameters
     ----------
     expected_index : pd.Index
         Index to align dataframes to.
-    *data : list of pd.DataFrame
-        DataFrames to align and concatenate.
+    *data : Transformation
+        Input transformations providing DataFrames to align and concatenate.
     method : str, optional
         Method to use for filling missing values when aligning, passed to pandas
         reindex method. Default is ``None``, which means missing values will be filled
         with NaN.
+
+    Notes
+    -----
+    Calling an instance returns the aligned DataFrames concatenated along
+    the column axis.
     """
 
     def __init__(self, expected_index, *data, method: str = None):
@@ -559,7 +617,19 @@ class Align(Transformation):
 
 
 class Concat(Transformation):
-    """Concatenate dataframes along specified axis."""
+    """Transformation that concatenates DataFrames along an axis.
+
+    Parameters
+    ----------
+    *data : Transformation
+        Input transformations providing DataFrames to concatenate.
+    axis : int, default=0
+        Axis passed to :func:`pandas.concat`.
+
+    Notes
+    -----
+    Calling an instance returns the concatenated DataFrame.
+    """
 
     def __init__(self, *data, axis=0):
         super().__init__(self.evaluate, *data)
@@ -571,15 +641,20 @@ class Concat(Transformation):
 
 
 class Scaler(Transformation):
-    """Multiply specified variables by given floats.
+    """Transformation that scales selected variables by fixed factors.
 
     Parameters
     ----------
-    data : Source
-        Source providing data to scale. Output should be a pandas DataFrame or Series.
+    data : Transformation
+        Input transformation providing a pandas DataFrame or Series.
     var_scales : dict
         Dictionary mapping variable names to floats. Variables in the data but not in
         the dictionary will not be scaled.
+
+    Notes
+    -----
+    Calling an instance returns scaled data. The transformation uses state
+    to reuse the selected columns and scale factors across evaluations.
     """
 
     def __init__(self, data, var_scales: dict[str, float]):
@@ -634,16 +709,21 @@ class Scaler(Transformation):
 
 
 class Aggregator(Transformation):
-    """Aggregate data by resampling to specified frequency and applying sum or mean.
+    """Transformation that resamples and aggregates a DataFrame.
 
     Parameters
     ----------
     freq : str
         Pandas frequency string to resample data.
-    data : Source, optional
-        Source providing data to aggregate. Output should be a pandas DataFrame.
-    agg_type : str, default "mean"
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a pandas DataFrame.
+    agg_type : {"sum", "mean"}, default="mean"
         Type of aggregation to apply. Must be either "sum" or "mean".
+
+    Notes
+    -----
+    Calling an instance resamples the input to ``freq`` and applies the
+    selected aggregation method.
     """
 
     def __init__(
@@ -673,7 +753,19 @@ class Aggregator(Transformation):
 
 
 class FillMissing(Transformation):
-    """Fill missing values in data with specified value."""
+    """Transformation that fills missing values with a specified value.
+
+    Parameters
+    ----------
+    data : Transformation
+        Input transformation providing an array or pandas object.
+    fill_value : scalar, default=0
+        Value used to replace missing values.
+
+    Notes
+    -----
+    Calling an instance returns the input with missing values replaced.
+    """
 
     def __init__(self, data, fill_value=0):
         super().__init__(self.evaluate, data=data)
@@ -688,17 +780,22 @@ class FillMissing(Transformation):
 
 
 class ToPandas(Transformation):
-    """Convert data to pandas DataFrame with specified columns and index.
+    """Transformation that converts data to a pandas DataFrame.
 
     Parameters
     ----------
-    data : Source
-        Source providing data to convert. Output should be a numpy array or similar.
+    data : Transformation
+        Input transformation providing an array-like value.
     columns : list of str or pd.Index
         Column names for the resulting DataFrame.
     index : pd.Index, optional
         Index for the resulting DataFrame. If ``None``, a default integer index will be
         used.
+
+    Notes
+    -----
+    Calling an instance returns a DataFrame with the configured columns and
+    index.
     """
 
     def __init__(self, data, columns, index):
@@ -711,12 +808,12 @@ class ToPandas(Transformation):
 
 
 class Disruption(Transformation):
-    """Model hourly disruptions at specific times by generating indicator features.
+    """Transformation that generates hourly disruption indicator features.
 
     Parameters
     ----------
-    index : Source
-        Source providing a datetime index to evaluate disruptions on.
+    index : Transformation
+        Input transformation providing a datetime index.
     hour : int
         Hour of the day when the disruption occurs (0-23).
     dayofweek : int, optional
@@ -732,6 +829,11 @@ class Disruption(Transformation):
     as_dict : bool, optional
         If ``True``, return a dictionary mapping horizons to disruption features instead
         of concatenating into a single DataFrame. Default is ``True``.
+
+    Notes
+    -----
+    Calling an instance returns either a dictionary of horizon-specific
+    indicator arrays or a forecast-matrix DataFrame, depending on ``as_dict``.
     """
 
     def __init__(
@@ -802,12 +904,16 @@ class Disruption(Transformation):
 
 
 class TimeOfDay(Transformation):
-    """Time of day feature, expressed as the fraction of the day passed.
+    """Transformation that computes the fraction of the day that has passed.
 
     Parameters
     ----------
-    index : Source
-        Source providing a datetime index to evaluate time of day on.
+    t : Transformation
+        Input transformation providing timestamps.
+
+    Notes
+    -----
+    Calling an instance returns values in the interval ``[0, 1)``.
     """
 
     def __init__(self, t):
@@ -828,13 +934,18 @@ class TimeOfDay(Transformation):
 
         return time_of_day_float
 
+
 class TimeOfYear(Transformation):
-    """Time of year feature, expressed as the fraction of the year passed.
+    """Transformation that computes the fraction of the year that has passed.
 
     Parameters
     ----------
-    index : Source
-        Source providing a datetime index to evaluate time of year on.
+    t : Transformation
+        Input transformation providing timestamps.
+
+    Notes
+    -----
+    Calling an instance returns values in the interval ``[0, 1)``.
     """
 
     def __init__(self, t):
@@ -861,12 +972,16 @@ class TimeOfYear(Transformation):
 
 
 class TimeOfWeek(TimeOfDay):
-    """Time of week feature, expressed as the fraction of the week passed.
+    """Transformation that computes the fraction of the week that has passed.
 
     Parameters
     ----------
-    index : Source
-        Source providing a datetime index to evaluate time of week on.
+    t : Transformation
+        Input transformation providing timestamps.
+
+    Notes
+    -----
+    Calling an instance returns values in the interval ``[0, 1)``.
     """
 
     def __init__(self, t):
@@ -908,14 +1023,17 @@ def _get_horizons(columns: pd.MultiIndex | tuple):
 
 
 class Horizons(Transformation):
-    """Extract forecast horizons from columns of a DataFrame or keys of a dictionary.
+    """Transformation that extracts forecast horizons from forecast data.
 
     Parameters
     ----------
-    data : Source
-        Source providing data to extract horizons from. Output should be a pandas
-        DataFrame in the forecast matrix format (see ``ForecastMatrix``) or a dictionary
-        with integer keys representing horizons.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a forecast-matrix DataFrame or a
+        pandas object with forecast-matrix columns.
+
+    Notes
+    -----
+    Calling an instance returns the horizons detected from the input columns.
     """
 
     def __init__(self, data=DEFAULT_SOURCE):
@@ -931,21 +1049,26 @@ class Horizons(Transformation):
 
 
 class ToExog(Transformation):
-    """Convert data to exogenous format for use with ARX predictor.
+    """Convert data to exogenous format for use with ARX models.
 
     Parameters
     ----------
     horizon : int
         Number of forecast horizons to include in the exogenous variables. All horizons
         from 1 to this value will be extracted from the data.
-    data : Source, optional
-        Source providing data to convert. Output should be a pandas DataFrame in the
-        forecast matrix format (see ``ForecastMatrix``) or a 3D numpy array of shape
-        (t, n_horizon, n_var).  If ``None`` (default) use ``DEFAULT_SOURCE``.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a forecast-matrix DataFrame or a
+        three-dimensional array with shape ``(t, n_horizon, n_var)``.
+
+    Notes
+    -----
+    Calling an instance returns a three-dimensional array with dimensions
+    time, horizon, and variable. The column selection is kept as state for
+    repeated DataFrame evaluations.
     """
 
     def __init__(self, horizon, data=DEFAULT_SOURCE):
-        self.horizons = np.arange(horizon)+1
+        self.horizons = np.arange(horizon) + 1
         super().__init__(self.evaluate, data=data, STATE="indices")
 
     def evaluate(self, data, indices=None):
@@ -1017,14 +1140,14 @@ class ToExog(Transformation):
 ### Output formatting functions
 def format_like(val, ref_val):
     """Format val like ref_val.
-    
+
     Parameters
     ----------
     val : Any
         The value to format.
     ref_val : Any
         The reference value to format like.
-    
+
     Returns
     -------
     formatted_val : Any
@@ -1044,26 +1167,38 @@ def format_like(val, ref_val):
 
     else:
         return val
-    
+
+
 registry = {}
 
+
 def find_format(source):
+    """Find the registered formatter for a transformation."""
     base = next((base for base in type(source).__mro__ if base in registry))
     return registry[base](source)
 
 
-
 class ForecastFormat(Transformation):
+    """Transformation that converts output to a forecast matrix format.
+
+    Parameters
+    ----------
+    source : Transformation
+        Transformation for which to format the output.
+
+    Notes
+    -----
+    Calling an instance formats the source output as pandas or NumPy data according to
+    rules defined in a registry.
+    """
 
     def __init__(self, source):
         func, args, kwargs = find_format(source)
         self._source = source
         super().__init__(func, source, *args, **kwargs)
 
-
-
     def __getattr__(self, name):
-
+        """Forward unknown attributes to the wrapped transformation."""
         source = object.__getattribute__(self, "_source")
 
         descriptor = getattr(type(source), name, None)
@@ -1119,19 +1254,23 @@ def format_forecast(prediction: dict, Y: pd.DataFrame, horizon: int = None, cols
             prediction["residuals"], index=index, columns=cols["mean"]
         )
 
-
     return result, cols
 
-registry[RRR] = lambda source: (format_forecast, (source.Y, source.horizon), {"STATE": "cols"})
+
+registry[RRR] = lambda source: (
+    format_forecast,
+    (source.Y, source.horizon),
+    {"STATE": "cols"},
+)
+
 
 def format_arx(prediction: dict, Y: pd.DataFrame, horizon, memory=None):
+    """Format ARX forecast output to match target variable Y."""
     prediction = prediction.copy()
     if memory is None:
         # Construct columns based on Y
         name = Y.fc.variables[0]
-        memory = fc_columns_from_product(
-            [name], [h + 1 for h in range(horizon)]
-        )
+        memory = fc_columns_from_product([name], [h + 1 for h in range(horizon)])
 
     for key in ["mean", "var"]:
         prediction[key] = _to_pandas(prediction[key], index=Y.index, columns=memory)
@@ -1142,9 +1281,16 @@ def format_arx(prediction: dict, Y: pd.DataFrame, horizon, memory=None):
 
     return prediction, memory
 
-registry[ARX] = lambda source: (format_arx, (source.endog, source.horizon), {"STATE": "memory"})
+
+registry[ARX] = lambda source: (
+    format_arx,
+    (source.endog, source.horizon),
+    {"STATE": "memory"},
+)
+
 
 def format_ridge_reconciliation(prediction: dict, Y: pd.DataFrame, memory=None):
+    """Format reconciled forecast output from RidgeReconciliation."""
     result = prediction.copy()
 
     # Format value["mean"] like Y
@@ -1167,20 +1313,28 @@ def format_ridge_reconciliation(prediction: dict, Y: pd.DataFrame, memory=None):
         )
     return result, memory
 
-registry[RidgeReconciliation] = lambda source: (format_ridge_reconciliation, (source.Y_hat,), {"STATE": "memory"})
+
+registry[RidgeReconciliation] = lambda source: (
+    format_ridge_reconciliation,
+    (source.Y_hat,),
+    {"STATE": "memory"},
+)
 
 registry[SlidingSum] = lambda source: find_format(source._bound.args[0])
 registry[SlidingMean] = lambda source: find_format(source._bound.args[0])
 registry[ForgettingMean] = lambda source: find_format(source.data)
 
+
 def forgetting_variance_resolver(source: ForgettingVariance):
+    """Resolver for ForgettingVariance transformation."""
     if source.covariance:
         return (format_forgetting_covariance, (source.data,), {"STATE": "memory"})
     else:
         return find_format(source.data)
-    
 
-def format_forgetting_covariance(value, data, memory = None):
+
+def format_forgetting_covariance(value, data, memory=None):
+    """Format a covariance estimate using forecast-matrix columns."""
 
     if memory is None:
 
@@ -1190,11 +1344,10 @@ def format_forgetting_covariance(value, data, memory = None):
         memory = _make_fc_columns(names, horizons, outer_prod=True)
 
     # Format using memory columns and index as mean formatter
-    formatted_cov = _to_pandas(
-        value, index=data.index, columns=memory
-    )
+    formatted_cov = _to_pandas(value, index=data.index, columns=memory)
 
     return formatted_cov, memory
+
 
 registry[ForgettingVariance] = forgetting_variance_resolver
 
@@ -1206,14 +1359,11 @@ class ForecastModel(Transformation):
 
     Parameters
     ----------
-    X : list of Source or Source
-        Source or list of sources providing input features for the forecast model.
-        Sources that output dataframes in the forecast matrix format
-        (see ``ForecastMatrix``) will be automatically subset to the specified input
-        horizons.
-    Y : Source
-        Source providing target variable for the forecast model. Output should be a
-        pandas DataFrame in the forecast matrix format (see ``ForecastMatrix``).
+    X : Transformation or sequence of Transformation
+        Input feature transformations. Forecast-matrix outputs are formatted and subset
+        to the selected input horizons when ``resolve_format`` is True.
+    Y : Transformation
+        Target transformation providing forecast-matrix data.
     horizon : int
         Forecast horizon to predict.
     input_horizons : tuple of int or "auto", optional
@@ -1226,6 +1376,11 @@ class ForecastModel(Transformation):
     **kwargs
         Additional keyword arguments to pass to the ridge regression model, see
         ``prediction.RRR``.
+
+    Notes
+    -----
+    Calling an instance returns the formatted forecast produced by the
+    underlying :class:`prediction.RRR` transformation.
     """
 
     def __init__(
@@ -1269,22 +1424,19 @@ class ForecastModel(Transformation):
         """Return the current ``RRR`` predictor object if any."""
         return self.states[self.prediction][0]
 
+
 class ForecastCollection(Transformation):
-    """Collection of forecast models for multiple horizons.
+    """Transformation containing one forecast model for each horizon.
 
     The collection consists of a separate ``ForecastModel`` for each specified horizon,
     which are called in parallel and their outputs are combined.
 
     Parameters
     ----------
-    X : list of Source or Source
-        Source or list of sources providing input features for the forecast model.
-        Sources that output dataframes in the forecast matrix format
-        (see ``ForecastMatrix``) will be automatically subset to the specified input
-        horizons.
-    Y : Source
-        Source providing target variable for the forecast model. Output should be a
-        pandas DataFrame in the forecast matrix format (see ``ForecastMatrix``).
+    X : Transformation or sequence of Transformation
+        Input feature transformations passed to each forecast model.
+    Y : Transformation
+        Target transformation passed to each forecast model.
     horizons : tuple of int
         Forecast horizons to predict. A separate forecast model will be created for each
         horizon.
@@ -1295,6 +1447,11 @@ class ForecastCollection(Transformation):
     **kwargs
         Additional keyword arguments to pass to each forecast model, see
         ``ForecastModel``.
+
+    Notes
+    -----
+    Calling an instance evaluates the models in parallel and concatenates their mean,
+    covariance, and residual outputs by horizon.
     """
 
     def __init__(
@@ -1331,26 +1488,31 @@ class ForecastCollection(Transformation):
 
 
 class Residuals(Transformation):
-    """Compute residuals for forecast matrix data.
-    
+    """Transformation that computes residuals for forecast-matrix data.
+
     Parameters
     ----------
-    Y : Source
-        Source providing dataframe of target variable. Should be in forecast matrix
-        format with zero as the only horizon, or a dataframe with a single level of
-        columns.
-    Y_hat : Source
-        Source providing dataframe of forecasts. Should be in forecast matrix format
-        with variable names matching those in Y.
+    Y : Transformation
+        Target transformation providing a DataFrame in forecast-matrix format
+        with zero as the only horizon, or a DataFrame with one column level.
+    Y_hat : Transformation
+        Forecast transformation providing forecast-matrix data with variable
+        names matching those in ``Y``.
+
+    Notes
+    -----
+    Calling an instance returns a DataFrame of residuals. The transformation
+    uses state to reuse column selections and previous forecast values across
+    separate input batches.
     """
 
     def __init__(self, Y, Y_hat):
-        super().__init__(self.evaluate, Y, Y_hat, STATE = "memory")
+        super().__init__(self.evaluate, Y, Y_hat, STATE="memory")
 
-    def evaluate(self, Y, Y_hat, memory = None):
+    def evaluate(self, Y, Y_hat, memory=None):
         """Return dataframe of residuals.
 
-        The residuals are computed by lagging the forecasts and subtracting from the 
+        The residuals are computed by lagging the forecasts and subtracting from the
         corresponding columns in Y. Memory is used to store indices for subsetting and
         old forecasted values for lagging.
 
@@ -1367,16 +1529,18 @@ class Residuals(Transformation):
             and Y_hat and old forecasted values for lagging. Should be in the same
             order as the horizons in Y_hat. If not provided, indices and old values
             will be computed from Y and Y_hat.
-        """ 
+        """
         horizons = Y_hat.fc.horizons
 
         if memory is None:
-            
+
             # Build indices
             y_hat_indices = []
             y_indices = []
             for h in horizons:
-                idx_y_hat = subset_columns(Y_hat.columns, horizons=[h], return_index=True)
+                idx_y_hat = subset_columns(
+                    Y_hat.columns, horizons=[h], return_index=True
+                )
                 vars = Y_hat.columns[idx_y_hat].get_level_values(0).tolist()
                 idx_y = subset_columns(Y.columns, *vars, return_index=True)
                 y_hat_indices.append(idx_y_hat)
@@ -1393,17 +1557,17 @@ class Residuals(Transformation):
 
             # Stack old_vals and Y_hat vertically, then lag
             all_vals = pd.concat([old_vals, Y_hat], axis=0)
-            lagged = all_vals.fc.lag().iloc[len(old_vals):]
+            lagged = all_vals.fc.lag().iloc[len(old_vals) :]
 
         # Preallocate result dataframe
-        result = pd.DataFrame(index=Y.index, columns = Y_hat.columns, dtype = float)
+        result = pd.DataFrame(index=Y.index, columns=Y_hat.columns, dtype=float)
 
         y_np = Y.to_numpy()
         y_hat_np = lagged.to_numpy()
 
-        for (idx_y_hat, idx_y) in indices:
+        for idx_y_hat, idx_y in indices:
             result.iloc[:, idx_y_hat] = y_np[:, idx_y] - y_hat_np[:, idx_y_hat]
 
-        old_vals = all_vals.iloc[-max(horizons):]
+        old_vals = all_vals.iloc[-max(horizons) :]
 
         return result, (indices, old_vals)

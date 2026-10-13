@@ -1,18 +1,9 @@
-"""Basic functionality for making discrete horizon forecasts.
+"""Transformations and utilities for discrete-horizon forecasting.
 
-The module is built around transformations for making predictions for discrete horizon
-forecasting problems. The Prediction transformation provides an extensible base class
-for handling data updates for forecasting models. The class implies that subclasses
-should implement an ``update`` and  ``predict`` method, which are used to train the model
-and make predictions without altering the model state.
-
-Prediction is subclassed by another base class, OnlinePrediction, which requires the use
-of a corresponding online pair of methods that enable incremental updates.
-
-The module further contains some ready to use prediction subclasses,
-- WLS: simple weighted least squares predictor
-- RRR: an online multivariate linear model using recursive ridge regression
-- ARX: autoregressive model with exogenous input using recursive ridge regression
+The module provides recursive ridge regression, autoregressive forecasting
+with exogenous inputs, lag construction, and forecast-result utilities. The
+forecasting models are implemented as callable transformations and can be
+composed with other transformations from the package.
 """
 import numpy as np
 
@@ -33,8 +24,21 @@ from .features import (
     ToArray,
 )
 def stack(forecasts):
-    """Stack results from multiple rows into a single output."""
+    """Stack dictionaries of forecast results along a new first axis.
 
+    Array values are converted to NumPy arrays. Missing array values are
+    replaced with NaN-filled arrays matching the first available value.
+
+    Parameters
+    ----------
+    forecasts : sequence of dict
+        Forecast result dictionaries with matching keys.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the stacked forecast results.
+    """
     # Convert to dict of lists
     forecasts = {key: [r[key] for r in forecasts] for key in forecasts[0]}
 
@@ -82,8 +86,27 @@ class RRRPredictor:
         self.n, self.m = n, m
 
     def update(self, x, y, mem, theta0, Q):
-        """Update parameters."""
+        """Update the recursive ridge-regression parameters.
 
+        Parameters
+        ----------
+        x : ndarray
+            Predictor vector with length ``n``.
+        y : ndarray
+            Response vector with length ``m``.
+        mem : float
+            Forgetting factor between zero and one.
+        theta0 : ndarray or None
+            Prior parameter matrix. If None, use zeros.
+        Q : ndarray, scalar, or None
+            Prior precision matrix. A scalar is interpreted as a multiple of
+            the identity matrix. If None, use a zero matrix.
+
+        Raises
+        ------
+        ValueError
+            If ``mem`` is outside ``[0, 1]`` or ``Q`` is not symmetric.
+        """
         n, m = self.n, self.m
         # Check inputs
         if mem < 0 or mem > 1:
@@ -134,6 +157,62 @@ class RRRPredictor:
             self.psi = np.linalg.solve(KpQ, temp1.T).T  # K^-1 H K^-1^T
 
 class RRR(Transformation):
+    """Transformation implementing recursive ridge regression.
+
+    The transformation estimates a multivariate linear model sequentially,
+    optionally updating its parameters for each observation. It can return
+    forecasts, parameter estimates, residuals, and prediction or residual
+    covariance estimates.
+
+    Parameters
+    ----------
+    X : Transformation
+        Predictor transformation.
+    Y : Transformation
+        Response transformation.
+    horizon : int, default=0
+        Number of observations by which the response is aligned with the predictors 
+        during training.
+    Q : ndarray, scalar, or None, optional
+        Ridge prior precision. A scalar is interpreted as a multiple of the identity
+        matrix.
+    theta0 : ndarray or None, optional
+        Prior parameter matrix.
+    memory : float, default=0.99
+        Forgetting factor used for recursive parameter updates.
+    init_K : float or None, optional
+        Initial diagonal value of the accumulated predictor matrix.
+    update_theta : bool, default=True
+        Whether to update the regression parameters at each observation.
+    full_cov : bool, default=True
+        Whether to return full covariance matrices for prediction errors.
+    cov_memory : float or None, optional
+        Forgetting factor for residual covariance estimation. Defaults to ``memory``.
+    track_memory : bool, default=True
+        Whether to track effective covariance-estimation memory.
+    center_cov : bool, default=False
+        Whether to center residuals before estimating covariance.
+    return_theta : bool, default=False
+        Whether to include parameter estimates in the output.
+    return_psi : bool, default=False
+        Whether to include parameter covariance factors in the output.
+    return_residuals : bool, default=False
+        Whether to include residuals in the output.
+    return_residual_cov : bool, default=False
+        Whether to include residual covariance estimates in the output.
+    return_pred_cov : bool, default=True
+        Whether to include prediction covariance estimates in the output.
+    iterate_Q, iterate_theta0, iterate_memory : bool, default=False
+        Whether the corresponding parameter is supplied separately for each observation.
+    iterate_update_theta : bool, default=False
+        Whether ``update_theta`` is supplied separately for each observation.
+
+    Notes
+    -----
+    Calling an instance returns a dictionary containing at least ``mean``.
+    Optional keys are controlled by the ``return_*`` arguments. The
+    transformation uses state to continue recursive estimation across calls.
+    """
 
     def __init__(
         self,
@@ -225,7 +304,6 @@ class RRR(Transformation):
 
     def _pred_variance(self, x, var, psi):
         """Compute prediction variance and collect results."""
-
         # Compute covariance of prediction error
         var_pred_err = var * (1 + x.T @ psi @ x)
 
@@ -268,31 +346,45 @@ def rmse(x):
     return np.sqrt(np.mean(x**2))
 
 class RMSE(Transformation):
-    """Compute the root-mean-square error of x."""
+    """Transformation that computes the root-mean-square error.
+
+    Parameters
+    ----------
+    x : Transformation
+        Input transformation providing the values for which to compute the
+        error.
+
+    Notes
+    -----
+    Calling an instance returns the root-mean-square value of the evaluated
+    input.
+    """
 
     def __init__(self, x):
         super().__init__(rmse, x)
 
 
 class BackShift(Transformation):
-    r"""Create columns of time-lagged variables.
-    
-    Creates output variables as lags of input variables, specified by a list of shifts.
-    Useful for constructing autoregressive features.
-    
+    r"""Transformation that creates columns of time-lagged variables.
+
+    The transformation constructs output columns by selecting input columns at the 
+    requested lags. It is useful for constructing autoregressive features.
+
     Parameters
     ----------
-    shifts : list
-        Shift specification as list. Either integer lags or tuples of (input_index, lag)
-        can be used.
-    data : Source, default DEFAULT_SOURCE
-        Input data source.
+    shifts : sequence of int or tuple
+        Shift specifications. An integer denotes a lag of the default input
+        column. A tuple ``(input_index, lag)`` selects a specific input
+        column and lag.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing an array with shape
+        ``(n_observations, n_inputs)``.
     skip_duplicates : bool, default False
-        If True, output contains values only at every max_shift+1 rows. This ensures
-        that none of the input values are repeated in the output.
+        If True, return values only at selected non-overlapping rows and fill
+        the remaining rows with NaN.
     initial_value : float, default np.nan
-        Fill value for unavailable historical data.
-    
+        Fill value for unavailable historical observations.
+
     Attributes
     ----------
     n : int
@@ -300,7 +392,13 @@ class BackShift(Transformation):
     max_shift : int
         Maximum lag across all shifts.
     shifts : dict
-        Normalized shift specification as {(i, j): lag} mapping.
+        Normalized shift specifications.
+
+    Notes
+    -----
+    Calling an instance returns an array containing the requested lagged
+    columns. The transformation uses a state to continue lagging across
+    separate input batches.
     """
 
     def __init__(
@@ -396,36 +494,65 @@ class BackShift(Transformation):
             return result, (all_data[end_idx:], None)
 
 class ARX(Transformation):
-    r"""Autoregressive model with exogenous input using recursive ridge regression.
+    r"""Transformation for autoregressive forecasting with exogenous input.
 
-    Combines ``BackShift`` to construct AR lags of the endogenous variable and
-    stacks with exogenous features for forecasting via ``RRRPredictor``.
+    The transformation combines autoregressive lags of the endogenous variable with 
+    optional exogenous features and estimates the coefficients using recursive ridge 
+    regression.
 
-    The model learns a one-step-ahead predictor and rolls forward to produce
-    h-step-ahead forecasts for horizon h.
+    Calling an instance rolls the one-step model forward to produce forecasts for the 
+    configured horizon.
 
     Parameters
     ----------
-    exog : Source
-        Exogenous features. Should produce a an array of forecasted exogenous values.
-    endog : Source
-        Endogenous target variable. Should produce an array of endogenous values.
+    endog : Transformation
+        Endogenous target transformation.
     horizon : int
-        Forecast horizon in time steps.
-    p : int or list
-        Autoregressive order (number of lags), or a list of specific lags to include.
-    burn_in, init_K, track_memory, combine_variance, full_cov, scorefun, default_params
-        Forwarded to ``RRRPredictor``. See ``RRR`` for details.
+        Number of future time steps to forecast.
+    order : int or list of int
+        Autoregressive order, or one-indexed lag positions to include.
+    exog : Transformation, optional
+        Exogenous feature transformation. Its first horizon column is used
+        during model fitting and its horizon columns are used for forecasts.
+    Q : ndarray, scalar, or None, optional
+        Ridge prior precision passed to :class:`RRR`.
+    theta0 : ndarray or None, optional
+        Prior parameter matrix passed to :class:`RRR`.
+    memory : float, default=0.99
+        Forgetting factor for recursive parameter updates.
+    init_K : float or None, optional
+        Initial diagonal value for the recursive predictor.
+    update_theta : bool, default=True
+        Whether to update the regression parameters at each observation.
+    cov_memory : float or None, optional
+        Forgetting factor for residual covariance estimation.
+    track_memory : bool, default=True
+        Whether to track effective covariance-estimation memory.
+    center_cov : bool, default=False
+        Whether to center residuals before covariance estimation.
+    return_theta : bool, default=False
+        Whether to include parameter estimates in the output.
+    return_psi : bool, default=False
+        Whether to include parameter covariance factors in the output.
+    return_residuals : bool, default=False
+        Whether to include residuals in the output.
+    return_residual_cov : bool, default=False
+        Whether to include residual covariance estimates in the output.
 
     Attributes
     ----------
     p : int or list
-        AR order or list of specific lags used as features.
+        Largest autoregressive lag used by the model.
 
     See Also
     --------
     RRR : Recursive ridge regression wrapper.
-    BackShift : Lag transformation for AR features.
+    BackShift : Transformation for constructing lagged features.
+
+    Notes
+    -----
+    The transformation uses state to continue recursive estimation and lag
+    construction across separate input batches.
     """
     
     def __init__(
@@ -518,7 +645,6 @@ class ARX(Transformation):
 
     def _forecast(self, endog, theta, resid_cov, exog = None):
         """Compute forecasts for a single time step."""
-
         result = {}
 
         arx_mean = np.full(self.horizon, np.nan)

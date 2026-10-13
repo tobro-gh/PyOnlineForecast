@@ -1,21 +1,24 @@
-"""Core functionality for sources and transformations.
+"""Core functionality for building lazy transformation graphs.
 
-The module provides the basic objects to define data pipelines using sources and
-transformations. The main components of the module are,
+The module provides the basic objects for defining data pipelines with
+transformations. A :class:`Transformation` wraps a callable and records its
+transformation dependencies. Dependencies are evaluated lazily when the
+transformation is called.
 
-- Source: a placeholder for data sources
-- Transformation: a base class for data transformations.
+The module also provides:
 
-Sources and transformations can be composed to build a computational graph which is
-lazily evaluating using the ``apply`` or ``__call__`` methods.
-
+- :class:`Data`, a placeholder for externally supplied data.
+- :class:`Param`, a transformation containing a fixed value.
+- :class:`Dim`, a transformation returning the size of an input dimension.
+- :class:`CircularBuffer`, a fixed-size buffer for two-dimensional arrays.
+- ``DEFAULT_SOURCE``, the source used for unnamed input data.
+- ``STATE``, the internal source used for transformation state.
 """
 #%%
 from __future__ import annotations
 
 import functools
 import inspect
-from typing import Any
 from collections import defaultdict
 
 import numpy as np
@@ -24,7 +27,7 @@ import numpy as np
 
 
 def _iterate(*iterative_args, state_arg = None):
-    """Decorator to wrap a function to be applied iteratively over input data."""
+    """Wrap a function to be applied iteratively over input data."""
 
     def decorator(function):
 
@@ -74,6 +77,41 @@ def _iterate(*iterative_args, state_arg = None):
     return decorator
 
 class Transformation:
+    """Base class for lazy transformations with dependencies.
+
+    A transformation wraps a callable and records any other transformations provided as
+    positional or keyword arguments. When called, dependencies are evaluated first and
+    their results are passed to the wrapped callable.
+
+    Parameters
+    ----------
+    function : callable
+        Function used to compute the transformation result.
+    *args
+        Positional arguments passed to ``function``. Arguments that are
+        transformations become dependencies; other arguments are treated as
+        fixed values.
+    STATE : str, optional
+        Name of the function argument used for state. The function must return
+        ``(result, state)`` when this option is provided.
+    ITERATE : str or tuple of str, optional
+        Name or names of function arguments to evaluate iteratively.
+    **kwargs
+        Keyword arguments passed to ``function``.
+
+    Attributes
+    ----------
+    dependencies : list of Transformation
+        Direct transformation dependencies.
+    states : defaultdict or None
+        State retained from the most recent call with ``track_states=True``.
+
+    Notes
+    -----
+    Arithmetic operators, matrix multiplication, item access, and attribute
+    access create new transformations that evaluate the corresponding operations when
+    called on data.
+    """
     
     def __init__(self, function, *args, STATE = None, ITERATE = None, **kwargs):
 
@@ -164,8 +202,29 @@ class Transformation:
                     del data[dep]
 
     def __call__(self, data, track_states = False, states = None, return_states = False):
-        """Apply the transformation to the input data."""
+        """Evaluate the transformation for the supplied data.
 
+        Parameters
+        ----------
+        data : object or dict
+            Input data. Non-dictionary input is associated with ``DEFAULT_SOURCE``.
+            A dictionary maps transformations to their input values.
+        track_states : bool, default=False
+            If True, retain the states produced during evaluation for use by later
+            calls.
+        states : dict, optional
+            If provided, use these states instead of the current states if
+            ``track_states=True``.
+        return_states : bool, default=False
+            If True, return both the result and the state mapping.
+
+        Returns
+        -------
+        object
+            The transformation result.
+        tuple
+            A tuple ``(result, states)`` when ``return_states=True``.
+        """
         # Parse data
         if not isinstance(data, dict):
             data = {DEFAULT_SOURCE: data}
@@ -199,7 +258,11 @@ class Transformation:
         return data[self]
 
     def reset_state(self):
-        """Reset the state of the transformation."""
+        """Clear the states retained by the transformation.
+
+        The next call with ``track_states=True`` starts without previously retained
+        transformation state.
+        """
         self.states = None
 
     def __add__(self, other):
@@ -243,8 +306,8 @@ class Transformation:
         return _PowTransformation(other, self)
 
     def __getitem__(self, key):
-        """Return self[key] as a GetItem."""
-        return GetItem(self, key)
+        """Return self[key] as a _GetiTem."""
+        return _GetiTem(self, key)
 
     def __matmul__(self, other):
         """Return self @ other as a _MatmulTransformation."""
@@ -255,22 +318,28 @@ class Transformation:
         return _MatmulTransformation(other, self)
 
     def get_attr(self, name):
-        """Access an attribute of the source as a GetAttr.
-        
+        """Create a transformation that accesses an attribute lazily.
+
         Parameters
         ----------
         name : str
-            Attribute name to access.
-        
+            Name of the attribute to access.
+
         Returns
         -------
         GetAttr
-            Transformation accessing self.name.
+            Transformation that returns ``getattr(value, name)`` when evaluated.
         """
         return GetAttr(self, name)
     
     def print_dependency_tree(self, level=0):
-        """Print the transformation dependency tree to stdout."""
+        """Print the transformation and its dependencies.
+
+        Parameters
+        ----------
+        level : int, default=0
+            Indentation level used for the current transformation.
+        """
         indent = "  " * level
         print(f"{indent}- {self}")
         for dep in self.dependencies:
@@ -278,11 +347,36 @@ class Transformation:
 
 
 class Data(Transformation):
+    """Placeholder transformation for externally supplied data.
+
+    A ``Data`` instance has no fixed value. Its value must be supplied in the
+    input dictionary when the transformation graph is evaluated.
+
+    Examples
+    --------
+    >>> data = Data()
+    >>> transformation = data * 2
+    >>> transformation({data: 3})
+    6
+    """
 
     def __init__(self):
         super().__init__(lambda: None)
 
 class Param(Transformation):
+    """Transformation containing a fixed parameter value.
+
+    Parameters
+    ----------
+    value : object
+        Value returned whenever the parameter is evaluated.
+
+    Examples
+    --------
+    >>> parameter = Param(4)
+    >>> parameter(None)
+    4
+    """
     
     def __init__(self, value):
         self.value = value
@@ -308,7 +402,9 @@ class _State(Data):
 
 
 DEFAULT_SOURCE = _DefaultSource()
+"""Default source used when input data is not provided as a dictionary."""
 STATE = _State()
+"""Internal source containing state associated with transformations."""
 
 class _SumTransformation(Transformation):
     
@@ -340,32 +436,36 @@ class _MatmulTransformation(Transformation):
     def __init__(self, a, b):
         super().__init__(lambda x, y: x @ y, a, b)
 
-class GetItem(Transformation):
+class _GetiTem(Transformation):
     
     def __init__(self, a, key):
         super().__init__(lambda x: x[key], a)
         self.key = key
 
 class GetAttr(Transformation):
+    """Internal transformation for lazy attribute access."""
     
     def __init__(self, a, name):
         super().__init__(lambda x: getattr(x, name), a)
         self.name = name
 
-#%%
-
 class Dim(Transformation):
-    """Transformation that returns the size of a selected axis of the input."""
+    """Get the size of a selected axis of the input.
+
+    Parameters
+    ----------
+    data : Transformation
+        Transformation providing an array-like value.
+    axis : int, default=1
+        Axis whose size should be returned.
+
+    Returns
+    -------
+    int
+        Size of ``data.shape[axis]``.
+    """
 
     def __init__(self, data, axis=1):
-        """Initialize Dim transformation with input data and axis.
-        
-        Parameters        ----------
-        data : Source
-            Source that provides an array-like input.
-        axis : int, default=1
-            The axis along which to get the size.
-        """
         super().__init__(lambda x: x.shape[axis], data)
 
 class CircularBuffer:
@@ -420,7 +520,7 @@ class CircularBuffer:
 
     def set_data(self, dtype=np.float64, default_value=np.nan):
         """Reset the data using provided dtype and default value."""
-        # Set data type of the buffer
+        dtype = np.result_type(dtype, np.asarray(default_value).dtype)
         self.data = np.full((self.size, self.m), default_value, dtype=dtype)
 
     @property
@@ -488,8 +588,10 @@ class CircularBuffer:
 
     def reset(self):
         """Reset the buffer data and index."""
-        self.data.fill(np.nan)
+        self.data.fill(self.default_value)
         self._index = None
         self.offset = 0
 
 
+
+# %%

@@ -1,39 +1,51 @@
 """Selection of feature transformations.
 
-This module provides a selection of feature transformations based on the core module
-Transformation class. The transformations are focused on use with online regression
-models.
+This module provides a selection of feature transformations based on the transformation
+class :class:`py_online_forecast.core.Transformation`. The transformations are focused
+on use with online regression models.
+
+Most transformations process observations along the first axis and preserve
+state between calls when they are evaluated with ``track_states=True``.
+
 """
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
 from .core import DEFAULT_SOURCE, CircularBuffer, Dim, Transformation
 
-#%%
-
-
-#%%
-
-
-
-
 ### Transformations
 class ToArray(Transformation):
-    """Transformation that converts input data to a numpy array."""
+    """Transformation that converts input data to a NumPy array.
+
+    Parameters
+    ----------
+    data : Transformation
+        Input transformation providing array-like data.
+
+    Notes
+    -----
+    Calling an instance returns the input converted with
+    ``numpy.asarray``.
+    """
 
     def __init__(self, data):
         super().__init__(lambda x: np.asarray(x), data)
 
 class Combine(Transformation):
-    """Transformation that combines multiple input sources into a dictionary.
-    
+    """Combine multiple inputs into a dictionary.
+
     Parameters
     ----------
-    sources : list of Transformation
-        The input sources to combine into a dictionary.
-    names : list, optional
-        The names to use for the combined features in the output dictionary. If not 
-        provided, the names of the input sources will be used.
+    *sources : Transformation
+        Input transformations whose results should be combined.
+    names : sequence, optional
+        Keys for the resulting dictionary. If omitted, the input
+        transformations themselves are used as keys.
+
+    Raises
+    ------
+    ValueError
+        If ``names`` does not contain one name for each input source.
     """
 
     def __init__(self, *sources, names = None):
@@ -44,26 +56,35 @@ class Combine(Transformation):
             names = sources
 
         self.names = names
-        super().__init__(self.evaluate, *sources)
+        super().__init__(self._evaluate, *sources)
     
-    def evaluate(self, *data):
+    def _evaluate(self, *data):
         """Combine input data into a dictionary."""
         return {name: v for name, v in zip(self.names, data)}
 
 class DesignMatrix(Transformation):
-    """Transformation that combines multiple input sources into a 2D design matrix.
+    """Transformation that constructs a two-dimensional design matrix.
+
+    Each input is converted to an array. Its first axis represents
+    observations, and all remaining axes are flattened before the inputs
+    are concatenated horizontally.
 
     Parameters
     ----------
-    sources : list of Transformation
-        Input sources with array like values to combine into a design matrix.
+    *data : Transformation
+        Input transformations providing array-like data.
+
+    Notes
+    -----
+    Calling an instance returns an array with shape
+    ``(n_samples, n_features)``.
     """
 
     def __init__(self, *data):
         data = [ToArray(d) for d in data]
-        super().__init__(self.stack, *data)
+        super().__init__(self._stack, *data)
     
-    def stack(self, *data):
+    def _stack(self, *data):
         """Reshape input data and stack horizontally.
         
         Parameters
@@ -84,23 +105,28 @@ class DesignMatrix(Transformation):
         return np.hstack(data)
 
 class One(Transformation):
-    """Return a column of ones.
+    """Transformation that creates an array of ones.
 
     Parameters
     ----------
-    ref : Transformation, optional
-        The transformation to use as reference for the length of the output column.
+    ref : Transformation, default=DEFAULT_SOURCE
+        Transformation whose first-axis length determines the output length.
     shape : tuple, optional
-        The shape of the output array, excluding the first dimension. If None, the
-        output will be a 1D array of shape (t,).
+        Additional output dimensions. If omitted, the output has shape
+        ``(n_samples,)``. Otherwise, it has shape
+        ``(n_samples,) + shape``.
+
+    Notes
+    -----
+    Calling an instance returns an array filled with ones.
     """
 
     def __init__(self, ref = DEFAULT_SOURCE, shape = None):
         t = Dim(ref, axis = 0)
         self._shape = shape
-        super().__init__(self.evaluate, t)
+        super().__init__(self._evaluate, t)
 
-    def evaluate(self, t):
+    def _evaluate(self, t):
         """Return a column of ones of length t."""
         if self._shape is None:
             return np.ones(t)
@@ -108,26 +134,36 @@ class One(Transformation):
             return np.ones((t,) + self._shape)
 
 class SlidingSum(Transformation):
-    """Compute sliding window sum using numpy's sliding_window_view function.
+    """Transformation that computes sliding-window sums.
 
     Parameters
     ----------
-    data : Source
-        The input data to compute the sliding sum over.
-    window_size : int
-        The size of the sliding window to compute the sum over.
-    *args, **kwargs
-        Additional arguments to pass to numpy's sliding_window_view function
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing a two-dimensional array. The first
+        axis represents observations.
+    window_size : int, default=1
+        Number of observations included in each sliding window.
+    *args
+        Additional positional arguments passed to
+        ``sliding_window_view``.
+    **kwargs
+        Additional keyword arguments passed to
+        ``sliding_window_view``.
+
+    Notes
+    -----
+    The transformation uses a state to include observations from previous
+    input batches when computing the sliding sums.
     """
 
     def __init__(self, data = DEFAULT_SOURCE, window_size = 1, *args, **kwargs):
         self.window_size = window_size
         data = ToArray(data)
-        super().__init__(self.evaluate, data = data, STATE = "old_data")
+        super().__init__(self._evaluate, data = data, STATE = "old_data")
         self._args = args
         self._kwargs = kwargs
 
-    def evaluate(self, data, old_data = None):
+    def _evaluate(self, data, old_data = None):
         """Evaluate the sliding window sum.
         
         Parameters
@@ -157,16 +193,26 @@ class SlidingSum(Transformation):
         return result, old_data
 
 class SlidingMean(Transformation):
-    """Compute sliding window mean using numpy's sliding_window_view function.
+    """Transformation that computes sliding-window means.
 
     Parameters
     ----------
-    data : Source
-        The input data to compute the sliding mean over.
+    data : Transformation
+        Input transformation providing a two-dimensional array. The first
+        axis represents observations.
     window_size : int
-        The size of the sliding window to compute the mean over.
-    *args, **kwargs
-        Additional arguments to pass to numpy's sliding_window_view function
+        Number of observations included in each sliding window.
+    *args
+        Additional positional arguments passed to
+        ``sliding_window_view``.
+    **kwargs
+        Additional keyword arguments passed to
+        ``sliding_window_view``.
+
+    Notes
+    -----
+    The transformation uses a state to include observations from previous
+    input batches when computing the sliding means.
     """
 
     def __init__(self, data = None, window_size = None, *args, **kwargs):
@@ -174,9 +220,9 @@ class SlidingMean(Transformation):
         self._kwargs = kwargs
         self.window_size = window_size
         data = ToArray(data)
-        super().__init__(self.evaluate, data = data, STATE = "old_data")
+        super().__init__(self._evaluate, data = data, STATE = "old_data")
 
-    def evaluate(self, data, old_data = None):
+    def _evaluate(self, data, old_data = None):
         """Evaluate the sliding window mean.
         
         Parameters
@@ -280,27 +326,34 @@ def forgetting_mean(forgetting, data, state, track_memory = False):
     return result_full, (new_est, memory)
 
 class ForgettingMean(Transformation):
-    """Compute the running mean with exponential forgetting.
-    
-    This is simply a wrapper around the ``forgetting_mean`` function, which manages the
-    state and forgetting parameter. See the ``forgetting_mean`` function for details.
+    """Transformation that computes a running mean.
+
+    The running mean is computed with exponential forgetting and ignores observations
+    containing NaN values.
 
     Parameters
     ----------
     forgetting : float
-        The forgetting factor for the exponential forgetting.
-    data : Source
-        The input data to compute the running mean over.
-    track_memory : bool
-        Whether to track the effective or assume saturated memory.
+        Forgetting factor applied between observations. Larger values give
+        greater weight to previous observations.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing observations along the first axis.
+    track_memory : bool, default=True
+        If True, track the effective memory explicitly. If False, assume
+        that the effective memory is saturated.
+
+    Notes
+    -----
+    The transformation uses a state to continue the running mean across
+    separate input batches.
     """
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True):
-        super().__init__(self.evaluate, data = data, forgetting = forgetting, STATE = "state")
+        super().__init__(self._evaluate, data = data, forgetting = forgetting, STATE = "state")
         self.track_memory = track_memory
         self.data = data
 
-    def evaluate(self, data, forgetting, state = None):
+    def _evaluate(self, data, forgetting, state = None):
         """Evaluate the running mean using ``forgetting_mean``.
         
         Parameters
@@ -312,26 +365,36 @@ class ForgettingMean(Transformation):
         return forgetting_mean(forgetting, data, state, self.track_memory)
 
 class ForgettingVariance(Transformation):
-    """Compute the running variance with exponential forgetting.
-    
-    This transformation computes a running variance estimate with exponential forgetting
-    by applying the ``forgetting_mean`` function to the optionally centered squared data.
-    The transformation can compute either the marginal variance or the full covariance
-    matrix. 
+    """Transformation that computes running variance estimates.
+
+    The calculation uses exponential forgetting and can optionally center
+    observations using a running mean.
 
     Parameters
     ----------
     forgetting : float
-        The forgetting factor for the exponential forgetting.
-    data : Source
-        The input data to compute the running variance over. The value of the source
-        should be array-like with shape (t, d) where t is the time dimension.
-    track_memory : bool
-        Whether to track the effective or assume saturated memory.
-    center : bool
-        Whether to center the data before computing the variance.
-    covariance : bool
-        Whether to compute the covariance matrix instead of the variance.
+        Forgetting factor applied between observations.
+    data : Transformation, default=DEFAULT_SOURCE
+        Input transformation providing observations with shape
+        ``(n_samples, n_features)``.
+    track_memory : bool, default=True
+        If True, track the effective memory explicitly. If False, assume that the
+        effective memory is saturated.
+    center : bool or Transformation, default=True
+        Whether to center the observations before computing their variance. A 
+        transformation may be supplied to provide a custom center.
+    covariance : bool, default=False
+        If True, compute a full covariance matrix. Otherwise, compute one variance value
+        for each feature.
+
+    Notes
+    -----
+    Calling an instance returns running variance estimates with shape
+    ``(n_samples, n_features)`` when ``covariance=False``. When ``covariance=True``, it
+    returns estimates with shape ``(n_samples, n_features, n_features)``.
+
+    The transformation uses a state to continue the variance or covariance
+    calculation across separate input batches.
     """
 
     def __init__(self, forgetting, data = DEFAULT_SOURCE, track_memory = True, center = True, covariance = False):
@@ -340,14 +403,14 @@ class ForgettingVariance(Transformation):
                 mean = center
             else:
                 mean = ForgettingMean(forgetting, data = data, track_memory = track_memory)
-            super().__init__(self.evaluate, data, forgetting, mean = mean, STATE = "state")
+            super().__init__(self._evaluate, data, forgetting, mean = mean, STATE = "state")
         else:
-            super().__init__(self.evaluate, data, forgetting, STATE = "state")
+            super().__init__(self._evaluate, data, forgetting, STATE = "state")
 
         self.track_memory = track_memory
         self.covariance = covariance
 
-    def evaluate(self, data, forgetting, mean = None, state = None):
+    def _evaluate(self, data, forgetting, mean = None, state = None):
         """Evaluate the running variance or covariance.
         
         Parameters
@@ -399,26 +462,32 @@ class ForgettingVariance(Transformation):
         return var, state
     
 class LowPass(Transformation):
-    """Low-pass filter using exponential forgetting.
-    
-    This transformation applied a low-pass filter with exponential forgetting and NaN
-    handling to the input data.
+    """Transformation that applies an exponential low-pass filter.
+
+    NaN values are replaced using the current filtered value or, when
+    necessary, the previous filtered value.
 
     Parameters
     ----------
-    data : Source
-        The input data to apply the low-pass filter to.
-    alpha : float
-        The forgetting factor for the exponential forgetting. Higher values of alpha
-        correspond to more smoothing.        
+    data : Transformation
+        Input transformation providing a two-dimensional array. The first axis 
+        represents observations.
+    alpha : float, default=0
+        Weight assigned to the previous filtered value. Larger values produce stronger
+        smoothing.
+
+    Notes
+    -----
+    The transformation uses a state to continue filtering across separate
+    input batches.
     """
 
     def __init__(self, data, alpha = 0):
         data = ToArray(data)
-        super().__init__(self.evaluate, data=data, STATE = "prev_value")
+        super().__init__(self._evaluate, data=data, STATE = "prev_value")
         self.alpha = alpha
 
-    def evaluate(self, data: np.ndarray, prev_value=None):
+    def _evaluate(self, data: np.ndarray, prev_value=None):
         """Evaluate the low-pass filter on the input data.
         
         Parameters
@@ -453,25 +522,31 @@ class LowPass(Transformation):
 
 
 class FourierSeries(Transformation):
-    """Fourier series features.
-    
-    The transformation computes the basis functions of a Fourier series expansion up to
-    a specified number of harmonics.
+    """Transformation that generates Fourier-series features.
+
+    The input is interpreted as observations along the first axis. All remaining input
+    dimensions are flattened before sine and cosine features are generated.
 
     Parameters
     ----------
-    data : Source
-        The input data to compute the Fourier features from.
-    nharmonics : int
-        The number of terms in the Fourier series expansion.
+    data : Transformation
+        Input transformation providing the reference values.
+    nharmonics : int, default=1
+        Number of harmonics to include.
+
+    Notes
+    -----
+    Calling an instance returns an array with shape
+    ``(n_samples, 2 * nharmonics * n_features)``. For each harmonic, cosine features are
+    followed by sine features.
     """
 
     def __init__(self, data, nharmonics = 1):
         self.nharmonics = nharmonics
         data = ToArray(data)
-        super().__init__(self.evaluate, data = data)
+        super().__init__(self._evaluate, data = data)
 
-    def evaluate(self, data: np.ndarray):
+    def _evaluate(self, data: np.ndarray):
         """Evaluate the Fourier series features.
 
         Parameters
@@ -484,7 +559,7 @@ class FourierSeries(Transformation):
         -------
         result : ndarray of shape (n_samples, 2*nharmonics*d)
             The Fourier series features of the input data.
-       """ 
+        """
         results = []
         if data.ndim != 2:
             data = data.reshape(data.shape[0], -1)
@@ -496,25 +571,28 @@ class FourierSeries(Transformation):
         return result
 
 class Lag(Transformation):
-    """Lag features along the observations dimension.
-    
-    This transformation lags arrays and dictionaries of arrays along the first
-    dimension.
+    """Transformation that lags observations along the first axis.
 
     Parameters
     ----------
-    data : Source
-        The input data to compute the lag features from.
-    amount : int
-        The number of steps to lag the data.
+    data : Transformation
+        Input transformation providing an array. The first axis represents observations.
+    amount : int, default=1
+        Number of observations by which to lag the input.
     default_value : scalar, optional
-        The value to use for the lagged values when there is not enough history. If
-        None, the default value is NaN.
-    offsets : int or list of int, optional
-        A set of offsets to lag from. If specified, evaluation of the transformation
-        will return a dictionary of lagged values per offset. The lag amount for the
-        i-th offset is given by amount - offsets[i]. If None, the transformation will
-        simply lag by the specified amount and return a single array of lagged values.
+        Value used where insufficient history is available. Defaults to NaN.
+    offsets : int or sequence of int, optional
+        Additional offsets to evaluate. For an offset ``h``, the effective lag is 
+        ``amount - h``.
+
+    Notes
+    -----
+    Calling an instance returns an array containing the lagged observations.
+    If ``offsets`` is provided, it returns a dictionary mapping each offset
+    to its corresponding lagged array.
+
+    The transformation uses a state to provide observations from previous
+    input batches when constructing lagged values.
     """
 
     def __init__(self, data, amount = 1, default_value = None, offsets: int | list = None):
@@ -527,10 +605,10 @@ class Lag(Transformation):
                 if h > amount:
                     raise ValueError(f"Offset {h} must be less than lag amount {amount}.")
         data = ToArray(data)
-        super().__init__(self.evaluate, data = data, STATE = "prev_values")
+        super().__init__(self._evaluate, data = data, STATE = "prev_values")
 
 
-    def evaluate(self, data, prev_values = None):
+    def _evaluate(self, data, prev_values = None):
         """Lag the data along the first dimension.
 
         Parameters
@@ -609,26 +687,36 @@ class Lag(Transformation):
         return result, prev_values
     
 class Periodic(Transformation):
-    """Map pre-computed values periodically from a reference index.
-    
+    """Transformation that maps indices to periodically repeating values.
+
     Parameters
     ----------
-    values: np.ndarray
-        Array of shape (n_times, ...) containing the values to map from.
-    index: np.ndarray
-        Array of shape (n_times,) containing the index corresponding to the values.
+    values : ndarray
+        Precomputed values. The first axis represents the periodic cycle.
+    index : Transformation
+        Transformation providing integer reference indices.
+    horizons : sequence of int, optional
+        Integer offsets to apply to each reference index.
+
+    Notes
+    -----
+    Calling an instance maps each index using modulo arithmetic, so indices
+    outside the range of ``values`` wrap around the periodic cycle.
+
+    Without ``horizons``, the output has the shape of ``values[index]``.
+    With ``horizons``, the output includes a horizon axis after the index
+    axis.
     """
 
     def __init__(self, values: np.ndarray, index: Transformation, horizons: list = None):
         self.values = values
-        n = len(values)
 
         self.horizons = horizons
         self._n = len(values)
         
-        super().__init__(self.evaluate, index)
+        super().__init__(self._evaluate, index)
 
-    def evaluate(self, index: np.ndarray) -> np.ndarray:
+    def _evaluate(self, index: np.ndarray) -> np.ndarray:
         """Return values mapped from reference_time.
         
         Parameters
@@ -656,13 +744,25 @@ class Periodic(Transformation):
         return np.stack(result, axis=1)
     
 class Difference(Transformation):
-    """Compute the difference along the first dimension."""
+    """Transformation that computes first differences.
+
+    Parameters
+    ----------
+    data : Transformation
+        Input transformation providing an array. The first axis represents
+        observations.
+
+    Notes
+    -----
+    The transformation uses a state to compute differences continuously
+    across separate input batches.
+    """
 
     def __init__(self, data):
         data = ToArray(data)
-        super().__init__(self.evaluate, data = data, STATE = "prev_value")
+        super().__init__(self._evaluate, data = data, STATE = "prev_value")
 
-    def evaluate(self, data, prev_value = None):
+    def _evaluate(self, data, prev_value = None):
         """Return the difference along the first dimension of the input data."""
         if prev_value is None:
             prev_value = np.full(data.shape[1:], np.nan)
@@ -672,21 +772,32 @@ class Difference(Transformation):
         return diff, new_prev_value
     
 class Map(Transformation):
-    """Apply a transformation to multiple inputs.
-    
+    """Transformation that applies another transformation to multiple inputs.
+
     Parameters
     ----------
     transformation : Transformation
-        The transformation to apply to the inputs.
-    *mapping : iterable of dict or Source
-        An iterable of input mappings. Each mapping should be either a dict or a Source.
-        If a dict, each key should be a dependency of the transformation, and the
-        corresponding value should be the source to map from. If a Source, it is assumed
-        to be the only dependency (DEFAULT_SOURCE) for the transformation.
-    names : list, optional
-        The names to use for the outputs of the transformation. If provided, the output
-        will be a dict mapping names to the corresponding outputs. If not provided, the
-        output is a list ordered as the input mappings.
+        Transformation to apply independently for each input.
+    *mapping : Transformation or dict
+        An iterable of input mappings. Each mapping should be either a dict or a 
+        Transformation. If a dict, each key should be a dependency of the 
+        transformation, and the corresponding value should be the source to use as
+        input for that dependency. If a Transformation, it is assumed to be the only
+        dependency (DEFAULT_SOURCE) for the transformation.
+    names : sequence of str, optional
+        Names for the outputs. If provided, outputs are returned as a dict mapping each
+        name to the corresponding output. If omitted, outputs are returned as a list.
+
+    Raises
+    ------
+    ValueError
+        If a mapping is neither a transformation nor a dictionary, or if
+        ``names`` does not contain one name per mapping.
+
+    Notes
+    -----
+    Calling an instance evaluates ``transformation`` separately for each
+    mapping. Each mapping is evaluated using its own state.
     """
     
     def __init__(self, transformation, *mapping, names = None):
@@ -702,7 +813,10 @@ class Map(Transformation):
             elif isinstance(m, dict):
                 standard_mapping.append(m)
             else:
-                raise ValueError(f"Mapping should be either a dict or a Source, got {type(m)}.")
+                raise ValueError(
+                    "Mapping should be either a dict or a Transformation, "
+                    f"got {type(m)}."
+                )
 
         sources = set()
         for m in standard_mapping:
@@ -710,10 +824,10 @@ class Map(Transformation):
             
         self.transform_sources = list(sources)
         self.mapping = standard_mapping
-        super().__init__(self.evaluate, *self.transform_sources, STATE = "states")
+        super().__init__(self._evaluate, *self.transform_sources, STATE = "states")
         self.transformation = transformation
     
-    def evaluate(self, *data, states = None):
+    def _evaluate(self, *data, states = None):
         """Apply the transformation to the input data."""
         results = []
         if states is None:

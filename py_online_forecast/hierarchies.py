@@ -1,17 +1,10 @@
-"""Transformations and tools for hierarchical forecast reconciliation.
+"""Transformations and utilities for hierarchical forecast reconciliation.
 
-This module provides transformations and tools for working with hierarchical forecast
-reconciliation. The main class is ``RidgeReconciliation``, which uses the ``RRR`` (or
-optionally ``SRRR``) prediction to model the bottom level forecast errors and then
-constructs reconciled forecasts at all levels of the hierarchy. Behind the scenes, these
-classes use the ``HierarchicalForecastReconciliation`` transformation, which provides
-a generic way to setup forecast reconciliation using any prediction model.
-
-For working with temporal hierarchies, the ``TemporalRidgeReconciliation`` class is a
-thin wrapper around ``RidgeReconciliation`` that uses a ``BackShift`` transformation to
-construct a bottom level variable for a temporal hierarchy.
-
-The module also includes some tools for constructing hierarchies using a ``Node`` class.
+The module provides ridge-based reconciliation transformations and utilities for 
+constructing summation, aggregation, and backshift structures The main class is the
+:class:`RidgeReconciliation` transformation, which reconciles forecasts in a hierarchy
+using recursive ridge regression. The module also provides :class:`Node` objects for
+representing ordinary and temporal hierarchies.
 """
 
 import numpy as np
@@ -107,6 +100,52 @@ class _ShrinkagePrior(c.Transformation):
 
 
 class RidgeReconciliation(c.Transformation):
+    """Transformation that reconciles forecasts using recursive ridge regression.
+
+    The transformation models bottom-level forecast errors, adds the predicted
+    errors to the bottom-level forecasts, and aggregates the result to all levels using 
+    the summation matrix.
+
+    Parameters
+    ----------
+    S_top : ndarray
+        Summation matrix mapping bottom-level values to top-level values, with shape
+        ``(n_top, n_bottom)``.
+    Y_bot : Transformation
+        Bottom-level observation transformation. The ordering should match the columns 
+        of ``S_top``.
+    Y_hat : Transformation
+        Forecast transformation containing top-level columns followed by bottom-level
+        columns. The ordering within each group should match the rows and columns of 
+        ``S_top``, respectively.
+    horizon : int, default=1
+        Forecast horizon used when aligning observations and forecasts.
+    memory : float, default=0.99
+        Forgetting factor used by the recursive regression.
+    full_hierarchy_cov : bool, default=False
+        If True, return full covariance matrices for all hierarchy levels. Otherwise, 
+        return only marginal variances.
+    optimal_shrinkage : bool, default=False
+        If True, estimate the ridge prior from forecast errors.
+    full_cov : bool, default=True
+        Whether the bottom-level prediction returns full covariance matrices.
+    l_shrink : float or None, optional
+        Shrinkage parameter used when ``optimal_shrinkage=True``.
+    **kwargs
+        Additional arguments forwarded to :class:`prediction.RRR`.
+
+    Raises
+    ------
+    ValueError
+        If shrinkage-specific arguments are supplied with incompatible
+        ``optimal_shrinkage`` settings.
+
+    Notes
+    -----
+    Calling an instance returns a dictionary with ``mean`` and ``cov`` keys. The 
+    transformation uses state to continue recursive estimation across separate input
+    batches.
+    """
 
     def __init__(self, S_top, Y_bot, Y_hat, horizon = 1, memory = 0.99, full_hierarchy_cov=False, 
                  optimal_shrinkage=False, full_cov = True, l_shrink = None, **kwargs):
@@ -225,6 +264,33 @@ class _TemporalUpdateSchema(c.Transformation):
         return bools, offset
 
 class TemporalRidgeReconciliation(RidgeReconciliation):
+    """Transformation for reconciling forecasts in a temporal hierarchy.
+
+    This transformation constructs bottom-level observations with
+    :class:`prediction.BackShift` and then applies :class:`RidgeReconciliation`.
+
+    Parameters
+    ----------
+    S_top : ndarray
+        Summation matrix mapping bottom-level values to top-level values.
+    B : sequence or dict
+        Backshift specification used to construct bottom-level observations.
+    Y : Transformation
+        Observed temporal series used to construct the bottom-level values.
+    Y_hat : Transformation
+        Forecast transformation containing top-level and bottom-level forecasts.
+    horizon : int, optional
+        Forecast horizon. If omitted, infer it from ``B``.
+    skip_duplicates : bool, default=False
+        If True, update the recursive model only on non-duplicate temporal observations.
+    **kwargs
+        Additional arguments forwarded to :class:`RidgeReconciliation`.
+
+    Notes
+    -----
+    Calling an instance returns the reconciled forecast dictionary produced
+    by :class:`RidgeReconciliation`.
+    """
 
     def __init__(self, S_top, B, Y, Y_hat, horizon = None, skip_duplicates = False, **kwargs):
         if horizon is None:
@@ -250,14 +316,25 @@ class TemporalRidgeReconciliation(RidgeReconciliation):
         super().__init__(S_top, Y_bot, Y_hat, horizon=horizon, **kwargs)
 
 class Node:
-    """Class for constructing hierarchies of variables.
+    """Node used to construct a hierarchy of variables.
 
     Parameters
     ----------
-    sources : list of Node
-        List of source nodes.
+    *sources : Node
+        Child nodes of this node.
     name : str, optional
-        Name of the node. If None (default), a unique name is generated automatically.
+        Node name. If omitted, a unique name is generated automatically.
+
+    Attributes
+    ----------
+    level : int
+        Number of edges between this node and the deepest leaf below it.
+    sources : list of Node
+        Child nodes of this node.
+    lags : dict
+        Cached lagged nodes created from this node.
+    name : str
+        Name of the node.
     """
 
     _counter = 0
@@ -621,12 +698,17 @@ def construct_aggregation_matrix(S, P, full=False):
 
 
 def get_input_nodes(output_nodes):
-    """Return a list of required input nodes for given output nodes.
+    """Return the unique input nodes required by output nodes.
 
     Parameters
     ----------
     output_nodes : list of Node or None, optional
         List of output nodes to determine required input nodes.
+
+    Returns
+    -------
+    list of Node
+        Unique unlagged input nodes in first-occurrence order.
     """
     input_nodes = []
     for out in output_nodes:
@@ -639,7 +721,7 @@ def get_input_nodes(output_nodes):
 
 
 def build_backshift(input_nodes, output_nodes):
-    """Return backshift matrix structure for temporal hierarchy.
+    """Construct a backshift specification for a temporal hierarchy.
 
     Constructs a backshift operator B such that y_bot = B z, where z are the states
     of the input nodes. The output is a list of pairs (i_k, j_k), k = 1, ..., m
@@ -652,6 +734,12 @@ def build_backshift(input_nodes, output_nodes):
         List of input nodes in the hierarchy.
     output_nodes : list of Node
         List of output nodes in the hierarchy.
+
+    Returns
+    -------
+    list of tuple
+        Pairs ``(input_index, lag)`` describing how each output node is
+        constructed from the input nodes.
     """
     B = []
     for out_node in output_nodes:
@@ -668,14 +756,21 @@ def build_backshift(input_nodes, output_nodes):
     return B
 
 class LaggedNode(Node):
-    """Class for lagged nodes in a temporal hierarchy.
+    """Node representing a lagged variable in a temporal hierarchy.
 
     Parameters
     ----------
     lag : int
         Lag of the node, must be non-negative.
     source : Node
-        Source node for the lagged variable.
+        Node representing the unlagged variable.
+
+    Attributes
+    ----------
+    lag : int
+        Non-negative lag applied to ``source``.
+    var : Node
+        Unlagged source node.
     """
 
     def __init__(self, lag: int, source: Node):
@@ -706,12 +801,9 @@ def make_hierarchy(edges):
 
     Returns
     -------
-    nodes : dict
-        Dictionary mapping node names to Node instances.
-    bot_nodes : list of Node
-        List of bottom-level nodes in the hierarchy.
-    top_nodes : list of Node
-        List of top-level nodes in the hierarchy.
+    dict
+        Dictionary mapping node names and temporal-edge specifications to
+        ``Node`` instances.
     """
     top_nodes = list(edges.keys())
     node_names = top_nodes.copy()
