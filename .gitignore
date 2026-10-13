@@ -30,3 +30,6 @@ Thumbs.db
 py_online_forecast.egg-info/
 build/
 dist/
+
+# Ignore the example directory
+examples/
