@@ -51,17 +51,18 @@ Each instance of a `Transformation` represents a node in a computational graph, 
 The output of the evaluation is the transformed data and an updated state. As a design principle to ensure predictability, evaluation of a transformation should be a pure function with respect to the input data, parameters and state.
 
 ## Prediction
-To make forecasts a model needs to be trained and then evaluated on input features. Custom `Transformation` subclasses can be implemented, or the provided `RRR` class may be used for recursive ridge regression.
+To make forecasts a model needs to be trained and then evaluated on input features. Custom `Transformation` subclasses can be implemented, or the provided `RRR` or `ARX` class may be used for recursive ridge regression.
 ```{eval-rst}
 .. autosummary::
    :nosignatures:
 
-   py_online_forecast.prediction.RRR   
+   py_online_forecast.prediction.RRR
+   py_online_forecast.prediction.ARX
 ```
-The `RRR` class provides a simple and robust prediction algorithm, and is also used by the ``ForecastModel`` of the ``foreacst_tools`` module.
+The `RRR` class provides a simple and robust prediction algorithm and is used by several other classes in the package.
 
 ## Hierarchical reconciliation
-The PyOnlineForecast package also supports online forecast reconciliation for structural and temporal hierarchies using the ``RidgeReconciliation`` and ``TemporalRidgeReconciliation`` classes.
+The PyOnlineForecast package also supports online forecast reconciliation for structural and temporal hierarchies using the `RidgeReconciliation` and `TemporalRidgeReconciliation` classes.
 ```{eval-rst}
 .. autosummary::
    :nosignatures:
@@ -69,7 +70,7 @@ The PyOnlineForecast package also supports online forecast reconciliation for st
    py_online_forecast.hierarchies.RidgeReconciliation
    py_online_forecast.hierarchies.TemporalRidgeReconciliation   
 ```
-``RidgeReconciliation`` is a transformation that uses ``RRR`` to perform hierarchical forecast reconciliation by posing a regularized linear model in the bottom level base forecast errors. It is extended by ``TemporalRidgeReconciliation`` to construct temporal hierarchies using the ``BackShift`` transformation from the ``prediction`` module.
+`RidgeReconciliation` is a transformation that uses `RRR` to perform hierarchical forecast reconciliation by posing a regularized linear model in the bottom level base forecast errors. It is extended by ``TemporalRidgeReconciliation`` to construct temporal hierarchies using the ``BackShift`` transformation from the ``prediction`` module.
 
 ## Extensibility
 The PyOnlineForecast package is designed to be extensible. Subclassing the ``Transformation`` class enables custom features to be incorporated into the online data pipeline.
